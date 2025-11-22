@@ -18,7 +18,7 @@
   let regexpName: string = $state('');
   let regexpPattern: string = $state('');
 
-  let regexpModal: Modal;
+  let modal: Modal;
   export const showModal = (id?: string) => {
     if (id) {
       const regexp = regexps.find((p) => p.id === id);
@@ -28,7 +28,7 @@
         regexpPattern = regexp.pattern;
       }
     }
-    regexpModal.show();
+    modal.show();
   };
 
   /**
@@ -62,12 +62,12 @@
       regexpPattern = '';
       alert(m.regexp_added_success());
     }
-    regexpModal.close();
+    modal.close();
     loading.end();
   }
 </script>
 
-<Modal icon={Scroll} title="{regexpId ? m.update() : m.add()}{m.regexp()}" bind:this={regexpModal}>
+<Modal icon={Scroll} title="{regexpId ? m.update() : m.add()}{m.regexp()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -89,7 +89,7 @@
       </label>
     </fieldset>
     <div class="modal-action">
-      <button type="button" class="btn" onclick={() => regexpModal.close()}>{m.cancel()}</button>
+      <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
       <button type="submit" class="btn btn-submit" disabled={loading.started}>
         {m.confirm()}
         {#if loading.delayed}

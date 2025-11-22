@@ -24,10 +24,10 @@
   let actionId: string = $state('');
 
   // rule modal
-  let ruleModal: Modal;
+  let modal: Modal;
   export const showModal = (key: string) => {
     lastKey = key.toUpperCase();
-    ruleModal.show();
+    modal.show();
   };
 
   // text type options
@@ -106,7 +106,7 @@
         action: actionId
       });
       form.reset();
-      ruleModal.close();
+      modal.close();
       alert(m.rule_added_success());
     } catch (error) {
       console.error(`Failed to register rule: ${error}`);
@@ -149,7 +149,7 @@
   }
 </script>
 
-<Modal icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={ruleModal}>
+<Modal icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -164,7 +164,7 @@
       <Select bind:value={actionId} options={actionIds} class="w-full" />
     </fieldset>
     <div class="modal-action">
-      <button type="button" class="btn" onclick={() => ruleModal?.close()}>{m.cancel()}</button>
+      <button type="button" class="btn" onclick={() => modal?.close()}>{m.cancel()}</button>
       <button type="submit" class="btn btn-submit" disabled={loading.started}>
         {m.confirm()}
         {#if loading.delayed}

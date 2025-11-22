@@ -35,7 +35,7 @@
   "shortcuts": "全局快捷键",
   "shortcuts_count": "已注册快捷键组数量",
   "register_shortcut": "注册快捷键组",
-  "register_key_tip": "请输入要注册的字母或数字键",
+  "recording_keys": "按键录制中...",
   "key_not_supported": "暂不支持该键位！",
   "key_already_registered": "该键位已被注册！",
   "delete_shortcut": "删除快捷键组",

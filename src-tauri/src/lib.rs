@@ -95,18 +95,17 @@ fn handle_run_event(app: &tauri::AppHandle, event: RunEvent) {
 /// Global shortcut handler function.
 fn handle_shortcut_event(app: &tauri::AppHandle, shortcut: &Shortcut, event: ShortcutEvent) {
     if event.state() == ShortcutState::Pressed {
-        // extract last character from shortcut.key formatted string
-        let key_str = format!("{}", shortcut.key);
-        let key_char = key_str.chars().last().unwrap_or('?').to_string();
+        // convert shortcut back to string representation
+        let shortcut_str = commands::shortcut_to_string(shortcut);
 
         let app_clone = app.clone();
-        let key_char_clone = key_char.clone();
+        let shortcut_str_clone = shortcut_str.clone();
 
         // asynchronously get selected text and emit event to frontend
         tauri::async_runtime::spawn(async move {
             if let Ok(selection) = get_selection(app_clone.clone()).await {
                 let event_data = serde_json::json!({
-                    "key": key_char_clone,
+                    "key": shortcut_str_clone,
                     "selection": selection
                 });
                 let _ = app_clone.emit("shortcut-triggered", event_data);

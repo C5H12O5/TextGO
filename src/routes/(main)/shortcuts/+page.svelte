@@ -1,21 +1,14 @@
 <script lang="ts">
-  import { enhance } from '$app/forms';
-  import { alert, Button, confirm, List, Modal, Rule, Shortcut } from '$lib/components';
+  import { alert, Button, confirm, List, Rule, Shortcut, Recorder } from '$lib/components';
   import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
-  import { buildFormSchema } from '$lib/constraint';
   import { JavaScript, LMStudio, NoData, Ollama, Python, Regexp, Tensorflow } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { prompts, scripts, shortcuts } from '$lib/stores.svelte';
-  import { type } from '@tauri-apps/plugin-os';
   import {
     ArrowArcRight,
     ArrowFatLineRight,
-    ArrowFatUp,
     Browser,
-    Command,
-    Control,
     FingerprintSimple,
-    Info,
     Sparkle,
     StackPlus,
     Trash,
@@ -24,35 +17,17 @@
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
 
-  // operating system type
-  const osType = type();
-
   // total number of rules
   let totalRules = $derived(Object.values(shortcuts.current).reduce((sum, arr) => sum + arr.length, 0));
 
-  // key to register
-  let key: string = $state('');
+  // shortcut string to register
+  let shortcutStr: string = $state('');
 
   // key registration modal
-  let keyModal: Modal;
+  let keyModal: Recorder;
 
   // rule manager modal
   let ruleManager: Rule | null = $state(null);
-
-  // whether in input method composition state
-  let compositing: boolean = false;
-
-  // form validation rules
-  const schema = buildFormSchema(({ text }) => ({
-    key: text()
-      .maxlength(1)
-      .pattern('^[a-zA-Z0-9]$')
-      .oninvalid((event) => {
-        if ((event.target as HTMLInputElement)?.value) {
-          oninvalid(m.key_not_supported());
-        }
-      })
-  }));
 
   /**
    * Handle invalid input.
@@ -61,7 +36,7 @@
    */
   function oninvalid(message: string) {
     // clear input
-    key = '';
+    shortcutStr = '';
     // show prompt
     alert({ level: 'error', message: message });
   }
@@ -72,7 +47,7 @@
    * @param value - input value
    */
   function checkDuplicate(value: string) {
-    if (value && shortcuts.current[value.toUpperCase()]) {
+    if (value && shortcuts.current[value]) {
       oninvalid(m.key_already_registered());
       return false;
     }
@@ -83,17 +58,19 @@
    * Submit registration.
    */
   async function submit() {
-    // take only first character and convert to uppercase
-    const newKey = key.charAt(0).toUpperCase();
-    if (!checkDuplicate(newKey)) {
+    if (!shortcutStr) {
       return;
     }
-    shortcuts.current[newKey] = [];
-    keyModal.close();
-    key = '';
+
+    if (!checkDuplicate(shortcutStr)) {
+      return;
+    }
+
+    shortcuts.current[shortcutStr] = [];
+    shortcutStr = '';
     // wait for DOM update then scroll to newly registered shortcut position
     await tick();
-    const element = document.querySelector(`[data-shortcut-key="${newKey}"]`);
+    const element = document.querySelector(`[data-shortcut-key="${shortcutStr}"]`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
@@ -136,7 +113,7 @@
         <span class="text-xs tracking-wider opacity-50">({m.rules_count({ count: totalRules })})</span>
       {/if}
     </span>
-    <button class="btn text-sm btn-sm btn-submit" onclick={() => keyModal.show()}>
+    <button class="btn text-sm btn-sm btn-submit" onclick={() => keyModal.showModal()}>
       <StackPlus class="size-5" />{m.register_shortcut()}
     </button>
   </div>
@@ -258,43 +235,6 @@
   {/each}
 </div>
 
-<Modal maxWidth="22rem" icon={StackPlus} title={m.register_shortcut()} bind:this={keyModal}>
-  <form
-    method="post"
-    use:enhance={({ cancel }) => {
-      cancel();
-      submit();
-    }}
-  >
-    <fieldset class="fieldset">
-      <div class="flex items-center justify-center gap-4 py-2">
-        <kbd class="kbd h-10 w-12">
-          {#if osType === 'macos'}
-            <Command class="size-6" />
-          {:else}
-            <Control class="size-6" />
-          {/if}
-        </kbd>
-        <span class="text-2xl font-bold opacity-50">+</span>
-        <kbd class="kbd h-10 w-12"><ArrowFatUp class="size-6" /></kbd>
-        <span class="text-2xl font-bold opacity-50">+</span>
-        <input
-          class="autofocus input h-10 w-12 text-xl"
-          {...schema.key}
-          bind:value={key}
-          oninput={(event) => !compositing && (event.target as HTMLInputElement)?.form?.requestSubmit()}
-          oncompositionstart={() => (compositing = true)}
-          oncompositionend={(event) => (
-            (compositing = false),
-            (event.target as HTMLInputElement)?.form?.requestSubmit()
-          )}
-        />
-      </div>
-      <div class="flex items-center justify-center gap-1 text-xs tracking-wider opacity-30">
-        <Info class="size-4" />{m.register_key_tip()}
-      </div>
-    </fieldset>
-  </form>
-</Modal>
+<Recorder bind:value={shortcutStr} onComplete={submit} bind:this={keyModal} />
 
 <Rule bind:this={ruleManager} />

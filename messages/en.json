@@ -35,7 +35,7 @@
   "shortcuts": "Global Shortcuts",
   "shortcuts_count": "Registered Shortcuts Count",
   "register_shortcut": "Register Shortcut",
-  "register_key_tip": "Please enter a letter or number key to register",
+  "recording_keys": "Recording Keys...",
   "key_not_supported": "Key not supported yet!",
   "key_already_registered": "This key has already been registered!",
   "delete_shortcut": "Delete Shortcut",

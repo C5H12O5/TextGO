@@ -23,6 +23,7 @@ export class Manager {
         // listen for shortcut triggered events from Rust backend
         await listen('shortcut-triggered', async (event) => {
           const payload = event.payload as { key: string; selection: string };
+          // key now contains the full shortcut string
           await this.handleShortcutEvent(payload.key, payload.selection);
         });
       } catch (error) {
@@ -34,13 +35,13 @@ export class Manager {
   /**
    * Handle shortcut event.
    *
-   * @param key - triggered shortcut key
+   * @param shortcutStr - triggered shortcut string (e.g., "Ctrl+Shift+A")
    * @param selection - selected text
    */
-  private async handleShortcutEvent(key: string, selection: string): Promise<void> {
+  private async handleShortcutEvent(shortcutStr: string, selection: string): Promise<void> {
     try {
-      // get all rules bound to this key
-      const rules = shortcuts.current[key];
+      // get all rules bound to this shortcut
+      const rules = shortcuts.current[shortcutStr];
       if (!rules || rules.length === 0) {
         return;
       }
@@ -70,10 +71,10 @@ export class Manager {
   async register(rule: Rule): Promise<void> {
     try {
       // check if backend shortcut is registered
-      const isRegistered = await invoke('is_shortcut_registered', { key: rule.key });
+      const isRegistered = await invoke('is_shortcut_registered', { shortcutStr: rule.key });
       if (!isRegistered) {
-        // register backend shortcut
-        await invoke('register_shortcut', { key: rule.key });
+        // register backend shortcut with full shortcut string
+        await invoke('register_shortcut', { shortcutStr: rule.key });
       }
       // save rule to frontend registry
       const rules = shortcuts.current[rule.key];
@@ -102,7 +103,7 @@ export class Manager {
         }
         // unregister backend shortcut when no remaining rules
         if (rules.length === 0) {
-          await invoke('unregister_shortcut', { key: rule.key });
+          await invoke('unregister_shortcut', { shortcutStr: rule.key });
         }
       }
     } catch (error) {

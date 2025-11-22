@@ -20,7 +20,7 @@
   let modelSample: string = $state('');
   let modelThreshold: number = $state(0.5);
 
-  let modelModal: Modal;
+  let modal: Modal;
   export const showModal = (id?: string) => {
     if (loading.started) {
       alert({ level: 'error', message: m.model_training_waiting() });
@@ -35,7 +35,7 @@
         modelThreshold = model.threshold;
       }
     }
-    modelModal.show();
+    modal.show();
   };
 
   /**
@@ -96,11 +96,11 @@
           alert({ level: 'error', message: m.model_training_failed() });
         });
     }
-    modelModal.close();
+    modal.close();
   }
 </script>
 
-<Modal icon={Sphere} title="{modelId ? m.update() : m.add()}{m.model()}" bind:this={modelModal}>
+<Modal icon={Sphere} title="{modelId ? m.update() : m.add()}{m.model()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -128,7 +128,7 @@
       </label>
     </fieldset>
     <div class="modal-action">
-      <button type="button" class="btn" onclick={() => modelModal.close()}>{m.cancel()}</button>
+      <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
       <button type="submit" class="btn btn-submit" disabled={loading.started}>
         {m.confirm()}
         {#if loading.delayed}

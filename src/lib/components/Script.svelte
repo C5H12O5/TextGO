@@ -43,7 +43,7 @@ def process(data):
   let scriptText: string = $state(JAVASCRIPT_TEMPLATE);
   let quietMode: boolean = $state(true);
 
-  let scriptModal: Modal;
+  let modal: Modal;
   export const showModal = (id?: string) => {
     if (id) {
       const script = scripts.find((s) => s.id === id);
@@ -55,7 +55,7 @@ def process(data):
         quietMode = script.quietMode || false;
       }
     }
-    scriptModal.show();
+    modal.show();
   };
 
   /**
@@ -98,12 +98,12 @@ def process(data):
       quietMode = true;
       alert(m.script_added_success());
     }
-    scriptModal.close();
+    modal.close();
     loading.end();
   }
 </script>
 
-<Modal icon={Code} title="{scriptId ? m.update() : m.add()}{m.script()}" bind:this={scriptModal}>
+<Modal icon={Code} title="{scriptId ? m.update() : m.add()}{m.script()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -162,7 +162,7 @@ def process(data):
       </label>
     </fieldset>
     <div class="modal-action">
-      <button type="button" class="btn" onclick={() => scriptModal.close()}>{m.cancel()}</button>
+      <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
       <button type="submit" class="btn btn-submit" disabled={loading.started}>
         {m.confirm()}
         {#if loading.delayed}

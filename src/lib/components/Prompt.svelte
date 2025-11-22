@@ -34,7 +34,7 @@ ${m.prompt_variables_tip()}
   let modelProvider: 'ollama' | 'lmstudio' = $state('ollama');
   let modelName: string = $state('gemma3:4b');
 
-  let promptModal: Modal;
+  let modal: Modal;
   let nameInputElement: HTMLInputElement;
   let collapseCheckbox: HTMLInputElement;
   export const showModal = (id?: string) => {
@@ -49,7 +49,7 @@ ${m.prompt_variables_tip()}
         modelName = prompt.model;
       }
     }
-    promptModal.show();
+    modal.show();
   };
 
   /**
@@ -95,12 +95,12 @@ ${m.prompt_variables_tip()}
       modelName = 'gemma3:4b';
       alert(m.prompt_added_success());
     }
-    promptModal.close();
+    modal.close();
     loading.end();
   }
 </script>
 
-<Modal icon={Lightbulb} title="{promptId ? m.update() : m.add()}{m.prompt_template()}" bind:this={promptModal}>
+<Modal icon={Lightbulb} title="{promptId ? m.update() : m.add()}{m.prompt_template()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -165,7 +165,7 @@ ${m.prompt_variables_tip()}
       </div>
     </fieldset>
     <div class="modal-action">
-      <button type="button" class="btn" onclick={() => promptModal.close()}>{m.cancel()}</button>
+      <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
       <button type="submit" class="btn btn-submit" disabled={loading.started}>
         {m.confirm()}
         {#if loading.delayed}
