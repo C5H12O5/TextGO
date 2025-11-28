@@ -2,7 +2,7 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "platforms": ["macOS", "windows"],
-  "windows": ["main", "popup"],
+  "windows": ["main", "popup", "toolbar"],
   "permissions": [
     "core:default",
     "core:window:allow-hide",

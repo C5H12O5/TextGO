@@ -240,11 +240,6 @@ export const PROGRAMMING_CASES: Option[] = [
   { value: 'yaml', label: 'YAML' }
 ];
 
-// memoized lookup function
-const findBuiltinCase = memoize((_case: string) => [...GENERAL_CASES, ...TEXT_CASES].find((c) => c.value === _case));
-const findNaturalCase = memoize((_case: string) => NATURAL_CASES.find((c) => c.value === _case));
-const findProgrammingCase = memoize((_case: string) => PROGRAMMING_CASES.find((c) => c.value === _case));
-
 // natural language detection options for franc
 const FRANC_OPTIONS = { minLength: 2, only: NATURAL_CASES.map((c) => c.value as string) };
 
@@ -287,106 +282,145 @@ const INITIAL_THRESHOLD = 0.5;
 // relative confidence difference threshold
 const RELATIVE_THRESHOLD = 0.15;
 
+// memoized lookup function
+const findBuiltinCase = memoize((_case: string) => [...GENERAL_CASES, ...TEXT_CASES].find((c) => c.value === _case));
+const findNaturalCase = memoize((_case: string) => NATURAL_CASES.find((c) => c.value === _case));
+const findProgrammingCase = memoize((_case: string) => PROGRAMMING_CASES.find((c) => c.value === _case));
+
+/**
+ * Find the first matching rule for the given text.
+ *
+ * @param text - text to match
+ * @param rules - list of rules to check
+ * @returns the first matched rule object, or null if no match is found
+ */
+export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null> {
+  return (await match(text, rules, false)) as Rule | null;
+}
+
+/**
+ * Find all matching rules for the given text.
+ *
+ * @param text - text to match
+ * @param rules - list of rules to check
+ * @returns array of matched rule objects
+ */
+export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
+  return (await match(text, rules, true)) as Rule[];
+}
+
 /**
  * Match the shortcut action to be executed based on the text type.
  *
  * @param text - text to match
  * @param rules - list of specified rules
- * @returns the matched rule object, returns `null` if no match is found
+ * @param matchAll - whether to find all matched rules
+ * @returns the matched rule(s), returns `null` or empty array if no match is found
  */
-export async function match(text: string, rules: Rule[]): Promise<Rule | null> {
+async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Rule | Rule[] | null> {
   console.debug(`Matching patterns: ${rules.map((r) => r.case || 'skip').join(', ')}`);
-  let langDetected = false;
-  let langDetectedResult: ModelResult[] = [];
-  // iterate through all bound rules to find the first matching text type
+  const matchedRules: Rule[] = [];
+  const matchedLangs: ModelResult[] = [];
+
+  // iterate through all bound rules to find the matching text type(s)
   for (const rule of rules) {
-    const _case = rule.case;
+    let matched: Rule | null = null;
+    const _case: string = rule.case;
+
     // empty string means no recognition
     if (_case === '') {
       console.debug('Skipping text recognition');
-      return rule;
-    }
-    if (!text) {
-      continue;
+      matched = { ...rule };
     }
 
-    // builtin regular expression matching
-    const builtin = findBuiltinCase(_case);
-    if (builtin && builtin.pattern && builtin.pattern.test(text)) {
-      console.debug(`Builtin regex matched: ${builtin.label}`);
-      rule.caseLabel = builtin.label;
-      return rule;
-    }
-
-    // natural language detection
-    const natural = findNaturalCase(_case);
-    if (natural) {
-      try {
-        if (franc(text, FRANC_OPTIONS) === _case) {
-          console.debug(`Natural language detected: ${natural.label}`);
-          rule.caseLabel = natural.label;
-          return rule;
+    if (text) {
+      // builtin regular expression matching
+      if (!matched) {
+        const builtin = findBuiltinCase(_case);
+        if (builtin && builtin.pattern && builtin.pattern.test(text)) {
+          console.debug(`Builtin regex matched: ${builtin.label}`);
+          matched = { ...rule, caseLabel: builtin.label };
         }
-      } catch (error) {
-        console.error(`Natural language detection failed: ${error}`);
       }
-    }
 
-    // programming language detection
-    const programming = findProgrammingCase(_case);
-    if (programming) {
-      try {
-        if (!langDetected) {
-          langDetectedResult = await MODEL_OPERATIONS.runModel(text);
-          langDetected = true;
-          console.debug(`Programming language detection result: ${JSON.stringify(langDetectedResult)}`);
-        }
-        if (matchProgrammingCase(_case, langDetectedResult)) {
-          console.debug(`Programming language detected: ${programming.label}`);
-          rule.caseLabel = programming.label;
-          return rule;
-        }
-      } catch (error) {
-        console.error(`Programming language detection failed: ${error}`);
-      }
-    }
-
-    // custom regular expression matching
-    if (_case.startsWith(REGEXP_MARK)) {
-      const regexpId = _case.substring(REGEXP_MARK.length);
-      const regexp = regexps.current.find((r) => r.id === regexpId);
-      if (regexp && regexp.pattern) {
-        try {
-          const pattern = new RegExp(regexp.pattern, regexp.flags);
-          if (pattern.test(text)) {
-            console.debug(`Custom regex matched: ${regexp.id}`);
-            rule.caseLabel = regexp.id;
-            return rule;
+      // natural language detection
+      if (!matched) {
+        const natural = findNaturalCase(_case);
+        if (natural) {
+          try {
+            if (franc(text, FRANC_OPTIONS) === _case) {
+              console.debug(`Natural language detected: ${natural.label}`);
+              matched = { ...rule, caseLabel: natural.label };
+            }
+          } catch (error) {
+            console.error(`Natural language detection failed: ${error}`);
           }
-        } catch (error) {
-          console.error(`Custom regex matching failed: ${error}`);
+        }
+      }
+
+      // programming language detection
+      if (!matched) {
+        const programming = findProgrammingCase(_case);
+        if (programming) {
+          try {
+            if (matchedLangs.length === 0) {
+              matchedLangs.push(...(await MODEL_OPERATIONS.runModel(text)));
+              console.debug(`Programming language detection result: ${JSON.stringify(matchedLangs)}`);
+            }
+            if (matchProgrammingCase(_case, matchedLangs)) {
+              console.debug(`Programming language detected: ${programming.label}`);
+              matched = { ...rule, caseLabel: programming.label };
+            }
+          } catch (error) {
+            console.error(`Programming language detection failed: ${error}`);
+          }
+        }
+      }
+
+      // custom regular expression matching
+      if (!matched && _case.startsWith(REGEXP_MARK)) {
+        const regexpId = _case.substring(REGEXP_MARK.length);
+        const regexp = regexps.current.find((r) => r.id === regexpId);
+        if (regexp && regexp.pattern) {
+          try {
+            const pattern = new RegExp(regexp.pattern, regexp.flags);
+            if (pattern.test(text)) {
+              console.debug(`Custom regex matched: ${regexp.id}`);
+              matched = { ...rule, caseLabel: regexp.id };
+            }
+          } catch (error) {
+            console.error(`Custom regex matching failed: ${error}`);
+          }
+        }
+      }
+
+      // custom model detection
+      if (!matched && _case.startsWith(MODEL_MARK)) {
+        const modelId = _case.substring(MODEL_MARK.length);
+        const model = models.current.find((m) => m.id === modelId);
+        if (model) {
+          try {
+            if (await matchModelCase(model, text)) {
+              console.debug(`Custom model matched: ${model.id}`);
+              matched = { ...rule, caseLabel: model.id };
+            }
+          } catch (error) {
+            console.error(`Custom model matching failed: ${error}`);
+          }
         }
       }
     }
 
-    // custom model detection
-    if (_case.startsWith(MODEL_MARK)) {
-      const modelId = _case.substring(MODEL_MARK.length);
-      const model = models.current.find((m) => m.id === modelId);
-      if (model) {
-        try {
-          if (await matchModelCase(model, text)) {
-            console.debug(`Custom model matched: ${model.id}`);
-            rule.caseLabel = model.id;
-            return rule;
-          }
-        } catch (error) {
-          console.error(`Custom model matching failed: ${error}`);
-        }
+    if (matched) {
+      if (matchAll) {
+        matchedRules.push(matched);
+      } else {
+        return matched;
       }
     }
   }
-  return null;
+
+  return matchAll ? matchedRules : null;
 }
 
 /**

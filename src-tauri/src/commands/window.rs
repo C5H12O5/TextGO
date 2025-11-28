@@ -1,4 +1,14 @@
+use crate::error::AppError;
+use crate::platform;
+use crate::ENIGO;
+use enigo::Mouse;
 use tauri::{Emitter, Manager, WebviewWindow};
+
+// window position offset from cursor
+const WINDOW_OFFSET: i32 = 10;
+
+// bottom safe area offset to avoid taskbar/dock
+const SAFE_AREA_BOTTOM: i32 = 80;
 
 /// Show main window.
 #[tauri::command]
@@ -25,6 +35,91 @@ pub fn goto_shortcuts(app: tauri::AppHandle) {
         // emit page navigation event
         let _ = window.emit("goto-shortcuts", ());
     }
+}
+
+/// Show popup and position it near the cursor.
+#[tauri::command]
+pub fn show_popup(app: tauri::AppHandle, payload: String) -> Result<(), AppError> {
+    if let Some(window) = app.get_webview_window("popup") {
+        // position window near cursor
+        position_window_near_cursor(&window)?;
+
+        // show and focus window
+        show_window(&app, "popup");
+
+        // send data
+        window.emit("popup", payload)?;
+    } else {
+        return Err("Popup window not found".into());
+    }
+
+    Ok(())
+}
+
+/// Show toolbar and position it near the cursor.
+#[tauri::command]
+pub fn show_toolbar(app: tauri::AppHandle, payload: String) -> Result<(), AppError> {
+    if let Some(window) = app.get_webview_window("toolbar") {
+        // position window near cursor
+        position_window_near_cursor(&window)?;
+
+        // show window
+        window.show()?;
+
+        // send data
+        window.emit("toolbar", payload)?;
+    } else {
+        return Err("Toolbar window not found".into());
+    }
+
+    Ok(())
+}
+
+/// Position a window near the mouse or selection with safe area constraints.
+fn position_window_near_cursor(window: &WebviewWindow) -> Result<(), AppError> {
+    // try to get selection location first, fall back to mouse position if failed
+    let (x, y) = match platform::get_selection_location() {
+        Ok(location) => location,
+        Err(_) => ENIGO.lock()?.as_ref()?.location()?,
+    };
+
+    // get window size
+    let window_size = window.outer_size()?;
+    let window_width = window_size.width as i32;
+    let window_height = window_size.height as i32;
+
+    // get current monitor info
+    let monitor = window
+        .current_monitor()?
+        .ok_or_else(|| AppError::from("No monitor found"))?;
+    let monitor_size = monitor.size();
+    let monitor_position = monitor.position();
+    let scale_factor = monitor.scale_factor();
+
+    // convert physical pixels to logical pixels
+    let screen_width = (monitor_size.width as f64 / scale_factor) as i32;
+    let screen_height = (monitor_size.height as f64 / scale_factor) as i32;
+    let screen_x = (monitor_position.x as f64 / scale_factor) as i32;
+    let screen_y = (monitor_position.y as f64 / scale_factor) as i32;
+
+    // calculate safe area for window
+    let min_x = screen_x;
+    let max_x = screen_x + screen_width - window_width;
+    let min_y = screen_y;
+    let max_y = screen_y + screen_height - window_height - SAFE_AREA_BOTTOM;
+
+    // set adjusted window position
+    window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
+        x: (x + WINDOW_OFFSET).clamp(min_x, max_x) as f64,
+        y: (y + WINDOW_OFFSET).clamp(min_y, max_y) as f64,
+    }))?;
+
+    // add some delay to prevent flickering
+    if !window.is_visible()? {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+    }
+
+    Ok(())
 }
 
 /// Show and focus window.

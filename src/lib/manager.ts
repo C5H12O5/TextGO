@@ -1,5 +1,5 @@
 import { execute } from '$lib/executor';
-import { match } from '$lib/matcher';
+import { matchOne, matchAll } from '$lib/matcher';
 import { shortcuts } from '$lib/stores.svelte';
 import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
@@ -45,7 +45,7 @@ export class Manager {
         return;
       }
       // match the action to execute
-      const rule = await match(selection, rules);
+      const rule = await matchOne(selection, rules);
       if (rule === null) {
         console.warn('No matching rule found');
         return;
@@ -59,6 +59,41 @@ export class Manager {
       await execute(rule, selection);
     } catch (error) {
       console.error(`Failed to handle shortcut event: ${error}`);
+    }
+  }
+
+  /**
+   * Show toolbar with all matched actions for the given text.
+   *
+   * @param shortcut - triggered shortcut string
+   * @param selection - selected text
+   */
+  async showToolbar(shortcut: string, selection: string): Promise<void> {
+    try {
+      // get all rules bound to this shortcut
+      const rules = shortcuts.current[shortcut];
+      if (!rules || rules.length === 0) {
+        return;
+      }
+
+      // find all matching rules
+      const matchedRules = await matchAll(selection, rules);
+
+      if (matchedRules.length === 0) {
+        console.warn('No matching rules found');
+        return;
+      }
+
+      // prepare payload with matched rules and selection
+      const payload = JSON.stringify({
+        rules: matchedRules,
+        selection: selection
+      });
+
+      // show toolbar window
+      await invoke('show_toolbar', { payload });
+    } catch (error) {
+      console.error(`Failed to show toolbar: ${error}`);
     }
   }
 

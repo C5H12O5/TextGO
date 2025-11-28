@@ -15,6 +15,38 @@ use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
+#[cfg(target_os = "macos")]
+use tauri_nspanel::{
+    tauri_panel, CollectionBehavior, ManagerExt, PanelLevel, StyleMask, TrackingAreaOptions,
+    WebviewWindowExt,
+};
+
+// Define toolbar panel for macOS
+#[cfg(target_os = "macos")]
+tauri_panel! {
+    panel!(ToolbarPanel {
+        config: {
+            can_become_main_window: false,
+            can_become_key_window: true,
+            becomes_key_only_if_needed: true,
+            is_floating_panel: true
+        }
+        with: {
+            // enable mouse tracking for the panel
+            tracking_area: {
+                options: TrackingAreaOptions::new()
+                    .active_always()
+                    .mouse_entered_and_exited()
+                    .mouse_moved()
+                    .cursor_update(),
+                auto_resize: true
+            }
+        }
+    })
+
+    panel_event!(ToolbarPanelEventHandler {})
+}
+
 // global, shared Enigo wrapped in a Mutex
 // the Enigo struct should be created once and then reused for efficiency
 pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
@@ -66,11 +98,72 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // get popup window and set close behavior
     if let Some(window) = app.get_webview_window("popup") {
         let app_handle = window.app_handle().clone();
+
         // hide popup window on close instead of quitting
         window.on_window_event(move |event| {
             if let WindowEvent::CloseRequested { api, .. } = event {
                 api.prevent_close();
                 hide_window(&app_handle, "popup");
+            }
+        });
+    }
+
+    // get toolbar window and set close behavior
+    if let Some(window) = app.get_webview_window("toolbar") {
+        let app_handle = window.app_handle().clone();
+
+        // convert to panel on macOS
+        #[cfg(target_os = "macos")]
+        {
+            if let Ok(panel) = window.to_panel::<ToolbarPanel>() {
+                let handler = ToolbarPanelEventHandler::new();
+
+                // setup mouse hover activation
+                let handle = app_handle.clone();
+                handler.on_mouse_entered(move |_event| {
+                    if let Ok(panel) = handle.get_webview_panel("toolbar") {
+                        panel.make_key_window();
+                    }
+                });
+
+                let handle = app_handle.clone();
+                handler.on_mouse_exited(move |_event| {
+                    if let Ok(panel) = handle.get_webview_panel("toolbar") {
+                        panel.resign_key_window();
+                    }
+                });
+
+                // set the window to float level
+                panel.set_level(PanelLevel::Floating.value());
+
+                // prevent app activation when clicked
+                panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
+
+                // allow display over fullscreen windows and on all spaces
+                panel.set_collection_behavior(
+                    CollectionBehavior::new()
+                        .full_screen_auxiliary()
+                        .can_join_all_spaces()
+                        .into(),
+                );
+
+                // don't hide when app deactivates
+                panel.set_hides_on_deactivate(false);
+
+                // receive keyboard and mouse events even
+                // when another window in the application is running modally
+                panel.set_works_when_modal(true);
+
+                // attach the event handler
+                panel.set_event_handler(Some(handler.as_ref()));
+            }
+        }
+
+        // hide toolbar window on close instead of quitting
+        window.on_window_event(move |event| {
+            if let WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                hide_window(&app_handle, "toolbar");
             }
         });
     }
@@ -133,7 +226,15 @@ fn handle_shortcut_event(app: &tauri::AppHandle, hotkey: &Shortcut, event: Short
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default();
+
+    // register nspanel plugin on macOS
+    #[cfg(target_os = "macos")]
+    {
+        builder = builder.plugin(tauri_nspanel::init());
+    }
+
+    builder
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
@@ -172,8 +273,9 @@ pub fn run() {
             execute_python,
             execute_javascript,
             enter_text,
-            show_popup,
             show_about,
+            show_popup,
+            show_toolbar,
             setup_tray,
             check_accessibility,
             open_accessibility

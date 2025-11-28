@@ -17,7 +17,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.5.2", features = [] }
 
 [dependencies]
-tauri = { version = "2.9.3", features = ["tray-icon"] }
+tauri = { version = "2.9.3", features = ["macos-private-api", "tray-icon"] }
 tauri-plugin-os = "2.3.2"
 tauri-plugin-store = "2.4.1"
 tauri-plugin-dialog = "2.4.2"
@@ -37,6 +37,7 @@ tauri-plugin-global-shortcut = "2.3.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10.1"
+tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.1" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = ">=0.59.0, <=0.62.2", features = [

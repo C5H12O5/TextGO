@@ -1,7 +1,6 @@
 mod accessibility;
 mod clipboard;
 mod executor;
-mod popup;
 mod selection;
 mod shortcut;
 mod tray;
@@ -12,7 +11,6 @@ mod window;
 pub use accessibility::*;
 pub use clipboard::*;
 pub use executor::*;
-pub use popup::*;
 pub use selection::*;
 pub use shortcut::*;
 pub use tray::*;
