@@ -5,7 +5,7 @@ import { models, regexps } from '$lib/stores.svelte';
 import type { Model, Option, Rule } from '$lib/types';
 import { ModelOperations, type ModelResult } from '@vscode/vscode-languagedetection';
 import { memoize } from 'es-toolkit/function';
-import { franc } from 'franc-min';
+import { francAll, type TrigramTuple } from 'franc-min';
 import {
   CalendarDots,
   Clock,
@@ -303,24 +303,25 @@ export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null
  *
  * @param text - text to match
  * @param rules - list of rules to check
- * @returns array of matched rule objects
+ * @returns array of matched rule objects, or empty array if no match is found
  */
 export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
   return (await match(text, rules, true)) as Rule[];
 }
 
 /**
- * Match the shortcut action to be executed based on the text type.
+ * Match the given text against the provided rules.
  *
  * @param text - text to match
- * @param rules - list of specified rules
+ * @param rules - list of rules to check
  * @param matchAll - whether to find all matched rules
  * @returns the matched rule(s), returns `null` or empty array if no match is found
  */
 async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Rule | Rule[] | null> {
   console.debug(`Matching patterns: ${rules.map((r) => r.case || 'skip').join(', ')}`);
   const matchedRules: Rule[] = [];
-  const matchedLangs: ModelResult[] = [];
+  let naturalLangs: TrigramTuple[] | null = null;
+  let programmingLangs: ModelResult[] | null = null;
 
   // iterate through all bound rules to find the matching text type(s)
   for (const rule of rules) {
@@ -331,9 +332,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
     if (_case === '') {
       console.debug('Skipping text recognition');
       matched = { ...rule };
-    }
-
-    if (text) {
+    } else if (text) {
       // builtin regular expression matching
       if (!matched) {
         const builtin = findBuiltinCase(_case);
@@ -348,7 +347,11 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
         const natural = findNaturalCase(_case);
         if (natural) {
           try {
-            if (franc(text, FRANC_OPTIONS) === _case) {
+            if (naturalLangs === null) {
+              naturalLangs = francAll(text, FRANC_OPTIONS);
+              console.debug(`Natural language detection result: ${JSON.stringify(naturalLangs)}`);
+            }
+            if (matchNaturalCase(_case, naturalLangs)) {
               console.debug(`Natural language detected: ${natural.label}`);
               matched = { ...rule, caseLabel: natural.label };
             }
@@ -363,11 +366,11 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
         const programming = findProgrammingCase(_case);
         if (programming) {
           try {
-            if (matchedLangs.length === 0) {
-              matchedLangs.push(...(await MODEL_OPERATIONS.runModel(text)));
-              console.debug(`Programming language detection result: ${JSON.stringify(matchedLangs)}`);
+            if (programmingLangs === null) {
+              programmingLangs = await MODEL_OPERATIONS.runModel(text);
+              console.debug(`Programming language detection result: ${JSON.stringify(programmingLangs)}`);
             }
-            if (matchProgrammingCase(_case, matchedLangs)) {
+            if (matchProgrammingCase(_case, programmingLangs)) {
               console.debug(`Programming language detected: ${programming.label}`);
               matched = { ...rule, caseLabel: programming.label };
             }
@@ -411,6 +414,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
       }
     }
 
+    // collect matched rule or return immediately
     if (matched) {
       if (matchAll) {
         matchedRules.push(matched);
@@ -429,7 +433,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
  *
  * https://github.com/microsoft/vscode/blob/main/src/vs/workbench/services/languageDetection/browser/languageDetectionWebWorker.ts
  *
- * @param targetId - target language ID
+ * @param targetId - target language ID (e.g., 'py', 'js')
  * @param results - model recognition results
  * @returns whether it matches the target language
  */
@@ -457,6 +461,41 @@ function matchProgrammingCase(targetId: string, results: ModelResult[]): boolean
     return false;
   }
   const nextConfidence = results[targetIndex + 1]?.confidence ?? 0;
+  return targetConfidence - nextConfidence > RELATIVE_THRESHOLD;
+}
+
+/**
+ * Determine if the natural language detection result matches the target language.
+ * Uses similar strategy as programming language detection.
+ *
+ * @param targetCode - target language code (e.g., 'cmn', 'eng')
+ * @param results - franc detection results (array of [code, confidence] tuples)
+ * @returns whether it matches the target language
+ */
+function matchNaturalCase(targetCode: string, results: TrigramTuple[]): boolean {
+  if (!results || results.length === 0) {
+    return false;
+  }
+  // get the position and confidence of target language in detection results
+  const targetIndex = results.findIndex(([code]) => code === targetCode);
+  if (targetIndex === -1) {
+    // target language is not in the results
+    return false;
+  }
+  const targetConfidence = results[targetIndex][1];
+
+  // strategy 1: judge if the confidence of target language meets the threshold
+  const threshold = INITIAL_THRESHOLD + 0.1 * targetIndex;
+  if (targetConfidence > threshold) {
+    return true;
+  }
+
+  // strategy 2: judge if the confidence difference from adjacent positions meets the threshold
+  if (targetConfidence <= MIN_CONFIDENCE || targetIndex >= 3) {
+    // confidence is too low or ranking is too low
+    return false;
+  }
+  const nextConfidence = results[targetIndex + 1]?.[1] ?? 0;
   return targetConfidence - nextConfidence > RELATIVE_THRESHOLD;
 }
 
