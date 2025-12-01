@@ -310,6 +310,152 @@ export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
 }
 
 /**
+ * Matcher context to share state across matchers.
+ */
+interface MatcherContext {
+  text: string;
+  rule: Rule;
+  naturalLangs: TrigramTuple[] | null;
+  programmingLangs: ModelResult[] | null;
+}
+
+/**
+ * Matcher function type.
+ * Returns the matched rule with label if successful, null otherwise.
+ */
+type Matcher = (context: MatcherContext) => Promise<Rule | null>;
+
+/**
+ * Skip matcher - matches empty case (no recognition).
+ */
+const skipMatcher: Matcher = async (context) => {
+  if (context.rule.case === '') {
+    console.debug('Skipping text recognition');
+    return { ...context.rule };
+  }
+  return null;
+};
+
+/**
+ * Builtin regex matcher - matches against predefined patterns.
+ */
+const builtinMatcher: Matcher = async (context) => {
+  if (!context.text) return null;
+
+  const builtin = findBuiltinCase(context.rule.case);
+  if (builtin && builtin.pattern && builtin.pattern.test(context.text)) {
+    console.debug(`Builtin regex matched: ${builtin.label}`);
+    return { ...context.rule, caseLabel: builtin.label };
+  }
+  return null;
+};
+
+/**
+ * Natural language matcher - detects natural languages using franc (https://github.com/wooorm/franc).
+ */
+const naturalMatcher: Matcher = async (context) => {
+  if (!context.text) return null;
+
+  const natural = findNaturalCase(context.rule.case);
+  if (!natural) return null;
+
+  try {
+    // lazy load natural language detection results
+    if (context.naturalLangs === null) {
+      context.naturalLangs = francAll(context.text, FRANC_OPTIONS);
+      console.debug(`Natural language detection result: ${JSON.stringify(context.naturalLangs)}`);
+    }
+    if (matchNaturalCase(context.rule.case, context.naturalLangs)) {
+      console.debug(`Natural language detected: ${natural.label}`);
+      return { ...context.rule, caseLabel: natural.label };
+    }
+  } catch (error) {
+    console.error(`Natural language detection failed: ${error}`);
+  }
+  return null;
+};
+
+/**
+ * Programming language matcher - detects programming languages using guesslang (https://github.com/yoeo/guesslang).
+ */
+const programmingMatcher: Matcher = async (context) => {
+  if (!context.text) return null;
+
+  const programming = findProgrammingCase(context.rule.case);
+  if (!programming) return null;
+
+  try {
+    // lazy load programming language detection results
+    if (context.programmingLangs === null) {
+      context.programmingLangs = await MODEL_OPERATIONS.runModel(context.text);
+      console.debug(`Programming language detection result: ${JSON.stringify(context.programmingLangs)}`);
+    }
+    if (matchProgrammingCase(context.rule.case, context.programmingLangs)) {
+      console.debug(`Programming language detected: ${programming.label}`);
+      return { ...context.rule, caseLabel: programming.label };
+    }
+  } catch (error) {
+    console.error(`Programming language detection failed: ${error}`);
+  }
+  return null;
+};
+
+/**
+ * Custom regex matcher - matches against user-defined regex patterns.
+ */
+const customRegexMatcher: Matcher = async (context) => {
+  if (!context.text || !context.rule.case.startsWith(REGEXP_MARK)) return null;
+
+  const regexpId = context.rule.case.substring(REGEXP_MARK.length);
+  const regexp = regexps.current.find((r) => r.id === regexpId);
+  if (!regexp || !regexp.pattern) return null;
+
+  try {
+    const pattern = new RegExp(regexp.pattern, regexp.flags);
+    if (pattern.test(context.text)) {
+      console.debug(`Custom regex matched: ${regexp.id}`);
+      return { ...context.rule, caseLabel: regexp.id };
+    }
+  } catch (error) {
+    console.error(`Custom regex matching failed: ${error}`);
+  }
+  return null;
+};
+
+/**
+ * Custom model matcher - matches using user-trained ML models.
+ */
+const customModelMatcher: Matcher = async (context) => {
+  if (!context.text || !context.rule.case.startsWith(MODEL_MARK)) return null;
+
+  const modelId = context.rule.case.substring(MODEL_MARK.length);
+  const model = models.current.find((m) => m.id === modelId);
+  if (!model) return null;
+
+  try {
+    if (await matchModelCase(model, context.text)) {
+      console.debug(`Custom model matched: ${model.id}`);
+      return { ...context.rule, caseLabel: model.id };
+    }
+  } catch (error) {
+    console.error(`Custom model matching failed: ${error}`);
+  }
+  return null;
+};
+
+/**
+ * Chain of matchers to execute in order.
+ */
+const MATCHERS: Matcher[] = [
+  skipMatcher,
+  builtinMatcher,
+  naturalMatcher,
+  programmingMatcher,
+  customRegexMatcher,
+  customModelMatcher
+];
+
+/**
  * Match the given text against the provided rules.
  *
  * @param text - text to match
@@ -320,99 +466,26 @@ export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
 async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Rule | Rule[] | null> {
   console.debug(`Matching patterns: ${rules.map((r) => r.case || 'skip').join(', ')}`);
   const matchedRules: Rule[] = [];
+
+  // shared context for lazy-loaded results
   let naturalLangs: TrigramTuple[] | null = null;
   let programmingLangs: ModelResult[] | null = null;
 
-  // iterate through all bound rules to find the matching text type(s)
+  // iterate through all rules
   for (const rule of rules) {
+    // create context for this rule
+    const context: MatcherContext = { text, rule, naturalLangs, programmingLangs };
+
+    // execute matchers in chain until one succeeds
     let matched: Rule | null = null;
-    const _case: string = rule.case;
-
-    // empty string means no recognition
-    if (_case === '') {
-      console.debug('Skipping text recognition');
-      matched = { ...rule };
-    } else if (text) {
-      // builtin regular expression matching
-      if (!matched) {
-        const builtin = findBuiltinCase(_case);
-        if (builtin && builtin.pattern && builtin.pattern.test(text)) {
-          console.debug(`Builtin regex matched: ${builtin.label}`);
-          matched = { ...rule, caseLabel: builtin.label };
-        }
-      }
-
-      // natural language detection
-      if (!matched) {
-        const natural = findNaturalCase(_case);
-        if (natural) {
-          try {
-            if (naturalLangs === null) {
-              naturalLangs = francAll(text, FRANC_OPTIONS);
-              console.debug(`Natural language detection result: ${JSON.stringify(naturalLangs)}`);
-            }
-            if (matchNaturalCase(_case, naturalLangs)) {
-              console.debug(`Natural language detected: ${natural.label}`);
-              matched = { ...rule, caseLabel: natural.label };
-            }
-          } catch (error) {
-            console.error(`Natural language detection failed: ${error}`);
-          }
-        }
-      }
-
-      // programming language detection
-      if (!matched) {
-        const programming = findProgrammingCase(_case);
-        if (programming) {
-          try {
-            if (programmingLangs === null) {
-              programmingLangs = await MODEL_OPERATIONS.runModel(text);
-              console.debug(`Programming language detection result: ${JSON.stringify(programmingLangs)}`);
-            }
-            if (matchProgrammingCase(_case, programmingLangs)) {
-              console.debug(`Programming language detected: ${programming.label}`);
-              matched = { ...rule, caseLabel: programming.label };
-            }
-          } catch (error) {
-            console.error(`Programming language detection failed: ${error}`);
-          }
-        }
-      }
-
-      // custom regular expression matching
-      if (!matched && _case.startsWith(REGEXP_MARK)) {
-        const regexpId = _case.substring(REGEXP_MARK.length);
-        const regexp = regexps.current.find((r) => r.id === regexpId);
-        if (regexp && regexp.pattern) {
-          try {
-            const pattern = new RegExp(regexp.pattern, regexp.flags);
-            if (pattern.test(text)) {
-              console.debug(`Custom regex matched: ${regexp.id}`);
-              matched = { ...rule, caseLabel: regexp.id };
-            }
-          } catch (error) {
-            console.error(`Custom regex matching failed: ${error}`);
-          }
-        }
-      }
-
-      // custom model detection
-      if (!matched && _case.startsWith(MODEL_MARK)) {
-        const modelId = _case.substring(MODEL_MARK.length);
-        const model = models.current.find((m) => m.id === modelId);
-        if (model) {
-          try {
-            if (await matchModelCase(model, text)) {
-              console.debug(`Custom model matched: ${model.id}`);
-              matched = { ...rule, caseLabel: model.id };
-            }
-          } catch (error) {
-            console.error(`Custom model matching failed: ${error}`);
-          }
-        }
-      }
+    for (const matcher of MATCHERS) {
+      matched = await matcher(context);
+      if (matched) break;
     }
+
+    // update shared context with lazy-loaded results
+    naturalLangs = context.naturalLangs;
+    programmingLangs = context.programmingLangs;
 
     // collect matched rule or return immediately
     if (matched) {
