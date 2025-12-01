@@ -21,7 +21,7 @@
   import { fly } from 'svelte/transition';
 
   // total number of rules
-  let totalRules = $derived(Object.values(shortcuts.current).reduce((sum, arr) => sum + arr.length, 0));
+  let totalRules = $derived(Object.values(shortcuts.current).reduce((sum, s) => sum + s.rules.length, 0));
 
   // shortcut recorder
   let recorder: Recorder;
@@ -46,7 +46,10 @@
     }
 
     // register new shortcut
-    shortcuts.current[shortcut] = [];
+    shortcuts.current[shortcut] = {
+      mode: 'quiet',
+      rules: []
+    };
 
     // wait for DOM update then scroll to newly registered shortcut position
     await tick();
@@ -54,6 +57,16 @@
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  }
+
+  /**
+   * Swap shortcut execution mode.
+   *
+   * @param shortcut - registered shortcut string
+   */
+  function swapMode(shortcut: string) {
+    const s = shortcuts.current[shortcut];
+    s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
   }
 
   /**
@@ -103,29 +116,40 @@
     </div>
   {/if}
   {#each Object.keys(shortcuts.current).sort() as shortcut (shortcut)}
+    {@const mode = shortcuts.current[shortcut].mode}
+    {@const rules = shortcuts.current[shortcut].rules}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
       <div class="flex items-center gap-4 pt-8 pb-2">
         <Shortcut {shortcut} />
-        <div class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis">
+        <button
+          class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis"
+          onclick={() => swapMode(shortcut)}
+        >
           <label class="swap swap-rotate group-hover:swap-active">
             <ArrowsClockwise class="swap-on size-4" />
             <ArrowCircleRight class="swap-off size-4" />
           </label>
-          <span class="text-sm">{m.toolbar_mode()}</span>
-        </div>
+          <span class="text-sm">
+            {#if mode === 'toolbar'}
+              {m.toolbar_mode()}
+            {:else}
+              {m.quiet_mode()}
+            {/if}
+          </span>
+        </button>
         <Button
           icon={Trash}
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
             const clear = () => {
-              for (const item of shortcuts.current[shortcut] || []) {
+              for (const item of rules) {
                 binder?.unregister(item);
               }
               delete shortcuts.current[shortcut];
             };
             // delete directly if rule is empty, otherwise need confirmation
-            if (shortcuts.current[shortcut].length > 0) {
+            if (rules.length > 0) {
               confirm({
                 title: m.delete_shortcut_title({ shortcut: formatShortcut(shortcut) }),
                 message: m.delete_confirm_message(),
@@ -140,15 +164,15 @@
       <List
         name={m.rule()}
         hint={m.rule_hint()}
-        bind:data={shortcuts.current[shortcut]}
+        bind:data={shortcuts.current[shortcut].rules}
         oncreate={() => binder?.showModal(shortcut)}
         ondelete={(item) => binder?.unregister(item)}
       >
         {#snippet title()}
           <Sparkle class="mx-1 size-4 opacity-60" />
           <span class="text-sm tracking-wide opacity-60">
-            {#if shortcuts.current[shortcut].length > 0}
-              {m.rules_count({ count: shortcuts.current[shortcut].length })}
+            {#if rules.length > 0}
+              {m.rules_count({ count: rules.length })}
             {:else}
               {m.rules_empty()}
             {/if}

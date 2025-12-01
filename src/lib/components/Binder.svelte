@@ -92,8 +92,8 @@
    * @param form - form element
    */
   async function register(form: HTMLFormElement) {
-    const rules = shortcuts.current[shortcut];
-    if (rules.find((r) => r.shortcut === shortcut && r.case === textCase)) {
+    const s = shortcuts.current[shortcut];
+    if (s.rules.find((r) => r.shortcut === shortcut && r.case === textCase)) {
       alert({ level: 'error', message: m.type_already_used() });
       return;
     }

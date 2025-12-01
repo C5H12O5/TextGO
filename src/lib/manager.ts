@@ -40,60 +40,32 @@ export class Manager {
   private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
     try {
       // get all rules bound to this shortcut
-      const rules = shortcuts.current[shortcut];
-      if (!rules || rules.length === 0) {
+      const s = shortcuts.current[shortcut];
+      if (!s || !s.rules || s.rules.length === 0) {
         return;
       }
-      // match the action to execute
-      const rule = await matchOne(selection, rules);
-      if (rule === null) {
-        console.warn('No matching rule found');
-        return;
+
+      if (s.mode === 'toolbar') {
+        // find all matching rules
+        const rules = await matchAll(selection, s.rules);
+        if (rules.length === 0) {
+          console.warn('No matching rules found');
+          return;
+        }
+        // show toolbar window
+        await invoke('show_toolbar', { payload: JSON.stringify({ rules, selection }) });
+      } else {
+        // find first matching rule
+        const rule = await matchOne(selection, s.rules);
+        if (rule === null) {
+          console.warn('No matching rule found');
+          return;
+        }
+        // execute action immediately
+        await execute(rule, selection);
       }
-      // execute default action
-      if (rule.action === '') {
-        await invoke('show_main_window');
-        return;
-      }
-      // execute action
-      await execute(rule, selection);
     } catch (error) {
       console.error(`Failed to handle shortcut event: ${error}`);
-    }
-  }
-
-  /**
-   * Show toolbar with all matched actions for the given text.
-   *
-   * @param shortcut - triggered shortcut string
-   * @param selection - selected text
-   */
-  async showToolbar(shortcut: string, selection: string): Promise<void> {
-    try {
-      // get all rules bound to this shortcut
-      const rules = shortcuts.current[shortcut];
-      if (!rules || rules.length === 0) {
-        return;
-      }
-
-      // find all matching rules
-      const matchedRules = await matchAll(selection, rules);
-
-      if (matchedRules.length === 0) {
-        console.warn('No matching rules found');
-        return;
-      }
-
-      // prepare payload with matched rules and selection
-      const payload = JSON.stringify({
-        rules: matchedRules,
-        selection: selection
-      });
-
-      // show toolbar window
-      await invoke('show_toolbar', { payload });
-    } catch (error) {
-      console.error(`Failed to show toolbar: ${error}`);
     }
   }
 
@@ -111,9 +83,9 @@ export class Manager {
         await invoke('register_shortcut', { shortcut: rule.shortcut });
       }
       // save rule to frontend registry
-      const rules = shortcuts.current[rule.shortcut];
-      if (rules && !rules.find((r) => r.id === rule.id)) {
-        rules.push(rule);
+      const s = shortcuts.current[rule.shortcut];
+      if (s && s.rules && !s.rules.find((r) => r.id === rule.id)) {
+        s.rules.push(rule);
       }
     } catch (error) {
       console.error(`Failed to register rule: ${error}`);
@@ -129,14 +101,14 @@ export class Manager {
   async unregister(rule: Rule): Promise<void> {
     try {
       // remove rule from frontend registry
-      const rules = shortcuts.current[rule.shortcut];
-      if (rules) {
-        const index = rules.findIndex((r) => r.id === rule.id);
+      const s = shortcuts.current[rule.shortcut];
+      if (s && s.rules) {
+        const index = s.rules.findIndex((r) => r.id === rule.id);
         if (index !== -1) {
-          rules.splice(index, 1);
+          s.rules.splice(index, 1);
         }
         // unregister backend shortcut when no remaining rules
-        if (rules.length === 0) {
+        if (s.rules.length === 0) {
           await invoke('unregister_shortcut', { shortcut: rule.shortcut });
         }
       }

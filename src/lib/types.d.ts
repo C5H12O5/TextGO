@@ -87,6 +87,16 @@ export type Rule = {
 };
 
 /**
+ * Type of shortcut.
+ */
+export type Shortcut = {
+  /** Execution mode. */
+  mode: 'quiet' | 'toolbar';
+  /** List of rules. */
+  rules: Rule[];
+};
+
+/**
  * Type of script.
  */
 export type Script = {

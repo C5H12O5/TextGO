@@ -1,5 +1,5 @@
 import { manager } from '$lib/manager';
-import type { Entry, Model, Prompt, Regexp, Rule, Script } from '$lib/types';
+import type { Entry, Model, Prompt, Regexp, Script, Shortcut } from '$lib/types';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { tick, untrack } from 'svelte';
@@ -109,15 +109,17 @@ export const theme = persisted<string>('theme', 'light', {
 });
 
 // shortcut group
-export const shortcuts = persisted<Record<string, Rule[]>>(
+export const shortcuts = persisted<Record<string, Shortcut>>(
   'shortcuts',
   {},
   {
     onload: async (shortcuts) => {
       // register all shortcut groups when main window initializes
       if (getCurrentWindow().label === 'main') {
-        for (const rule of Object.values(shortcuts).flat()) {
-          await manager.register(rule);
+        for (const shortcut of Object.values(shortcuts)) {
+          for (const rule of shortcut.rules) {
+            await manager.register(rule);
+          }
         }
       }
     }

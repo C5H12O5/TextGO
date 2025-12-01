@@ -228,12 +228,20 @@ const findBuiltinAction = memoize((action: string) =>
 export async function execute(rule: Rule, selection: string): Promise<void> {
   // action identifier
   const action = rule.action;
+
+  // execute default action
+  if (action === '') {
+    await invoke('show_main_window');
+    return;
+  }
+
   // assemble data
   const data: Data = {
     selection: selection,
     clipboard: await invoke<string>('get_clipboard_text'),
     datetime: new Date().toISOString()
   };
+
   // generate record
   const entry: Entry = {
     id: crypto.randomUUID(),
@@ -244,6 +252,7 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
     clipboard: data.clipboard,
     selection: data.selection
   };
+
   // execute action based on identifier
   if (action.startsWith(SCRIPT_MARK)) {
     const scriptId = action.substring(SCRIPT_MARK.length);
