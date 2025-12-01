@@ -7,7 +7,9 @@
   import { prompts, scripts, shortcuts } from '$lib/stores.svelte';
   import {
     ArrowArcRight,
+    ArrowCircleRight,
     ArrowFatLineRight,
+    ArrowsClockwise,
     Browser,
     FingerprintSimple,
     Sparkle,
@@ -102,11 +104,18 @@
   {/if}
   {#each Object.keys(shortcuts.current).sort() as shortcut (shortcut)}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
-      <div class="flex items-center justify-between pt-8 pb-2">
+      <div class="flex items-center gap-4 pt-8 pb-2">
         <Shortcut {shortcut} />
+        <div class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis">
+          <label class="swap swap-rotate group-hover:swap-active">
+            <ArrowsClockwise class="swap-on size-4" />
+            <ArrowCircleRight class="swap-off size-4" />
+          </label>
+          <span class="text-sm">{m.toolbar_mode()}</span>
+        </div>
         <Button
           icon={Trash}
-          class="text-emphasis"
+          class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
             const clear = () => {

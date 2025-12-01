@@ -115,7 +115,7 @@
       <fieldset class="flex items-center justify-between">
         <Label tip={m.accessibility_explain()} tipPlacement="duplex">{m.accessibility()}</Label>
         {#if accessibility.current}
-          <div class="badge bg-base-200 badge-md text-emphasis">
+          <div class="badge bg-base-200 text-emphasis">
             <CheckCircle class="size-4" />
             <span class="text-sm">{m.permission_granted()}</span>
           </div>

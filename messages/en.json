@@ -40,6 +40,7 @@
   "shortcut_already_registered": "This shortcut is already registered!",
   "delete_shortcut": "Delete Shortcut",
   "delete_shortcut_title": "Delete Shortcut [{shortcut}]",
+  "toolbar_mode": "Toolbar Mode",
   "rule": "Rule",
   "rule_hint": "Trigger action after selecting text and pressing shortcut",
   "rules_count": "{count} rules",

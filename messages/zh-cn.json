@@ -40,6 +40,7 @@
   "shortcut_already_registered": "该快捷键已被注册！",
   "delete_shortcut": "删除快捷键",
   "delete_shortcut_title": "删除快捷键 [{shortcut}]",
+  "toolbar_mode": "工具栏模式",
   "rule": "规则",
   "rule_hint": "选中文本后按下快捷键触发动作",
   "rules_count": "{count}条规则",
