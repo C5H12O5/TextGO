@@ -4,7 +4,7 @@
   import { JavaScript, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { nodePath, pythonPath, scripts } from '$lib/stores.svelte';
-  import { Code, Empty, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
+  import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
@@ -35,12 +35,6 @@
       {/if}
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
-        {#if item.quietMode === true}
-          <span class="badge badge-ghost badge-sm">
-            <Empty class="size-4 shrink-0 opacity-50" />
-            {m.quiet_mode()}
-          </span>
-        {/if}
       </div>
       <Button
         icon={PencilSimpleLine}

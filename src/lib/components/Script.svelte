@@ -31,7 +31,7 @@ def process(data):
   import { Loading } from '$lib/states.svelte';
   import { javascript } from '@codemirror/lang-javascript';
   import { python } from '@codemirror/lang-python';
-  import { ArrowFatLineRight, Code, Empty } from 'phosphor-svelte';
+  import { ArrowFatLineRight, Code } from 'phosphor-svelte';
 
   const { scripts }: { scripts: Script[] } = $props();
   const loading = new Loading();
@@ -41,7 +41,6 @@ def process(data):
   let scriptName: string = $state('');
   let scriptLang: 'javascript' | 'python' = $state('javascript');
   let scriptText: string = $state(JAVASCRIPT_TEMPLATE);
-  let quietMode: boolean = $state(true);
 
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -52,7 +51,6 @@ def process(data):
         scriptName = script.id;
         scriptLang = script.lang;
         scriptText = script.script;
-        quietMode = script.quietMode || false;
       }
     }
     modal.show();
@@ -81,21 +79,18 @@ def process(data):
       // update script
       script.lang = scriptLang;
       script.script = scriptText;
-      script.quietMode = quietMode;
       alert(m.script_updated_success());
     } else {
       // add new script
       scripts.push({
         id: scriptName,
         lang: scriptLang,
-        script: scriptText,
-        quietMode: quietMode
+        script: scriptText
       });
       // reset form
       scriptName = '';
       scriptLang = 'javascript';
       scriptText = JAVASCRIPT_TEMPLATE;
-      quietMode = true;
       alert(m.script_added_success());
     }
     modal.close();
@@ -154,12 +149,6 @@ def process(data):
           bind:document={scriptText}
         />
       {/key}
-      <label class="label mt-2 justify-between rounded-box border px-2 py-1.5">
-        <span class="flex items-center gap-2 transition-colors {quietMode ? 'text-base-content' : ''}">
-          <Empty class="size-5" />{m.quiet_mode_explain()}
-        </span>
-        <input type="checkbox" class="checkbox" bind:checked={quietMode} />
-      </label>
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>

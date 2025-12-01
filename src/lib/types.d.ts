@@ -58,8 +58,6 @@ export type Entry = {
   result?: string;
   /** Script language. */
   scriptLang?: 'javascript' | 'python';
-  /** Silent mode. */
-  quietMode?: boolean;
   /** Model provider. */
   provider?: 'ollama' | 'lmstudio';
   /** Model name. */
@@ -98,8 +96,6 @@ export type Script = {
   lang: 'javascript' | 'python';
   /** Script content. */
   script: string;
-  /** Silent mode. */
-  quietMode?: boolean;
 };
 
 /**

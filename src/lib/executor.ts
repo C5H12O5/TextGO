@@ -257,18 +257,13 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
       entry.actionLabel = scriptId;
       entry.result = result;
       entry.scriptLang = script.lang;
-      entry.quietMode = script.quietMode;
       entries.current.unshift(entry);
       // remove excess records
       if (entries.current.length > historySize.current) {
         entries.current = entries.current.slice(0, historySize.current);
       }
-      if (script.quietMode) {
-        // do not show window in silent mode
-        await invoke('enter_text', { text: result });
-      } else {
-        await showPopup(entry);
-      }
+      // directly replace selected text
+      await invoke('enter_text', { text: result });
     }
   } else if (action.startsWith(PROMPT_MARK)) {
     const promptId = action.substring(PROMPT_MARK.length);
@@ -289,6 +284,7 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
       if (entries.current.length > historySize.current) {
         entries.current = entries.current.slice(0, historySize.current);
       }
+      // show popup window
       await showPopup(entry);
     }
   } else {

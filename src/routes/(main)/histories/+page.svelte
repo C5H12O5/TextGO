@@ -13,7 +13,6 @@
     ClockCounterClockwise,
     Copy,
     Cube,
-    Empty,
     FileJs,
     FileMd,
     FilePy,
@@ -103,11 +102,6 @@
                   <span class="badge gap-1 border badge-xs">
                     <Cube class="size-3" />
                     {entry.model}
-                  </span>
-                {:else if entry.quietMode}
-                  <span class="badge gap-1 border badge-xs">
-                    <Empty class="size-3" />
-                    {m.quiet_mode()}
                   </span>
                 {/if}
               </div>
