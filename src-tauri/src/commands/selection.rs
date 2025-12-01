@@ -1,7 +1,7 @@
 use crate::commands::clipboard::with_clipboard_backup;
 use crate::error::AppError;
 use crate::platform;
-use crate::ENIGO;
+use crate::{CLIPBOARD_CONTEXT, ENIGO};
 use clipboard_rs::Clipboard;
 use enigo::{Direction, Key, Keyboard};
 use log::warn;
@@ -26,9 +26,14 @@ pub async fn get_selection(app: tauri::AppHandle) -> Result<String, AppError> {
 /// Get selected text through clipboard.
 async fn get_selection_fallback(app: tauri::AppHandle) -> Result<String, AppError> {
     // use backup-operation-restore mode
-    with_clipboard_backup(|clipboard| async move {
+    with_clipboard_backup(|| async move {
         // clear clipboard
-        let _ = clipboard.clear();
+        {
+            let clipboard = CLIPBOARD_CONTEXT.lock()?;
+            if let Ok(clipboard_ref) = clipboard.as_ref() {
+                let _ = clipboard_ref.clear();
+            }
+        }
 
         // send copy shortcut
         // https://github.com/enigo-rs/enigo/issues/153
@@ -47,11 +52,14 @@ async fn get_selection_fallback(app: tauri::AppHandle) -> Result<String, AppErro
             sleep(check_interval).await;
 
             // read current clipboard text
-            if let Ok(current_text) = clipboard.get_text() {
-                // if clipboard content changed, copy operation completed
-                if !current_text.is_empty() {
-                    selected_text = current_text;
-                    break;
+            let clipboard = CLIPBOARD_CONTEXT.lock()?;
+            if let Ok(clipboard_ref) = clipboard.as_ref() {
+                if let Ok(current_text) = clipboard_ref.get_text() {
+                    // if clipboard content changed, copy operation completed
+                    if !current_text.is_empty() {
+                        selected_text = current_text;
+                        break;
+                    }
                 }
             }
         }

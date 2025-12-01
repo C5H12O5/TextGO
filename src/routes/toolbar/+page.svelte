@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PROMPT_MARK, SCRIPT_MARK } from '$lib/constants';
-  import { CONVERT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import { CONVERT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { prompts, scripts } from '$lib/stores.svelte';
   import type { Rule } from '$lib/types';
   import { listen } from '@tauri-apps/api/event';
@@ -9,7 +9,6 @@
   import { Code, Robot } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { onMount } from 'svelte';
-  import { execute } from '$lib/executor';
 
   type ActionItem = {
     id: string;
@@ -103,6 +102,14 @@
       } catch (error) {
         console.error('Failed to parse toolbar data:', error);
       }
+    });
+
+    listen('mouse-double-click', () => {
+      console.info('Double click detected');
+    });
+
+    listen('mouse-drag-select', (event) => {
+      console.info('Selected text:', event.payload);
     });
 
     return () => {

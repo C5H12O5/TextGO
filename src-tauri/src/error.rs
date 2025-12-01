@@ -22,63 +22,65 @@ impl serde::Serialize for AppError {
     }
 }
 
-impl From<String> for AppError {
-    fn from(error: String) -> Self {
-        AppError::from(error.as_str())
+// create AppError from strings
+impl AppError {
+    fn new(msg: impl Into<String>) -> Self {
+        let msg = msg.into();
+        error!("{}", msg);
+        AppError(msg)
     }
 }
 
 impl From<&str> for AppError {
     fn from(error: &str) -> Self {
-        error!("{}", error);
-        AppError(error.to_string())
+        AppError::new(error)
     }
 }
 
-impl From<std::io::Error> for AppError {
-    fn from(error: std::io::Error) -> Self {
-        error!("IO error: {}", error);
-        AppError(error.to_string())
+impl From<String> for AppError {
+    fn from(error: String) -> Self {
+        AppError::new(error)
     }
 }
 
-impl<T> From<std::sync::PoisonError<T>> for AppError {
-    fn from(error: std::sync::PoisonError<T>) -> Self {
-        error!("Mutex lock poisoned: {}", error);
-        AppError(error.to_string())
+impl From<&String> for AppError {
+    fn from(error: &String) -> Self {
+        AppError::new(error.as_str())
     }
 }
 
-impl From<tauri::Error> for AppError {
-    fn from(error: tauri::Error) -> Self {
-        error!("Tauri error: {}", error);
-        AppError(error.to_string())
-    }
+// macro to implement From for multiple error types
+macro_rules! impl_from_error {
+    // regular types
+    ($($t:ty),* $(,)?) => {
+        $(
+            impl From<$t> for AppError {
+                fn from(error: $t) -> Self {
+                    AppError::new(error.to_string())
+                }
+            }
+        )*
+    };
+    // generic types
+    (generic: $($t:ty),* $(,)?) => {
+        $(
+            impl<T> From<$t> for AppError {
+                fn from(error: $t) -> Self {
+                    AppError::new(error.to_string())
+                }
+            }
+        )*
+    };
 }
 
-impl From<tauri_plugin_global_shortcut::Error> for AppError {
-    fn from(error: tauri_plugin_global_shortcut::Error) -> Self {
-        error!("Global shortcut error: {}", error);
-        AppError(error.to_string())
-    }
-}
-
-impl From<enigo::InputError> for AppError {
-    fn from(error: enigo::InputError) -> Self {
-        error!("Enigo input error: {}", error);
-        AppError(error.to_string())
-    }
-}
-
-impl From<&mut enigo::NewConError> for AppError {
-    fn from(error: &mut enigo::NewConError) -> Self {
-        AppError::from(&*error)
-    }
-}
-
-impl From<&enigo::NewConError> for AppError {
-    fn from(error: &enigo::NewConError) -> Self {
-        error!("Enigo initialization error: {}", error);
-        AppError(error.to_string())
-    }
-}
+impl_from_error!(
+    std::io::Error,
+    std::sync::mpsc::RecvError,
+    tauri::Error,
+    tauri_plugin_global_shortcut::Error,
+    enigo::InputError,
+    &enigo::NewConError,
+    &mut enigo::NewConError,
+    Box<dyn std::error::Error + Send + Sync>,
+);
+impl_from_error!(generic: std::sync::PoisonError<T>);

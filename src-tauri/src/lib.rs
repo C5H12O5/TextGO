@@ -2,13 +2,17 @@ mod commands;
 mod error;
 mod platform;
 
+use crate::error::AppError;
+use clipboard_rs::ClipboardContext;
 use commands::*;
-use enigo::{Enigo, Settings};
+use enigo::{Enigo, Mouse, Settings};
 use fern::colors::ColoredLevelConfig;
 use log::LevelFilter;
+use rdev::{listen, set_is_main_thread, Button, Event, EventType};
 use std::{
     collections::HashMap,
     sync::{LazyLock, Mutex},
+    time::{Duration, Instant},
 };
 use tauri::{Emitter, Manager, RunEvent, WindowEvent};
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
@@ -21,7 +25,7 @@ use tauri_nspanel::{
     WebviewWindowExt,
 };
 
-// Define toolbar panel for macOS
+// define toolbar panel for macOS
 #[cfg(target_os = "macos")]
 tauri_panel! {
     panel!(ToolbarPanel {
@@ -47,21 +51,231 @@ tauri_panel! {
     panel_event!(ToolbarPanelEventHandler {})
 }
 
-// global, shared Enigo wrapped in a Mutex
-// the Enigo struct should be created once and then reused for efficiency
-pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
-    LazyLock::new(|| Mutex::new(Enigo::new(&Settings::default())));
+// global app handle storage
+pub static APP_HANDLE: LazyLock<Mutex<Option<tauri::AppHandle>>> =
+    LazyLock::new(|| Mutex::new(None));
 
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
-// global flag to pause shortcut event processing
+// global flag to pause shortcut handling
 pub static SHORTCUT_PAUSED: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
+
+// global Enigo instance for keyboard simulation
+pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
+    LazyLock::new(|| Mutex::new(Enigo::new(&Settings::default())));
+
+// global ClipboardContext instance
+pub static CLIPBOARD_CONTEXT: LazyLock<Mutex<Result<ClipboardContext, String>>> =
+    LazyLock::new(|| Mutex::new(ClipboardContext::new().map_err(|e| e.to_string())));
+
+// mouse event tracking state
+pub static LAST_CLICK_TIME: LazyLock<Mutex<Option<Instant>>> = LazyLock::new(|| Mutex::new(None));
+pub static IS_DRAGGING: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
+pub static DRAG_START_POS: LazyLock<Mutex<Option<(f64, f64)>>> = LazyLock::new(|| Mutex::new(None));
+
+/// Handle mouse events
+fn mouse_event_callback(event: Event) {
+    match event.event_type {
+        EventType::ButtonPress(Button::Left) => {
+            let _ = handle_mouse_press();
+        }
+        EventType::ButtonRelease(Button::Left) => {
+            let _ = handle_mouse_release();
+        }
+        EventType::MouseMove { x, y } => {
+            let _ = handle_mouse_move(x, y);
+        }
+        _ => (),
+    }
+}
+
+/// Handle mouse press event (detect double click)
+fn handle_mouse_press() -> Result<(), AppError> {
+    let now = Instant::now();
+
+    // check for double click (within 500ms)
+    let is_double_click = if let Ok(mut last_click) = LAST_CLICK_TIME.lock() {
+        if let Some(last_time) = *last_click {
+            let elapsed = now.duration_since(last_time);
+            if elapsed < Duration::from_millis(500) {
+                *last_click = None; // reset after detecting double click
+                true
+            } else {
+                *last_click = Some(now);
+                false
+            }
+        } else {
+            *last_click = Some(now);
+            false
+        }
+    } else {
+        false
+    };
+
+    if is_double_click {
+        process_double_click()?;
+    } else {
+        // start tracking potential drag
+        let pos = ENIGO
+            .lock()?
+            .as_ref()?
+            .location()
+            .map(|(x, y)| (x as f64, y as f64))?;
+
+        if let Ok(mut drag_pos) = DRAG_START_POS.lock() {
+            *drag_pos = Some(pos);
+        }
+
+        // still handle single click for toolbar closing
+        process_mouse_click()?;
+    }
+
+    Ok(())
+}
+
+/// Handle mouse release event (detect drag end)
+fn handle_mouse_release() -> Result<(), AppError> {
+    if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
+        if *is_dragging {
+            // drag ended - get selected text
+            process_drag_end()?;
+            *is_dragging = false;
+        }
+    }
+
+    // reset drag start position
+    if let Ok(mut drag_pos) = DRAG_START_POS.lock() {
+        *drag_pos = None;
+    }
+
+    Ok(())
+}
+
+/// Handle mouse move event (detect dragging)
+fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
+    if let Ok(drag_pos) = DRAG_START_POS.lock() {
+        if let Some((start_x, start_y)) = *drag_pos {
+            // check if moved enough to be considered a drag (>5 pixels)
+            let distance = ((x - start_x).powi(2) + (y - start_y).powi(2)).sqrt();
+            if distance > 5.0 {
+                if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
+                    if !*is_dragging {
+                        *is_dragging = true;
+                        log::info!("Drag started");
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// Process double click event
+fn process_double_click() -> Result<(), AppError> {
+    log::info!("Double click detected");
+
+    // get app handle and emit event to frontend
+    if let Ok(handle_opt) = APP_HANDLE.lock() {
+        if let Some(app_handle) = handle_opt.as_ref() {
+            let _ = app_handle.emit("mouse-double-click", ());
+        }
+    }
+
+    Ok(())
+}
+
+/// Process drag end event (text selection)
+fn process_drag_end() -> Result<(), AppError> {
+    log::info!("Drag ended - checking for text selection");
+
+    // get app handle and emit event to frontend
+    if let Ok(handle_opt) = APP_HANDLE.lock() {
+        if let Some(app_handle) = handle_opt.as_ref() {
+            let app_clone = app_handle.clone();
+            // asynchronously get selected text
+            tauri::async_runtime::spawn(async move {
+                if let Ok(selection) = get_selection(app_clone.clone()).await {
+                    if !selection.is_empty() {
+                        let _ = app_clone.emit("mouse-drag-select", selection);
+                    }
+                }
+            });
+        }
+    }
+
+    Ok(())
+}
+
+/// Process mouse click event
+fn process_mouse_click() -> Result<(), AppError> {
+    // get current mouse position using enigo
+    let (click_x, click_y) = ENIGO
+        .lock()?
+        .as_ref()?
+        .location()
+        .map(|(x, y)| (x as f64, y as f64))?;
+
+    // get app handle
+    let app_handle = APP_HANDLE
+        .lock()?
+        .clone()
+        .ok_or("App handle not available")?;
+
+    // check toolbar window visibility and position
+    let toolbar = app_handle
+        .get_webview_window("toolbar")
+        .ok_or("Toolbar window not found")?;
+
+    // check if toolbar is visible
+    if !toolbar.is_visible().unwrap_or(false) {
+        return Ok(());
+    }
+
+    // get toolbar window position and size
+    let position = toolbar.outer_position()?;
+    let size = toolbar.outer_size()?;
+
+    // calculate toolbar bounds
+    let toolbar_x = position.x as f64;
+    let toolbar_y = position.y as f64;
+    let toolbar_width = size.width as f64;
+    let toolbar_height = size.height as f64;
+
+    // check if click is outside toolbar bounds
+    let is_outside = click_x < toolbar_x
+        || click_x > toolbar_x + toolbar_width
+        || click_y < toolbar_y
+        || click_y > toolbar_y + toolbar_height;
+
+    if is_outside {
+        // close toolbar window
+        let _ = toolbar.hide();
+    }
+
+    Ok(())
+}
 
 /// Application setup function.
 fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     let app_handle = app.app_handle().clone();
+
+    // store app handle for mouse listener
+    if let Ok(mut handle) = APP_HANDLE.lock() {
+        *handle = Some(app_handle.clone());
+    }
+
+    // start global mouse listener
+    #[cfg(target_os = "macos")]
+    set_is_main_thread(false);
+
+    std::thread::spawn(|| {
+        if let Err(error) = listen(mouse_event_callback) {
+            log::error!("Error starting mouse listener: {:?}", error);
+        }
+    });
 
     // initialize tray menu
     setup_tray(

@@ -30,6 +30,7 @@ serde_json = "1.0.145"
 tokio = { version = "1.48", features = ["process", "rt-multi-thread"] }
 enigo = "0.6.1"
 clipboard-rs = "0.3.1"
+rdev = { git = "https://github.com/Narsil/rdev" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-autostart = "2.5.1"

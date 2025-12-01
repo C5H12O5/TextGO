@@ -1,7 +1,7 @@
 use crate::commands::clipboard::with_clipboard_backup;
 use crate::error::AppError;
 use crate::platform;
-use crate::ENIGO;
+use crate::{CLIPBOARD_CONTEXT, ENIGO};
 use clipboard_rs::Clipboard;
 use enigo::{Direction, Key, Keyboard};
 use std::time::Duration;
@@ -18,9 +18,14 @@ pub async fn enter_text(app: tauri::AppHandle, text: String) -> Result<(), AppEr
     let chars = text.chars().count();
 
     // use clipboard to enter text
-    with_clipboard_backup(|clipboard| async move {
+    with_clipboard_backup(|| async move {
         // set clipboard text
-        let _ = clipboard.set_text(text);
+        {
+            let clipboard = CLIPBOARD_CONTEXT.lock()?;
+            if let Ok(clipboard_ref) = clipboard.as_ref() {
+                let _ = clipboard_ref.set_text(text);
+            }
+        }
 
         // send paste shortcut
         let _ = app.run_on_main_thread(|| {
