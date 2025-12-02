@@ -484,6 +484,8 @@ pub fn run() {
             resume_shortcut_handling,
             get_selection,
             get_clipboard_text,
+            set_clipboard_text,
+            clear_clipboard,
             execute_python,
             execute_javascript,
             enter_text,
