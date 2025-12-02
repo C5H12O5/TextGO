@@ -78,7 +78,7 @@ pub fn show_toolbar(app: tauri::AppHandle, payload: String) -> Result<(), AppErr
 /// Position a window near the mouse or selection with safe area constraints.
 fn position_window_near_cursor(window: &WebviewWindow) -> Result<(), AppError> {
     // try to get selection location first, fall back to mouse position if failed
-    let (x, y) = match platform::get_selection_location() {
+    let (x, y) = match platform::get_cursor_location() {
         Ok(location) => location,
         Err(_) => ENIGO.lock()?.as_ref()?.location()?,
     };

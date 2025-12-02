@@ -197,7 +197,7 @@ pub fn get_selection() -> Result<String, AppError> {
 }
 
 /// Get the physical coordinates of the bottom-right corner of the selected text.
-pub fn get_selection_location() -> Result<(i32, i32), AppError> {
+pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
     unsafe {
         // get focused element
         let focused_element = get_focused_element()?;
