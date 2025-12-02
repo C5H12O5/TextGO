@@ -207,18 +207,19 @@
     maxWidth = '100%',
 
     title = '',
-    enlarger = !readOnly,
+    enlarger: _enlarger,
     copier = true,
     resetter = true,
     formatter = true,
     onchange
   }: CodeMirrorProps = $props();
+  let enlarger = $derived(_enlarger ?? !readOnly);
 
   let editor: HTMLDivElement;
   let editorView: EditorView;
   let largerView: Modal | null = $state(null);
   let originalDoc = document;
-  const languageName = getLanguageName(language);
+  const languageName = $derived(getLanguageName(language));
 
   /**
    * Reset document content.
@@ -281,7 +282,7 @@
    *
    * https://codemirror.net/examples/styling/
    */
-  const styleSheets: Extension = [
+  const styleSheets: Extension = $derived([
     EditorView.baseTheme({
       '&': {
         userSelect: 'text'
@@ -311,12 +312,12 @@
         minHeight: minHeight
       }
     })
-  ];
+  ]);
 
   /**
    * Extension for specified language support.
    */
-  const languageSupport: Extension = language ? language : [];
+  const languageSupport: Extension = $derived(language ? language : []);
 
   /**
    * Extension for listening to document changes.
@@ -333,7 +334,7 @@
    *
    * https://codemirror.net/examples/tab/
    */
-  const tabKeyHandler: Extension = [keymap.of([indentWithTab]), indentUnit.of(' '.repeat(tabSize))];
+  const tabKeyHandler: Extension = $derived([keymap.of([indentWithTab]), indentUnit.of(' '.repeat(tabSize))]);
 
   /**
    * Extension for editor theme.
@@ -363,7 +364,7 @@
   /**
    * Extension for enabling placeholder text.
    */
-  const placeholderHandler: Extension = _placeholder ? placeholder(_placeholder) : [];
+  const placeholderHandler: Extension = $derived(_placeholder ? placeholder(_placeholder) : []);
 
   onMount(() => {
     // create editor view

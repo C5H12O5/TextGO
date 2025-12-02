@@ -75,7 +75,7 @@
     onclick
   }: ButtonProps = $props();
 
-  const preset = PRESETS[size];
+  const preset = $derived(PRESETS[size]);
 
   let subtleClass = $derived(subtle ? 'btn-subtle' : '');
   let squareClass = $derived(square ? 'p-0' : 'px-2');

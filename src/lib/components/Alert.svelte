@@ -55,7 +55,7 @@
   import { fade, fly, slide } from 'svelte/transition';
 
   const { dialog = false, maxSize = 1, timeout = 2000 }: AlertProps = $props();
-  const dialogId = dialog ? crypto.randomUUID() : '';
+  const dialogId = $derived(dialog ? crypto.randomUUID() : '');
 
   // reactive mapping of alert messages
   const alerts = new SvelteMap<string, Message>();
