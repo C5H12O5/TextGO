@@ -24,26 +24,31 @@ impl serde::Serialize for AppError {
 
 // create AppError from strings
 impl AppError {
+    #[track_caller]
     fn new(msg: impl Into<String>) -> Self {
         let msg = msg.into();
-        error!("{}", msg);
+        let location = std::panic::Location::caller();
+        error!("[{}:{}] {}", location.file(), location.line(), msg);
         AppError(msg)
     }
 }
 
 impl From<&str> for AppError {
+    #[track_caller]
     fn from(error: &str) -> Self {
         AppError::new(error)
     }
 }
 
 impl From<String> for AppError {
+    #[track_caller]
     fn from(error: String) -> Self {
         AppError::new(error)
     }
 }
 
 impl From<&String> for AppError {
+    #[track_caller]
     fn from(error: &String) -> Self {
         AppError::new(error.as_str())
     }
@@ -55,6 +60,7 @@ macro_rules! impl_from_error {
     ($($t:ty),* $(,)?) => {
         $(
             impl From<$t> for AppError {
+                #[track_caller]
                 fn from(error: $t) -> Self {
                     AppError::new(error.to_string())
                 }
@@ -65,6 +71,7 @@ macro_rules! impl_from_error {
     (generic: $($t:ty),* $(,)?) => {
         $(
             impl<T> From<$t> for AppError {
+                #[track_caller]
                 fn from(error: $t) -> Self {
                     AppError::new(error.to_string())
                 }
