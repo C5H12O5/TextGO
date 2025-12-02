@@ -48,7 +48,7 @@ pub fn show_popup(app: tauri::AppHandle, payload: String) -> Result<(), AppError
         show_window(&app, "popup");
 
         // send data
-        window.emit("popup", payload)?;
+        window.emit("show-popup", payload)?;
     } else {
         return Err("Popup window not found".into());
     }
@@ -67,7 +67,7 @@ pub fn show_toolbar(app: tauri::AppHandle, payload: String) -> Result<(), AppErr
         window.show()?;
 
         // send data
-        window.emit("toolbar", payload)?;
+        window.emit("show-toolbar", payload)?;
     } else {
         return Err("Toolbar window not found".into());
     }

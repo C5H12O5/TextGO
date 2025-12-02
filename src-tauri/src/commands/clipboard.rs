@@ -1,24 +1,33 @@
 use crate::error::AppError;
-use crate::{APP_HANDLE, CLIPBOARD_CONTEXT};
+use crate::{APP_HANDLE, CLIPBOARD};
+use clipboard_rs::Clipboard;
 use clipboard_rs::ContentFormat;
-use clipboard_rs::{Clipboard, ClipboardContent};
+
+// all supported clipboard content formats
+const ALL_FORMATS: [ContentFormat; 5] = [
+    ContentFormat::Text,
+    ContentFormat::Rtf,
+    ContentFormat::Html,
+    ContentFormat::Image,
+    ContentFormat::Files,
+];
 
 /// Get clipboard text content.
 #[tauri::command]
 pub fn get_clipboard_text() -> Result<String, AppError> {
-    run(|| Ok(CLIPBOARD_CONTEXT.lock()?.as_ref()?.get_text()?))
+    run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get_text()?))
 }
 
 /// Set clipboard text content.
 #[tauri::command]
 pub fn set_clipboard_text(text: String) -> Result<(), AppError> {
-    run(|| Ok(CLIPBOARD_CONTEXT.lock()?.as_ref()?.set_text(text)?))
+    run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set_text(text)?))
 }
 
 /// Clear clipboard contents.
 #[tauri::command]
 pub fn clear_clipboard() -> Result<(), AppError> {
-    run(|| Ok(CLIPBOARD_CONTEXT.lock()?.as_ref()?.clear()?))
+    run(|| Ok(CLIPBOARD.lock()?.as_ref()?.clear()?))
 }
 
 /// Backup clipboard contents, execute operation, then restore clipboard contents.
@@ -28,39 +37,17 @@ where
     Fut: std::future::Future<Output = Result<T, AppError>>,
 {
     // backup all format contents
-    let contents = get_all()?;
+    let contents = run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get(&ALL_FORMATS)?))?;
 
     // execute operation
     let result = operation().await?;
 
     // restore original clipboard contents
-    set_all(contents)?;
+    if !contents.is_empty() {
+        run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))?;
+    }
 
     Ok(result)
-}
-
-/// Get all clipboard content formats.
-fn get_all() -> Result<Vec<ClipboardContent>, AppError> {
-    run(|| {
-        let formats = [
-            ContentFormat::Text,
-            ContentFormat::Rtf,
-            ContentFormat::Html,
-            ContentFormat::Image,
-            ContentFormat::Files,
-        ];
-        Ok(CLIPBOARD_CONTEXT.lock()?.as_ref()?.get(&formats)?)
-    })
-}
-
-/// Set clipboard contents with multiple formats.
-fn set_all(contents: Vec<ClipboardContent>) -> Result<(), AppError> {
-    run(|| {
-        if !contents.is_empty() {
-            return Ok(CLIPBOARD_CONTEXT.lock()?.as_ref()?.set(contents)?);
-        }
-        Ok(())
-    })
 }
 
 /// Run function on main thread if on macOS, otherwise run directly.

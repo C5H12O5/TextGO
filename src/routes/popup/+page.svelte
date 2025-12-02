@@ -159,7 +159,7 @@
       abort();
     };
     // listen to events sent by main process
-    const unlisten = listen<string>('popup', (event) => {
+    const unlisten = listen<string>('show-popup', (event) => {
       setup(JSON.parse(event.payload) as Entry);
       chat();
     });

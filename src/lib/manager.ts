@@ -21,7 +21,7 @@ export class Manager {
     if (getCurrentWindow().label === 'main') {
       try {
         // listen for shortcut triggered events from Rust backend
-        await listen('shortcut-triggered', async (event) => {
+        await listen('shortcut', async (event) => {
           const payload = event.payload as { shortcut: string; selection: string };
           await this.handleShortcutEvent(payload.shortcut, payload.selection);
         });

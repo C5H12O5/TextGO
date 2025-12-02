@@ -14,10 +14,10 @@ name = "textgo_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.5.2", features = [] }
+tauri-build = { version = "2.5.3", features = [] }
 
 [dependencies]
-tauri = { version = "2.9.3", features = ["macos-private-api", "tray-icon"] }
+tauri = { version = "2.9.4", features = ["macos-private-api", "tray-icon"] }
 tauri-plugin-os = "2.3.2"
 tauri-plugin-store = "2.4.1"
 tauri-plugin-dialog = "2.4.2"

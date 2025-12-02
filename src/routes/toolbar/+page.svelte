@@ -94,7 +94,7 @@
 
   onMount(() => {
     // listen to toolbar update events
-    const unlisten = listen<string>('toolbar', (event) => {
+    const unlisten = listen<string>('show-toolbar', (event) => {
       try {
         // Parse the JSON payload
         const data = JSON.parse(event.payload);
@@ -104,12 +104,12 @@
       }
     });
 
-    listen('mouse-double-click', () => {
-      console.info('Double click detected');
+    listen('dbclick', (event) => {
+      console.info(`Double clicked text: ${event.payload}`);
     });
 
-    listen('mouse-drag-select', (event) => {
-      console.info('Selected text:', event.payload);
+    listen('dragend', (event) => {
+      console.info(`Drag ended with text: ${event.payload}`);
     });
 
     return () => {
