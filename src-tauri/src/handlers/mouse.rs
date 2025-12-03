@@ -28,43 +28,16 @@ pub fn handle_mouse_event(event: Event) {
     }
 }
 
-/// Handle mouse press event (detect double click or drag start).
+/// Handle mouse press event (detect drag start).
 fn handle_mouse_press() -> Result<(), AppError> {
-    let now = Instant::now();
-
-    // check for double click (within 500ms)
-    let is_double_click = if let Ok(mut last_click_time) = LAST_CLICK_TIME.lock() {
-        if let Some(last) = *last_click_time {
-            let elapsed = now.duration_since(last);
-            if elapsed < Duration::from_millis(500) {
-                // reset after detecting double click
-                *last_click_time = None;
-                true
-            } else {
-                *last_click_time = Some(now);
-                false
-            }
-        } else {
-            *last_click_time = Some(now);
-            false
-        }
-    } else {
-        false
-    };
-
-    if is_double_click {
-        // emit double click event
-        emit_event("dbclick")?;
-    } else {
-        // start tracking potential drag
-        let pos = mouse_pos()?;
-        if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
-            *drag_start_pos = Some(pos);
-        }
-
-        // hide toolbar on mouse press
-        hide_toolbar()?;
+    // start tracking potential drag
+    let pos = mouse_pos()?;
+    if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
+        *drag_start_pos = Some(pos);
     }
+
+    // hide toolbar on mouse press
+    hide_toolbar()?;
 
     Ok(())
 }
@@ -88,20 +61,46 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Handle mouse release event (detect drag end).
+/// Handle mouse release event (detect drag end or double click).
 fn handle_mouse_release() -> Result<(), AppError> {
+    // reset drag start position
+    if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
+        *drag_start_pos = None;
+    }
+
     // check for drag end
     if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
         if *is_dragging {
             // emit drag end event
             emit_event("dragend")?;
             *is_dragging = false;
+            return Ok(());
         }
     }
 
-    // reset drag start position
-    if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
-        *drag_start_pos = None;
+    // check for double click (within 500ms)
+    let now = Instant::now();
+    let is_double_click = if let Ok(mut last_click_time) = LAST_CLICK_TIME.lock() {
+        if let Some(last) = *last_click_time {
+            let elapsed = now.duration_since(last);
+            if elapsed < Duration::from_millis(500) {
+                // reset after detecting double click
+                *last_click_time = None;
+                true
+            } else {
+                *last_click_time = Some(now);
+                false
+            }
+        } else {
+            *last_click_time = Some(now);
+            false
+        }
+    } else {
+        false
+    };
+    if is_double_click {
+        // emit double click event
+        emit_event("dbclick")?;
     }
 
     Ok(())
