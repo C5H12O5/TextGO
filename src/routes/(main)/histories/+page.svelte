@@ -51,8 +51,8 @@
     class="border-none gradient bg-base-300"
     onclick={() => goto(resolve('/shortcuts'))}
   />
-  <div class="pointer-events-none mx-auto flex items-center gap-1.5">
-    <ClockCounterClockwise class="size-5" />
+  <div class="pointer-events-none mx-auto flex items-center gap-1">
+    <ClockCounterClockwise class="size-5 opacity-80" />
     <span class="tracking-wider">{m.histories()}</span>
   </div>
 </Title>

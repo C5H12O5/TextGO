@@ -1,10 +1,11 @@
 import { execute } from '$lib/executor';
-import { matchOne, matchAll } from '$lib/matcher';
+import { matchAll, matchOne } from '$lib/matcher';
 import { shortcuts } from '$lib/stores.svelte';
 import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { isMouseShortcut } from './helpers';
 
 /**
  * Shortcut manager class.
@@ -76,14 +77,17 @@ export class Manager {
    */
   async register(rule: Rule): Promise<void> {
     try {
-      // check if backend shortcut is registered
-      const isRegistered = await invoke('is_shortcut_registered', { shortcut: rule.shortcut });
-      if (!isRegistered) {
-        // register backend shortcut with full shortcut string
-        await invoke('register_shortcut', { shortcut: rule.shortcut });
+      const shortcut = rule.shortcut;
+      if (!isMouseShortcut(shortcut)) {
+        // check if backend shortcut is registered
+        const isRegistered = await invoke('is_shortcut_registered', { shortcut });
+        if (!isRegistered) {
+          // register backend shortcut with full shortcut string
+          await invoke('register_shortcut', { shortcut });
+        }
       }
       // save rule to frontend registry
-      const s = shortcuts.current[rule.shortcut];
+      const s = shortcuts.current[shortcut];
       if (s && s.rules && !s.rules.find((r) => r.id === rule.id)) {
         s.rules.push(rule);
       }
@@ -100,16 +104,17 @@ export class Manager {
    */
   async unregister(rule: Rule): Promise<void> {
     try {
+      const shortcut = rule.shortcut;
       // remove rule from frontend registry
-      const s = shortcuts.current[rule.shortcut];
+      const s = shortcuts.current[shortcut];
       if (s && s.rules) {
         const index = s.rules.findIndex((r) => r.id === rule.id);
         if (index !== -1) {
           s.rules.splice(index, 1);
         }
         // unregister backend shortcut when no remaining rules
-        if (s.rules.length === 0) {
-          await invoke('unregister_shortcut', { shortcut: rule.shortcut });
+        if (!isMouseShortcut(shortcut) && s.rules.length === 0) {
+          await invoke('unregister_shortcut', { shortcut });
         }
       }
     } catch (error) {

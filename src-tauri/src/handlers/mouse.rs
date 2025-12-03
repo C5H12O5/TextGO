@@ -72,7 +72,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
         if *is_dragging {
             // emit drag end event
-            emit_event("dragend")?;
+            emit_event("MouseClick+MouseMove")?;
             *is_dragging = false;
             return Ok(());
         }
@@ -100,7 +100,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     };
     if is_double_click {
         // emit double click event
-        emit_event("dbclick")?;
+        emit_event("MouseClick+MouseClick")?;
     }
 
     Ok(())
@@ -116,7 +116,7 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
 }
 
 /// Emit mouse event to frontend with current selection.
-fn emit_event(event: &str) -> Result<(), AppError> {
+fn emit_event(shortcut: &str) -> Result<(), AppError> {
     // check if shortcut processing is paused
     if let Ok(paused) = SHORTCUT_PAUSED.lock() {
         if *paused {
@@ -127,12 +127,16 @@ fn emit_event(event: &str) -> Result<(), AppError> {
     // get selection asynchronously and emit event
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         let app_handle = app.clone();
-        let event_name = event.to_string();
+        let shortcut = shortcut.to_string();
         tauri::async_runtime::spawn(async move {
             if let Ok(selection) = get_selection(app_handle.clone()).await {
                 if !selection.is_empty() {
                     // emit event if selection is not empty
-                    let _ = app_handle.emit(&event_name, selection);
+                    let event_data = serde_json::json!({
+                        "shortcut": shortcut,
+                        "selection": selection
+                    });
+                    let _ = app_handle.emit("shortcut", event_data);
                 }
             }
         });

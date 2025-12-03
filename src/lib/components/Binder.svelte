@@ -93,8 +93,8 @@
    */
   async function register(form: HTMLFormElement) {
     const s = shortcuts.current[shortcut];
-    if (s.rules.find((r) => r.shortcut === shortcut && r.case === textCase)) {
-      alert({ level: 'error', message: m.type_already_used() });
+    if (s.rules.find((r) => r.shortcut === shortcut && r.case === textCase && r.action === actionId)) {
+      alert({ level: 'error', message: m.rule_already_used() });
       return;
     }
     loading.start();

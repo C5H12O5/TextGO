@@ -103,15 +103,6 @@
         console.error('Failed to parse toolbar data:', error);
       }
     });
-
-    listen('dbclick', (event) => {
-      console.info(`Double clicked text: ${event.payload}`);
-    });
-
-    listen('dragend', (event) => {
-      console.info(`Drag ended with text: ${event.payload}`);
-    });
-
     return () => {
       unlisten.then((fn) => fn());
     };

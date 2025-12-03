@@ -1,7 +1,7 @@
 <script lang="ts">
   import { alert, Binder, Button, confirm, List, Recorder, Shortcut } from '$lib/components';
-  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
-  import { formatShortcut } from '$lib/helpers';
+  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
+  import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { JavaScript, LMStudio, NoData, Ollama, Python, Regexp, Tensorflow } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { prompts, scripts, shortcuts } from '$lib/stores.svelte';
@@ -12,10 +12,13 @@
     ArrowsClockwise,
     Browser,
     FingerprintSimple,
+    Keyboard,
+    MouseLeftClick,
     Sparkle,
     StackPlus,
     Trash,
-    Warning
+    Warning,
+    WaveSine
   } from 'phosphor-svelte';
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -28,6 +31,10 @@
 
   // rule binder
   let binder: Binder | null = $state(null);
+
+  // dropdown element
+  let dropdown: HTMLDetailsElement;
+  let dropdownOpen: boolean = $state(false);
 
   /**
    * Register new shortcut.
@@ -47,7 +54,7 @@
 
     // register new shortcut
     shortcuts.current[shortcut] = {
-      mode: 'quiet',
+      mode: isMouseShortcut(shortcut) ? 'toolbar' : 'quiet',
       rules: []
     };
 
@@ -89,6 +96,20 @@
     return prompts.current.find((item) => item.id === id);
   }
 
+  /**
+   * Compare two shortcut strings for sorting.
+   *
+   * @param a - first shortcut string
+   * @param b - second shortcut string
+   */
+  function compareShortcut(a: string, b: string) {
+    if (a === DBCLICK_SHORTCUT) return -1;
+    if (b === DBCLICK_SHORTCUT) return 1;
+    if (a === DRAG_SHORTCUT) return -1;
+    if (b === DRAG_SHORTCUT) return 1;
+    return a.localeCompare(b);
+  }
+
   // control display delay when no data to avoid flickering
   let showNoData = $state(false);
   onMount(() => {
@@ -98,6 +119,15 @@
   });
 </script>
 
+<svelte:window
+  onclick={(event) => {
+    // close the dropdown when clicking outside of it
+    if (event.target instanceof Node && !dropdown.contains(event.target)) {
+      dropdownOpen = false;
+    }
+  }}
+/>
+
 <div class="relative min-h-(--app-h) rounded-container">
   <div class="flex items-center justify-between">
     <span class="pl-1 text-sm opacity-60">
@@ -106,16 +136,74 @@
         <span class="text-xs tracking-wider opacity-50">({m.rules_count({ count: totalRules })})</span>
       {/if}
     </span>
-    <button class="btn text-sm btn-sm btn-submit" onclick={() => recorder.showModal()}>
-      <StackPlus class="size-5" />{m.register_shortcut()}
-    </button>
+    <details class="dropdown dropdown-end" bind:this={dropdown} bind:open={dropdownOpen}>
+      <summary
+        class="btn text-sm btn-sm btn-submit"
+        onclick={(event) => {
+          if (shortcuts.current[DBCLICK_SHORTCUT] && shortcuts.current[DRAG_SHORTCUT]) {
+            // both mouse shortcuts are registered, open recorder directly
+            event.preventDefault();
+            recorder.showModal();
+          }
+        }}
+      >
+        <StackPlus class="size-5" />{m.register_shortcut()}
+      </summary>
+      <ul class="dropdown-content menu z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
+        <!-- mouse double-click option -->
+        <li class={shortcuts.current[DBCLICK_SHORTCUT] ? 'hidden' : ''}>
+          <button
+            class="btn px-1 btn-sm"
+            onclick={() => {
+              register(DBCLICK_SHORTCUT);
+              dropdownOpen = false;
+            }}
+          >
+            <span class="flex">
+              <MouseLeftClick class="size-4" />
+              <MouseLeftClick class="size-4" />
+            </span>
+            <span class="mx-auto tracking-wider">{m.mouse_dbclick()}</span>
+          </button>
+        </li>
+        <!-- mouse drag option -->
+        <li class={shortcuts.current[DRAG_SHORTCUT] ? 'hidden' : ''}>
+          <button
+            class="btn px-1 btn-sm"
+            onclick={() => {
+              register(DRAG_SHORTCUT);
+              dropdownOpen = false;
+            }}
+          >
+            <span class="flex">
+              <MouseLeftClick class="size-4" />
+              <WaveSine class="size-4" />
+            </span>
+            <span class="mx-auto tracking-wider">{m.mouse_drag()}</span>
+          </button>
+        </li>
+        <!-- keyboard shortcut option -->
+        <li>
+          <button
+            class="btn px-1 btn-sm"
+            onclick={() => {
+              recorder.showModal();
+              dropdownOpen = false;
+            }}
+          >
+            <Keyboard class="mx-1.75 size-4.5" />
+            <span class="mx-auto tracking-wider">{m.keyboard_keys()}</span>
+          </button>
+        </li>
+      </ul>
+    </details>
   </div>
   {#if showNoData && Object.keys(shortcuts.current).length === 0}
     <div class="pointer-events-none absolute inset-0 flex items-center justify-center">
       <NoData class="m-auto size-64 pl-4 opacity-10" />
     </div>
   {/if}
-  {#each Object.keys(shortcuts.current).sort() as shortcut (shortcut)}
+  {#each Object.keys(shortcuts.current).sort(compareShortcut) as shortcut (shortcut)}
     {@const mode = shortcuts.current[shortcut].mode}
     {@const rules = shortcuts.current[shortcut].rules}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>

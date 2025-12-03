@@ -22,7 +22,7 @@
     onclick={() => goto(resolve('/shortcuts'))}
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1">
-    <GearSix class="size-5" />
+    <GearSix class="size-5 opacity-80" />
     <span class="tracking-wider">{m.settings()}</span>
   </div>
 </Title>

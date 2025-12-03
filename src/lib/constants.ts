@@ -1,4 +1,14 @@
 /**
+ * Mouse double-click shortcut.
+ */
+export const DBCLICK_SHORTCUT = 'MouseClick+MouseClick';
+
+/**
+ * Mouse drag shortcut.
+ */
+export const DRAG_SHORTCUT = 'MouseClick+MouseMove';
+
+/**
  * Classification model prefix.
  */
 export const MODEL_MARK = 'model-';

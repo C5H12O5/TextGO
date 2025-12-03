@@ -159,7 +159,7 @@
   });
 </script>
 
-<Modal maxWidth="28rem" icon={StackPlus} title={m.register_shortcut()} bind:this={modal} onclose={stopRecording}>
+<Modal maxWidth="28rem" icon={StackPlus} title={m.keyboard_shortcut()} bind:this={modal} onclose={stopRecording}>
   <fieldset class="fieldset gap-4 py-4">
     <div class="flex items-center justify-center">
       <div class="flex min-h-10 min-w-40 items-center gap-1 rounded-box border-2 border-primary px-3">

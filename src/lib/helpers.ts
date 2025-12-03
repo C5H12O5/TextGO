@@ -1,3 +1,5 @@
+import { DBCLICK_SHORTCUT, DRAG_SHORTCUT } from '$lib/constants';
+import { m } from '$lib/paraglide/messages';
 import { getLocale } from '$lib/paraglide/runtime';
 import { type } from '@tauri-apps/plugin-os';
 import type { ActionReturn } from 'svelte/action';
@@ -45,9 +47,9 @@ const KBD_LABEL_MAP: Record<string, string> = {
 };
 
 /**
- * Get display representation of a keyboard key code.
+ * Get display representation of a key code.
  *
- * @param code - keyboard key code
+ * @param code - key code
  * @returns display representation
  */
 export function getKbdLabel(code: string): string {
@@ -65,12 +67,17 @@ export function getKbdLabel(code: string): string {
 }
 
 /**
- * Format keyboard shortcut string.
+ * Format shortcut string.
  *
- * @param shortcut - keyboard shortcut string (e.g., "Meta+Shift+KeyA")
+ * @param shortcut - shortcut string (e.g., "Meta+Shift+KeyA")
  * @returns formatted shortcut string (e.g., "⌘+⇧+A" on macOS)
  */
 export function formatShortcut(shortcut: string): string {
+  if (shortcut === DBCLICK_SHORTCUT) {
+    return m.mouse_dbclick();
+  } else if (shortcut === DRAG_SHORTCUT) {
+    return m.mouse_drag();
+  }
   return shortcut
     .split('+')
     .map((code) => getKbdLabel(code))
@@ -92,6 +99,16 @@ export function formatISO8601(str: string | null | undefined): string {
     dateStyle: 'medium',
     timeStyle: 'medium'
   });
+}
+
+/**
+ * Check if the shortcut is a mouse shortcut.
+ *
+ * @param shortcut - shortcut string
+ * @returns true if mouse shortcut, false otherwise
+ */
+export function isMouseShortcut(shortcut: string): boolean {
+  return shortcut === DBCLICK_SHORTCUT || shortcut === DRAG_SHORTCUT;
 }
 
 /**

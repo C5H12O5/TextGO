@@ -8,7 +8,7 @@
 </script>
 
 <div class="flex items-center gap-0.5 text-primary/80 {_class}">
-  {#each keys as key, index (key)}
+  {#each keys as key, index (index)}
     {@const modifier = index < keys.length - 1}
     {#if modifier}
       <Kbd {key} />

@@ -11,14 +11,18 @@
     Backspace,
     Command,
     Control,
+    MouseLeftClick,
     Option,
+    WaveSine,
     WindowsLogo,
     type IconComponentProps
   } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
-  // Map of special key labels to their corresponding icons
+  // mapping of key labels to icon components
   const ICON_MAP: Record<string, Component<IconComponentProps>> = {
+    MouseClick: MouseLeftClick,
+    MouseMove: WaveSine,
     Win: WindowsLogo,
     '⌘': Command,
     '⌃': Control,
@@ -36,7 +40,7 @@
   /**
    * Get either the icon component or the label string for a given key code.
    *
-   * @param code - keyboard key code
+   * @param code - key code
    * @returns icon component or label string
    */
   function getLabelOrIcon(code: string): Component<IconComponentProps> | string {

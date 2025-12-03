@@ -2,12 +2,12 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { Title } from '$lib/components';
-  import { Keyboard, Moon, Sun } from '$lib/icons';
+  import { Moon, Sun } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { theme } from '$lib/stores.svelte';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { ClockCounterClockwise, GearSix } from 'phosphor-svelte';
+  import { ClockCounterClockwise, GearSix, Stack } from 'phosphor-svelte';
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -85,9 +85,9 @@
   <Title class="sticky top-0 z-101 bg-base-300/80 backdrop-blur-sm {titleBorder ? 'border-b' : ''}">
     {#snippet fallback()}
       <!-- shortcuts -->
-      <div class="pointer-events-none flex items-center gap-2 rounded-field gradient bg-base-300 px-2 py-0.5">
-        <Keyboard class="size-6 opacity-70" />
-        <span class="text-sm tracking-wider">{m.shortcuts()}</span>
+      <div class="pointer-events-none flex items-center gap-1 rounded-field gradient bg-base-300 px-2 py-0.5">
+        <Stack class="size-5 opacity-80" weight="duotone" />
+        <span class="tracking-wider">{m.shortcuts()}</span>
       </div>
       <div class="ml-auto flex items-center gap-2">
         <!-- themes -->
