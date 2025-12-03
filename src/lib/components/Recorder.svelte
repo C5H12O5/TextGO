@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Kbd, Modal } from '$lib/components';
+  import { Keyboard } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
+  import { invoke } from '@tauri-apps/api/core';
   import { Lightbulb, StackPlus } from 'phosphor-svelte';
   import { onMount } from 'svelte';
-  import { invoke } from '@tauri-apps/api/core';
 
   const { onrecord }: { onrecord?: (value: string) => void } = $props();
 
@@ -32,7 +33,8 @@
    */
   function startRecording() {
     stopRecording();
-    recording = true;
+    // wait a moment to avoid immediate key capture
+    setTimeout(() => (recording = true), 100);
     invoke('pause_shortcut_handling');
   }
 
@@ -159,18 +161,22 @@
 
 <Modal maxWidth="28rem" icon={StackPlus} title={m.register_shortcut()} bind:this={modal} onclose={stopRecording}>
   <fieldset class="fieldset gap-4 py-4">
-    <div class="flex items-center justify-center gap-2">
-      <div class="flex min-h-10 min-w-40 items-center justify-center gap-1 rounded-box border-2 border-primary px-3">
+    <div class="flex items-center justify-center">
+      <div class="flex min-h-10 min-w-40 items-center gap-1 rounded-box border-2 border-primary px-3">
+        <!-- pressed modifier keys -->
         {#if pressedModifiers.length > 0}
-          {#each pressedModifiers as modifier (modifier)}
-            <Kbd key={modifier} />
+          {#each pressedModifiers as modifier, index (modifier)}
+            <Kbd key={modifier} class={index == 0 && pressedKey ? 'ml-auto' : ''} />
             <span class="text-lg font-bold opacity-50">+</span>
           {/each}
-        {/if}
-        {#if pressedKey}
-          <Kbd key={pressedKey} />
         {:else}
-          <span class="text-sm opacity-50">{m.recording_keys()}</span>
+          <Keyboard class="size-6 pr-1 opacity-30" />
+        {/if}
+        <!-- pressed main key -->
+        {#if pressedKey}
+          <Kbd key={pressedKey} class="mr-auto" />
+        {:else}
+          <span class="mx-auto text-sm opacity-50">{m.recording_keys()}</span>
         {/if}
       </div>
     </div>

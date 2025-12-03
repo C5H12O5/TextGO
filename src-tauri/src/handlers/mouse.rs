@@ -1,6 +1,6 @@
 use crate::commands::get_selection;
 use crate::error::AppError;
-use crate::{APP_HANDLE, ENIGO};
+use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED};
 use enigo::Mouse;
 use rdev::{Button, Event, EventType};
 use std::sync::{LazyLock, Mutex};
@@ -117,10 +117,17 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
 
 /// Emit mouse event to frontend with current selection.
 fn emit_event(event: &str) -> Result<(), AppError> {
+    // check if shortcut processing is paused
+    if let Ok(paused) = SHORTCUT_PAUSED.lock() {
+        if *paused {
+            return Ok(());
+        }
+    }
+
+    // get selection asynchronously and emit event
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         let app_handle = app.clone();
         let event_name = event.to_string();
-        // get selection asynchronously
         tauri::async_runtime::spawn(async move {
             if let Ok(selection) = get_selection(app_handle.clone()).await {
                 if !selection.is_empty() {

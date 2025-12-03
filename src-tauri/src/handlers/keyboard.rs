@@ -1,4 +1,5 @@
-use crate::{commands::get_selection, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
+use crate::commands::get_selection;
+use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
 use tauri::Emitter;
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 

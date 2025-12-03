@@ -35,6 +35,8 @@
   "shortcuts": "Global Shortcuts",
   "shortcuts_count": "Registered Shortcuts Count",
   "register_shortcut": "Register Shortcut",
+  "mouse_dbclick": "Double Click",
+  "mouse_drag": "Drag Select",
   "recording_keys": "Recording Keys...",
   "recording_keys_hint": "Hold 1-2 modifier keys and press a regular key",
   "shortcut_already_registered": "This shortcut is already registered!",

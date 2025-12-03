@@ -35,6 +35,8 @@
   "shortcuts": "全局快捷键",
   "shortcuts_count": "已注册快捷键数量",
   "register_shortcut": "注册快捷键",
+  "mouse_dbclick": "双击选中",
+  "mouse_drag": "拖拽选中",
   "recording_keys": "按键录制中...",
   "recording_keys_hint": "按住 1 至 2 个修饰键，再按下 1 个常规键",
   "shortcut_already_registered": "该快捷键已被注册！",
