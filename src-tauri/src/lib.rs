@@ -9,10 +9,10 @@ use enigo::{Enigo, Settings};
 use fern::colors::ColoredLevelConfig;
 use handlers::{handle_keyboard_event, handle_mouse_event};
 use log::LevelFilter;
-use rdev::{listen, set_is_main_thread};
+use rdev::listen;
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
-use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
+use tauri::{App, AppHandle, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
@@ -68,13 +68,11 @@ pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default();
-
     // register nspanel plugin on macOS
     #[cfg(target_os = "macos")]
-    {
-        builder = builder.plugin(tauri_nspanel::init());
-    }
+    let builder = tauri::Builder::default().plugin(tauri_nspanel::init());
+    #[cfg(not(target_os = "macos"))]
+    let builder = tauri::Builder::default();
 
     builder
         .plugin(tauri_plugin_os::init())
@@ -141,7 +139,11 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // start mouse event listener
     // https://github.com/Narsil/rdev/issues/165
     #[cfg(target_os = "macos")]
-    set_is_main_thread(false);
+    {
+        use rdev::set_is_main_thread;
+
+        set_is_main_thread(false);
+    }
 
     std::thread::spawn(|| {
         if let Err(error) = listen(handle_mouse_event) {
@@ -179,10 +181,13 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     setup_window(
         app,
         "toolbar",
+        #[allow(unused_variables)]
         Some(|window: &WebviewWindow, app: &AppHandle| {
             // convert to panel on macOS
             #[cfg(target_os = "macos")]
             {
+                use tauri::Emitter;
+
                 if let Ok(panel) = window.to_panel::<ToolbarPanel>() {
                     let handler = ToolbarPanelEventHandler::new();
 

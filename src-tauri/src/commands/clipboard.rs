@@ -1,5 +1,5 @@
 use crate::error::AppError;
-use crate::{APP_HANDLE, CLIPBOARD};
+use crate::CLIPBOARD;
 use clipboard_rs::Clipboard;
 use clipboard_rs::ContentFormat;
 
@@ -58,14 +58,14 @@ where
 {
     #[cfg(target_os = "macos")]
     {
-        let (tx, rx) = std::sync::mpsc::channel();
+        use crate::APP_HANDLE;
 
+        let (tx, rx) = std::sync::mpsc::channel();
         if let Some(app) = APP_HANDLE.lock()?.clone() {
             app.run_on_main_thread(move || {
                 let _ = tx.send(func());
             })?;
         }
-
         rx.recv()?
     }
 
