@@ -54,7 +54,10 @@ export class Manager {
           return;
         }
         // show toolbar window
-        await invoke('show_toolbar', { payload: JSON.stringify({ rules, selection }) });
+        await invoke('show_toolbar', {
+          payload: JSON.stringify({ rules, selection }),
+          mouse: isMouseShortcut(shortcut)
+        });
       } else {
         // find first matching rule
         const rule = await matchOne(selection, s.rules);

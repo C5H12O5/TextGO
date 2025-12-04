@@ -1,4 +1,5 @@
 import { PROMPT_MARK, SCRIPT_MARK } from '$lib/constants';
+import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
 import { entries, historySize, nodePath, prompts, pythonPath, scripts } from '$lib/stores.svelte';
 import type { Entry, Option, Prompt, Rule, Script } from '$lib/types';
@@ -364,7 +365,10 @@ export async function renderPrompt(prompt: Prompt, data: Data): Promise<string> 
  */
 async function showPopup(entry: Entry): Promise<void> {
   try {
-    await invoke('show_popup', { payload: JSON.stringify(entry) });
+    await invoke('show_popup', {
+      payload: JSON.stringify(entry),
+      mouse: isMouseShortcut(entry.shortcut)
+    });
   } catch (error) {
     console.error(`Failed to show popup window: ${error}`);
   }

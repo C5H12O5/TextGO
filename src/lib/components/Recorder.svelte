@@ -34,7 +34,7 @@
   function startRecording() {
     stopRecording();
     // wait a moment to avoid immediate key capture
-    setTimeout(() => (recording = true), 100);
+    setTimeout(() => (recording = true), 200);
     invoke('pause_shortcut_handling');
   }
 

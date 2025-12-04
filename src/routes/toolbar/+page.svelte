@@ -35,6 +35,9 @@
   // main element reference
   let mainElement: HTMLElement;
 
+  // track if mouse is inside toolbar
+  let isMouseInside = $state(true);
+
   /**
    * Update toolbar with matched rules.
    */
@@ -164,18 +167,31 @@
         console.error('Failed to parse toolbar data:', error);
       }
     });
+
+    // listen to panel mouse exited event to clear hover states
+    const unlistenMouseExited = listen('toolbar-exited', () => {
+      isMouseInside = false;
+    });
+
+    const unlistenMouseEntered = listen('toolbar-entered', () => {
+      isMouseInside = true;
+    });
+
     return () => {
       unlisten.then((fn) => fn());
+      unlistenMouseExited.then((fn) => fn());
+      unlistenMouseEntered.then((fn) => fn());
     };
   });
 </script>
 
 <main bind:this={mainElement} class="flex size-full bg-transparent">
-  <div class="flex h-8 gap-2 rounded-box border bg-base-100/90 backdrop-blur-sm">
+  <div class="flex gap-2 rounded-box border bg-base-100/95 backdrop-blur-sm">
     {#if actions.length > 0}
       {#each visibleActions as action (action.id)}
         <button
-          class="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-all duration-200 hover:bg-primary hover:text-primary-content hover:shadow-md"
+          class="action-button flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-all duration-200"
+          class:can-hover={isMouseInside}
           onclick={() => handleActionClick(action)}
           title={action.label}
         >
@@ -186,7 +202,7 @@
         </button>
       {/each}
       {#if overflowActions.length > 0}
-        <button class="btn h-8 min-h-0 px-2 btn-ghost btn-sm" onclick={showOverflowMenu}>
+        <button class="btn min-h-0 px-2 btn-ghost btn-sm" onclick={showOverflowMenu}>
           <DotsThree class="size-4" weight="bold" />
         </button>
       {/if}
@@ -199,6 +215,14 @@
     html,
     body {
       background: transparent;
+    }
+
+    .action-button.can-hover:hover {
+      background-color: var(--color-base-200);
+      color: var(--color-primary);
+      box-shadow:
+        0 4px 6px -1px rgb(0 0 0 / 0.1),
+        0 2px 4px -2px rgb(0 0 0 / 0.1);
     }
   }
 </style>

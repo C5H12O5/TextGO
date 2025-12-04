@@ -7,10 +7,22 @@ use std::sync::{LazyLock, Mutex};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
+// mouse click state struct
+#[derive(Clone, Copy)]
+struct Click {
+    time: Instant,
+    pos: (f64, f64),
+}
+
 // mouse event tracking states
-static LAST_CLICK_TIME: LazyLock<Mutex<Option<Instant>>> = LazyLock::new(|| Mutex::new(None));
 static DRAG_START_POS: LazyLock<Mutex<Option<(f64, f64)>>> = LazyLock::new(|| Mutex::new(None));
 static IS_DRAGGING: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
+static LAST_CLICK: LazyLock<Mutex<Option<Click>>> = LazyLock::new(|| Mutex::new(None));
+
+// thresholds for drag and double click detection
+const MIN_DRAG_DISTANCE: f64 = 8.0;
+const MAX_DBCLICK_DISTANCE: f64 = 3.0;
+const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
@@ -24,8 +36,8 @@ pub fn handle_mouse_event(event: Event) {
         EventType::ButtonRelease(Button::Left) => {
             let _ = handle_mouse_release();
         }
-        EventType::KeyPress(_) => {
-            // hide toolbar on any key press
+        EventType::Wheel { .. } | EventType::KeyPress(_) => {
+            // hide toolbar on wheel scroll or key press
             let _ = hide_toolbar();
         }
         _ => (),
@@ -36,8 +48,8 @@ pub fn handle_mouse_event(event: Event) {
 fn handle_mouse_press() -> Result<(), AppError> {
     // start tracking potential drag
     let pos = mouse_pos()?;
-    if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
-        *drag_start_pos = Some(pos);
+    if let Ok(mut start_pos) = DRAG_START_POS.lock() {
+        *start_pos = Some(pos);
     }
 
     // hide toolbar on mouse press
@@ -50,9 +62,9 @@ fn handle_mouse_press() -> Result<(), AppError> {
 fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
     if let Ok(start_pos) = DRAG_START_POS.lock() {
         if let Some((start_x, start_y)) = *start_pos {
-            // check if moved enough to be considered a drag (>5 pixels)
+            // check if moved enough to be considered a drag
             let distance = ((x - start_x).powi(2) + (y - start_y).powi(2)).sqrt();
-            if distance > 5.0 {
+            if distance > MIN_DRAG_DISTANCE {
                 if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
                     if !*is_dragging {
                         *is_dragging = true;
@@ -82,30 +94,25 @@ fn handle_mouse_release() -> Result<(), AppError> {
         }
     }
 
-    // check for double click (within 500ms)
+    // check for double click
+    let pos = mouse_pos()?;
     let now = Instant::now();
-    let is_double_click = if let Ok(mut last_click_time) = LAST_CLICK_TIME.lock() {
-        if let Some(last) = *last_click_time {
-            let elapsed = now.duration_since(last);
-            if elapsed < Duration::from_millis(500) {
-                // reset after detecting double click
-                *last_click_time = None;
-                true
+    if let Ok(mut last_click) = LAST_CLICK.lock() {
+        if let Some(last) = *last_click {
+            let interval = now.duration_since(last.time);
+            let distance = ((pos.0 - last.pos.0).powi(2) + (pos.1 - last.pos.1).powi(2)).sqrt();
+            if (interval < MAX_DBCLICK_INTERVAL) && (distance < MAX_DBCLICK_DISTANCE) {
+                // emit double click event
+                emit_event("MouseClick+MouseClick")?;
+                // reset last click state
+                *last_click = None;
             } else {
-                *last_click_time = Some(now);
-                false
+                *last_click = Some(Click { time: now, pos });
             }
         } else {
-            *last_click_time = Some(now);
-            false
+            *last_click = Some(Click { time: now, pos });
         }
-    } else {
-        false
     };
-    if is_double_click {
-        // emit double click event
-        emit_event("MouseClick+MouseClick")?;
-    }
 
     Ok(())
 }

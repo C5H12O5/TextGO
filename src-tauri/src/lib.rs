@@ -12,7 +12,7 @@ use log::LevelFilter;
 use rdev::{listen, set_is_main_thread};
 use std::collections::HashMap;
 use std::sync::{LazyLock, Mutex};
-use tauri::{App, AppHandle, Manager, RunEvent, WebviewWindow, WindowEvent};
+use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
@@ -192,6 +192,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     handler.on_mouse_entered(move |_event| {
                         if let Ok(panel) = app_handle.get_webview_panel(&window_label) {
                             panel.make_key_window();
+                            let _ = app_handle.emit("toolbar-entered", ());
                         }
                     });
 
@@ -200,6 +201,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     handler.on_mouse_exited(move |_event| {
                         if let Ok(panel) = app_handle.get_webview_panel(&window_label) {
                             panel.resign_key_window();
+                            let _ = app_handle.emit("toolbar-exited", ());
                         }
                     });
 

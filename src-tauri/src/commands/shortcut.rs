@@ -1,10 +1,11 @@
 use crate::error::AppError;
 use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
+use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
 /// Pause shortcut event handling by unregistering all shortcuts.
 #[tauri::command]
-pub fn pause_shortcut_handling(app: tauri::AppHandle) -> Result<(), AppError> {
+pub fn pause_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
     // set paused flag to true
     {
         let mut paused = SHORTCUT_PAUSED.lock()?;
@@ -27,7 +28,7 @@ pub fn pause_shortcut_handling(app: tauri::AppHandle) -> Result<(), AppError> {
 
 /// Resume shortcut event handling by re-registering all shortcuts.
 #[tauri::command]
-pub fn resume_shortcut_handling(app: tauri::AppHandle) -> Result<(), AppError> {
+pub fn resume_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
     // re-register all shortcuts
     let shortcuts: Vec<String> = {
         let registered = REGISTERED_SHORTCUTS.lock()?;
@@ -50,7 +51,7 @@ pub fn resume_shortcut_handling(app: tauri::AppHandle) -> Result<(), AppError> {
 
 /// Register global shortcut.
 #[tauri::command]
-pub fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), AppError> {
+pub fn register_shortcut(app: AppHandle, shortcut: String) -> Result<(), AppError> {
     // check if registered
     if let Ok(registered) = is_shortcut_registered(shortcut.clone()) {
         if registered {
@@ -75,7 +76,7 @@ pub fn register_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), 
 
 /// Unregister global shortcut.
 #[tauri::command]
-pub fn unregister_shortcut(app: tauri::AppHandle, shortcut: String) -> Result<(), AppError> {
+pub fn unregister_shortcut(app: AppHandle, shortcut: String) -> Result<(), AppError> {
     // check if registered
     if let Ok(registered) = is_shortcut_registered(shortcut.clone()) {
         if !registered {

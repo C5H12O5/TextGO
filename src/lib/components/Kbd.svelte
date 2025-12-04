@@ -57,9 +57,9 @@
 
 <kbd class="kbd min-w-8 font-sans {_class}">
   {#if typeof kbd === 'string'}
-    <span class="text-sm font-medium">{kbd}</span>
+    <span class="text-sm font-light">{kbd}</span>
   {:else}
     {@const Icon = kbd}
-    <Icon class="size-3.5" weight="bold" />
+    <Icon class="size-3.5" />
   {/if}
 </kbd>

@@ -2,7 +2,7 @@ use crate::error::AppError;
 use crate::platform;
 use crate::ENIGO;
 use enigo::Mouse;
-use tauri::{Emitter, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 // window position offset from cursor
 const WINDOW_OFFSET: i32 = 10;
@@ -12,25 +12,25 @@ const SAFE_AREA_BOTTOM: i32 = 80;
 
 /// Show main window.
 #[tauri::command]
-pub fn show_main_window(app: tauri::AppHandle) {
+pub fn show_main_window(app: AppHandle) {
     show_window(&app, "main");
 }
 
 /// Hide main window.
 #[tauri::command]
-pub fn hide_main_window(app: tauri::AppHandle) {
+pub fn hide_main_window(app: AppHandle) {
     hide_window(&app, "main");
 }
 
 /// Toggle main window visibility.
 #[tauri::command]
-pub fn toggle_main_window(app: tauri::AppHandle) {
+pub fn toggle_main_window(app: AppHandle) {
     toggle_window(&app, "main");
 }
 
 /// Navigate to shortcut registration page.
 #[tauri::command]
-pub fn goto_shortcuts(app: tauri::AppHandle) {
+pub fn goto_shortcuts(app: AppHandle) {
     if let Some(window) = show_window(&app, "main") {
         // emit page navigation event
         let _ = window.emit("goto-shortcuts", ());
@@ -39,10 +39,10 @@ pub fn goto_shortcuts(app: tauri::AppHandle) {
 
 /// Show popup and position it near the cursor.
 #[tauri::command]
-pub fn show_popup(app: tauri::AppHandle, payload: String) -> Result<(), AppError> {
+pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
     if let Some(window) = app.get_webview_window("popup") {
         // position window near cursor
-        position_window_near_cursor(&window)?;
+        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
         // show and focus window
         show_window(&app, "popup");
@@ -58,10 +58,10 @@ pub fn show_popup(app: tauri::AppHandle, payload: String) -> Result<(), AppError
 
 /// Show toolbar and position it near the cursor.
 #[tauri::command]
-pub fn show_toolbar(app: tauri::AppHandle, payload: String) -> Result<(), AppError> {
+pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
     if let Some(window) = app.get_webview_window("toolbar") {
         // position window near cursor
-        position_window_near_cursor(&window)?;
+        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
         // show window
         window.show()?;
@@ -76,11 +76,17 @@ pub fn show_toolbar(app: tauri::AppHandle, payload: String) -> Result<(), AppErr
 }
 
 /// Position a window near the mouse or selection with safe area constraints.
-fn position_window_near_cursor(window: &WebviewWindow) -> Result<(), AppError> {
-    // try to get selection location first, fall back to mouse position if failed
-    let (x, y) = match platform::get_cursor_location() {
-        Ok(location) => location,
-        Err(_) => ENIGO.lock()?.as_ref()?.location()?,
+fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<(), AppError> {
+    // get cursor position
+    let (x, y) = if mouse {
+        // directly use mouse position from enigo
+        ENIGO.lock()?.as_ref()?.location()?
+    } else {
+        // try to get selection location first, fall back to mouse position if failed
+        match platform::get_cursor_location() {
+            Ok(location) => location,
+            Err(_) => ENIGO.lock()?.as_ref()?.location()?,
+        }
     };
 
     // get window size
@@ -123,7 +129,7 @@ fn position_window_near_cursor(window: &WebviewWindow) -> Result<(), AppError> {
 }
 
 /// Show and focus window.
-pub fn show_window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow> {
+pub fn show_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
     if let Some(window) = app.get_webview_window(label) {
         if window.is_minimized().unwrap_or(false) {
             // unminimize
@@ -142,7 +148,7 @@ pub fn show_window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow>
 }
 
 /// Hide window.
-pub fn hide_window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow> {
+pub fn hide_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
     if let Some(window) = app.get_webview_window(label) {
         let _ = window.hide();
 
@@ -159,7 +165,7 @@ pub fn hide_window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow>
 }
 
 /// Toggle window visibility.
-pub fn toggle_window(app: &tauri::AppHandle, label: &str) -> Option<WebviewWindow> {
+pub fn toggle_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
     if let Some(window) = app.get_webview_window(label) {
         // check if window is minimized
         if window.is_minimized().unwrap_or(false) {

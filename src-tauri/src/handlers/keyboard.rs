@@ -1,10 +1,10 @@
 use crate::commands::get_selection;
 use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
-use tauri::Emitter;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 
 /// Handle keyboard shortcut event.
-pub fn handle_keyboard_event(app: &tauri::AppHandle, hotkey: &Shortcut, event: ShortcutEvent) {
+pub fn handle_keyboard_event(app: &AppHandle, hotkey: &Shortcut, event: ShortcutEvent) {
     if event.state() == ShortcutState::Pressed {
         // check if shortcut processing is paused
         if let Ok(paused) = SHORTCUT_PAUSED.lock() {

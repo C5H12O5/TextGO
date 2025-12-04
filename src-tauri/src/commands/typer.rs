@@ -4,11 +4,12 @@ use crate::platform;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 use std::time::Duration;
+use tauri::AppHandle;
 use tokio::time::sleep;
 
 /// Enter text and try to select it.
 #[tauri::command]
-pub async fn enter_text(app: tauri::AppHandle, text: String) -> Result<(), AppError> {
+pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
     if text.is_empty() {
         return Ok(());
     }

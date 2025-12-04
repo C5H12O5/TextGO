@@ -5,11 +5,12 @@ use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 use log::warn;
 use std::time::Duration;
+use tauri::AppHandle;
 use tokio::time::sleep;
 
 /// Get selected text.
 #[tauri::command]
-pub async fn get_selection(app: tauri::AppHandle) -> Result<String, AppError> {
+pub async fn get_selection(app: AppHandle) -> Result<String, AppError> {
     // try using platform native API to get selected text first
     if let Ok(text) = platform::get_selection() {
         if !text.is_empty() {
@@ -23,7 +24,7 @@ pub async fn get_selection(app: tauri::AppHandle) -> Result<String, AppError> {
 }
 
 /// Get selected text through clipboard.
-async fn get_selection_fallback(app: tauri::AppHandle) -> Result<String, AppError> {
+async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
     // use backup-operation-restore mode
     with_clipboard_backup(|| async move {
         // clear clipboard
