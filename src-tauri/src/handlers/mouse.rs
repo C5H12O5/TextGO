@@ -24,6 +24,10 @@ pub fn handle_mouse_event(event: Event) {
         EventType::ButtonRelease(Button::Left) => {
             let _ = handle_mouse_release();
         }
+        EventType::KeyPress(_) => {
+            // hide toolbar on any key press
+            let _ = hide_toolbar();
+        }
         _ => (),
     }
 }

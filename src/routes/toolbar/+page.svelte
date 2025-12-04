@@ -3,10 +3,12 @@
   import { CONVERT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { prompts, scripts } from '$lib/stores.svelte';
   import type { Rule } from '$lib/types';
+  import { LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
+  import { Menu, MenuItem } from '@tauri-apps/api/menu';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { Code, Robot } from 'phosphor-svelte';
+  import { Code, DotsThree, Robot } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { onMount } from 'svelte';
 
@@ -20,8 +22,18 @@
   // matched actions to display
   let actions: ActionItem[] = $state([]);
 
+  // maximum actions to show before dropdown
+  const MAX_VISIBLE_ACTIONS = 6;
+
+  // visible and overflow actions
+  let visibleActions = $derived(actions.slice(0, MAX_VISIBLE_ACTIONS));
+  let overflowActions = $derived(actions.slice(MAX_VISIBLE_ACTIONS));
+
   // selected text
   let selection: string = $state('');
+
+  // main element reference
+  let mainElement: HTMLElement;
 
   /**
    * Update toolbar with matched rules.
@@ -77,6 +89,26 @@
     });
 
     actions = items;
+
+    // Resize window to fit content after actions are updated
+    setTimeout(async () => {
+      if (mainElement) {
+        try {
+          // Get the actual content size (first child element)
+          const contentElement = mainElement.firstElementChild as HTMLElement;
+          if (contentElement) {
+            const rect = contentElement.getBoundingClientRect();
+            const currentWindow = getCurrentWindow();
+
+            // Use logical size directly
+            console.info(`Resizing window to width: ${rect.width}, height: ${rect.height}`);
+            await currentWindow.setSize(new LogicalSize(rect.width, rect.height));
+          }
+        } catch (error) {
+          console.error('Failed to resize window:', error);
+        }
+      }
+    }, 0);
   }
 
   /**
@@ -89,6 +121,35 @@
       await execute(action.rule, selection);
     } catch (error) {
       console.error('Failed to execute action:', error);
+    }
+  }
+
+  /**
+   * Show overflow menu using system context menu.
+   */
+  async function showOverflowMenu() {
+    try {
+      // Create menu items
+      const menuItems = await Promise.all(
+        overflowActions.map(async (action) => {
+          return await MenuItem.new({
+            id: action.id,
+            text: action.label,
+            action: () => handleActionClick(action)
+          });
+        })
+      );
+
+      // Create menu
+      const menu = await Menu.new({
+        items: menuItems
+      });
+
+      // Show popup menu at cursor
+      const currentWindow = getCurrentWindow();
+      await menu.popup(undefined, currentWindow);
+    } catch (error) {
+      console.error('Failed to show overflow menu:', error);
     }
   }
 
@@ -109,12 +170,12 @@
   });
 </script>
 
-<main class="flex size-full bg-transparent">
-  {#if actions.length > 0}
-    <div class="flex h-8 cursor-pointer items-center gap-2 rounded-lg border p-2 backdrop-blur-sm">
-      {#each actions as action (action.id)}
+<main bind:this={mainElement} class="flex size-full bg-transparent">
+  <div class="flex h-8 gap-2 rounded-box border bg-base-100/90 backdrop-blur-sm">
+    {#if actions.length > 0}
+      {#each visibleActions as action (action.id)}
         <button
-          class="flex cursor-pointer items-center gap-1.5 rounded-md transition-all duration-200 hover:bg-primary hover:text-primary-content hover:shadow-md"
+          class="flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 transition-all duration-200 hover:bg-primary hover:text-primary-content hover:shadow-md"
           onclick={() => handleActionClick(action)}
           title={action.label}
         >
@@ -124,15 +185,20 @@
           <span class="max-w-[120px] truncate text-sm font-medium">{action.label}</span>
         </button>
       {/each}
-    </div>
-  {/if}
+      {#if overflowActions.length > 0}
+        <button class="btn h-8 min-h-0 px-2 btn-ghost btn-sm" onclick={showOverflowMenu}>
+          <DotsThree class="size-4" weight="bold" />
+        </button>
+      {/if}
+    {/if}
+  </div>
 </main>
 
-<!-- <style>
+<style>
   :global {
     html,
     body {
       background: transparent;
     }
   }
-</style> -->
+</style>
