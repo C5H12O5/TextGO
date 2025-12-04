@@ -1,23 +1,19 @@
 use crate::commands::get_selection;
 use crate::error::AppError;
-use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED};
+use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
 use enigo::Mouse;
 use rdev::{Button, Event, EventType};
-use std::sync::{LazyLock, Mutex};
+use std::cell::Cell;
+use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
-// mouse click state struct
-#[derive(Clone, Copy)]
-struct Click {
-    time: Instant,
-    pos: (f64, f64),
-}
-
 // mouse event tracking states
-static DRAG_START_POS: LazyLock<Mutex<Option<(f64, f64)>>> = LazyLock::new(|| Mutex::new(None));
-static IS_DRAGGING: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
-static LAST_CLICK: LazyLock<Mutex<Option<Click>>> = LazyLock::new(|| Mutex::new(None));
+thread_local! {
+    static DRAG_START_POS: Cell<Option<(f64, f64)>> = const { Cell::new(None) };
+    static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
+    static LAST_CLICK: Cell<Option<(Instant, (f64, f64))>> = const { Cell::new(None) };
+}
 
 // thresholds for drag and double click detection
 const MIN_DRAG_DISTANCE: f64 = 8.0;
@@ -26,6 +22,11 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
+    // check if shortcut handling is suspended or paused
+    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+        return;
+    }
+
     match event.event_type {
         EventType::ButtonPress(Button::Left) => {
             let _ = handle_mouse_press();
@@ -48,9 +49,8 @@ pub fn handle_mouse_event(event: Event) {
 fn handle_mouse_press() -> Result<(), AppError> {
     // start tracking potential drag
     let pos = mouse_pos()?;
-    if let Ok(mut start_pos) = DRAG_START_POS.lock() {
-        *start_pos = Some(pos);
-    }
+    DRAG_START_POS.set(Some(pos));
+    IS_DRAGGING.set(false);
 
     // hide toolbar on mouse press
     hide_toolbar()?;
@@ -60,17 +60,11 @@ fn handle_mouse_press() -> Result<(), AppError> {
 
 /// Handle mouse move event (detect dragging).
 fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
-    if let Ok(start_pos) = DRAG_START_POS.lock() {
-        if let Some((start_x, start_y)) = *start_pos {
-            // check if moved enough to be considered a drag
-            let distance = ((x - start_x).powi(2) + (y - start_y).powi(2)).sqrt();
-            if distance > MIN_DRAG_DISTANCE {
-                if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
-                    if !*is_dragging {
-                        *is_dragging = true;
-                    }
-                }
-            }
+    if let Some((start_x, start_y)) = DRAG_START_POS.get() {
+        // check if moved enough to be considered a drag
+        let distance = ((x - start_x).powi(2) + (y - start_y).powi(2)).sqrt();
+        if distance > MIN_DRAG_DISTANCE {
+            IS_DRAGGING.set(true);
         }
     }
 
@@ -80,39 +74,33 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
 /// Handle mouse release event (detect drag end or double click).
 fn handle_mouse_release() -> Result<(), AppError> {
     // reset drag start position
-    if let Ok(mut drag_start_pos) = DRAG_START_POS.lock() {
-        *drag_start_pos = None;
-    }
+    DRAG_START_POS.set(None);
 
     // check for drag end
-    if let Ok(mut is_dragging) = IS_DRAGGING.lock() {
-        if *is_dragging {
-            // emit drag end event
-            emit_event("MouseClick+MouseMove")?;
-            *is_dragging = false;
-            return Ok(());
-        }
+    if IS_DRAGGING.get() {
+        // emit drag end event
+        emit_event("MouseClick+MouseMove")?;
+        IS_DRAGGING.set(false);
+        return Ok(());
     }
 
     // check for double click
     let pos = mouse_pos()?;
     let now = Instant::now();
-    if let Ok(mut last_click) = LAST_CLICK.lock() {
-        if let Some(last) = *last_click {
-            let interval = now.duration_since(last.time);
-            let distance = ((pos.0 - last.pos.0).powi(2) + (pos.1 - last.pos.1).powi(2)).sqrt();
-            if (interval < MAX_DBCLICK_INTERVAL) && (distance < MAX_DBCLICK_DISTANCE) {
-                // emit double click event
-                emit_event("MouseClick+MouseClick")?;
-                // reset last click state
-                *last_click = None;
-            } else {
-                *last_click = Some(Click { time: now, pos });
-            }
+    if let Some((last_time, last_pos)) = LAST_CLICK.get() {
+        let interval = now.duration_since(last_time);
+        let distance = ((pos.0 - last_pos.0).powi(2) + (pos.1 - last_pos.1).powi(2)).sqrt();
+        if (interval < MAX_DBCLICK_INTERVAL) && (distance < MAX_DBCLICK_DISTANCE) {
+            // emit double click event
+            emit_event("MouseClick+MouseClick")?;
+            // reset last click state
+            LAST_CLICK.set(None);
         } else {
-            *last_click = Some(Click { time: now, pos });
+            LAST_CLICK.set(Some((now, pos)));
         }
-    };
+    } else {
+        LAST_CLICK.set(Some((now, pos)));
+    }
 
     Ok(())
 }
@@ -128,13 +116,6 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
 
 /// Emit mouse event to frontend with current selection.
 fn emit_event(shortcut: &str) -> Result<(), AppError> {
-    // check if shortcut processing is paused
-    if let Ok(paused) = SHORTCUT_PAUSED.lock() {
-        if *paused {
-            return Ok(());
-        }
-    }
-
     // get selection asynchronously and emit event
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         let app_handle = app.clone();

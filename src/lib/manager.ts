@@ -54,10 +54,16 @@ export class Manager {
           return;
         }
         // show toolbar window
-        await invoke('show_toolbar', {
-          payload: JSON.stringify({ rules, selection }),
-          mouse: isMouseShortcut(shortcut)
-        });
+        const payload = JSON.stringify({ rules, selection });
+        const mouse = isMouseShortcut(shortcut);
+        if (mouse) {
+          await invoke('show_toolbar', { payload, mouse });
+        } else {
+          // slight delay to ensure keyboard event has fully processed
+          setTimeout(async () => {
+            await invoke('show_toolbar', { payload, mouse });
+          }, 100);
+        }
       } else {
         // find first matching rule
         const rule = await matchOne(selection, s.rules);

@@ -1,4 +1,5 @@
 use crate::commands::clipboard::{set_clipboard_text, with_clipboard_backup};
+use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
 use crate::ENIGO;
@@ -13,6 +14,9 @@ pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
     if text.is_empty() {
         return Ok(());
     }
+
+    // suspend shortcut handling to avoid interference
+    let _guard = ShortcutHandlerGuard::suspend();
 
     // calculate number of characters before moving text
     let chars = text.chars().count();

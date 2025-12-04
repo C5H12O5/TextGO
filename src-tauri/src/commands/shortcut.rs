@@ -1,16 +1,30 @@
 use crate::error::AppError;
-use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
+use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
+use std::sync::atomic::Ordering;
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+
+// guard to suspend shortcut event handling within a scope
+pub struct ShortcutHandlerGuard;
+
+impl ShortcutHandlerGuard {
+    pub fn suspend() -> Self {
+        SHORTCUT_SUSPEND.store(true, Ordering::Relaxed);
+        ShortcutHandlerGuard
+    }
+}
+
+impl Drop for ShortcutHandlerGuard {
+    fn drop(&mut self) {
+        SHORTCUT_SUSPEND.store(false, Ordering::Relaxed);
+    }
+}
 
 /// Pause shortcut event handling by unregistering all shortcuts.
 #[tauri::command]
 pub fn pause_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
     // set paused flag to true
-    {
-        let mut paused = SHORTCUT_PAUSED.lock()?;
-        *paused = true;
-    }
+    SHORTCUT_PAUSED.store(true, Ordering::Relaxed);
 
     // unregister all shortcuts
     let shortcuts: Vec<String> = {
@@ -41,10 +55,7 @@ pub fn resume_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
     }
 
     // set paused flag to false
-    {
-        let mut paused = SHORTCUT_PAUSED.lock()?;
-        *paused = false;
-    }
+    SHORTCUT_PAUSED.store(false, Ordering::Relaxed);
 
     Ok(())
 }

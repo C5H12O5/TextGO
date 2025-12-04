@@ -1,4 +1,5 @@
 use crate::commands::clipboard::{clear_clipboard, get_clipboard_text, with_clipboard_backup};
+use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
 use crate::ENIGO;
@@ -11,6 +12,9 @@ use tokio::time::sleep;
 /// Get selected text.
 #[tauri::command]
 pub async fn get_selection(app: AppHandle) -> Result<String, AppError> {
+    // suspend shortcut handling to avoid interference
+    let _guard = ShortcutHandlerGuard::suspend();
+
     // try using platform native API to get selected text first
     if let Ok(text) = platform::get_selection() {
         if !text.is_empty() {

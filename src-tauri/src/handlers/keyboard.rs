@@ -1,18 +1,18 @@
 use crate::commands::get_selection;
-use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED};
+use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 
 /// Handle keyboard shortcut event.
 pub fn handle_keyboard_event(app: &AppHandle, hotkey: &Shortcut, event: ShortcutEvent) {
-    if event.state() == ShortcutState::Pressed {
-        // check if shortcut processing is paused
-        if let Ok(paused) = SHORTCUT_PAUSED.lock() {
-            if *paused {
-                return;
-            }
-        }
+    // check if shortcut handling is suspended or paused
+    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+        return;
+    }
 
+    // only handle key release events
+    if event.state() == ShortcutState::Released {
         // get shortcut string from registered shortcuts
         let shortcut = {
             let registered = REGISTERED_SHORTCUTS.lock().unwrap();

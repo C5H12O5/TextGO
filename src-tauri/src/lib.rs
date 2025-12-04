@@ -11,10 +11,32 @@ use handlers::{handle_keyboard_event, handle_mouse_event};
 use log::LevelFilter;
 use rdev::listen;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicBool;
 use std::sync::{LazyLock, Mutex};
 use tauri::{App, AppHandle, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
+
+// global app handle storage
+pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
+
+// global shortcut paused state
+pub static SHORTCUT_PAUSED: AtomicBool = AtomicBool::new(false);
+
+// global shortcut suspend state
+pub static SHORTCUT_SUSPEND: AtomicBool = AtomicBool::new(false);
+
+// global registered shortcuts mapping
+pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
+    LazyLock::new(|| Mutex::new(HashMap::new()));
+
+// global Enigo instance for keyboard simulation
+pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
+    LazyLock::new(|| Mutex::new(Enigo::new(&Settings::default())));
+
+// global ClipboardContext instance for clipboard access
+pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
+    LazyLock::new(|| Mutex::new(ClipboardContext::new().map_err(|e| e.to_string())));
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
@@ -47,24 +69,6 @@ tauri_panel! {
 
     panel_event!(ToolbarPanelEventHandler {})
 }
-
-// global app handle storage
-pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
-
-// global shortcut paused state
-pub static SHORTCUT_PAUSED: LazyLock<Mutex<bool>> = LazyLock::new(|| Mutex::new(false));
-
-// global registered shortcuts mapping
-pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
-    LazyLock::new(|| Mutex::new(HashMap::new()));
-
-// global Enigo instance for keyboard simulation
-pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
-    LazyLock::new(|| Mutex::new(Enigo::new(&Settings::default())));
-
-// global ClipboardContext instance for clipboard access
-pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
-    LazyLock::new(|| Mutex::new(ClipboardContext::new().map_err(|e| e.to_string())));
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -139,11 +143,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // start mouse event listener
     // https://github.com/Narsil/rdev/issues/165
     #[cfg(target_os = "macos")]
-    {
-        use rdev::set_is_main_thread;
-
-        set_is_main_thread(false);
-    }
+    rdev::set_is_main_thread(false);
 
     std::thread::spawn(|| {
         if let Err(error) = listen(handle_mouse_event) {

@@ -5,7 +5,7 @@ use enigo::Mouse;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
 
 // window position offset from cursor
-const WINDOW_OFFSET: i32 = 10;
+const WINDOW_OFFSET: i32 = 5;
 
 // bottom safe area offset to avoid taskbar/dock
 const SAFE_AREA_BOTTOM: i32 = 80;
