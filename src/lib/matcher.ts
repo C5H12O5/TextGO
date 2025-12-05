@@ -466,6 +466,7 @@ const MATCHERS: Matcher[] = [
 async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Rule | Rule[] | null> {
   console.debug(`Matching patterns: ${rules.map((r) => r.case || 'skip').join(', ')}`);
   const matchedRules: Rule[] = [];
+  const matchedActions: Set<string> = new Set();
 
   // shared context for lazy-loaded results
   let naturalLangs: TrigramTuple[] | null = null;
@@ -473,6 +474,11 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
 
   // iterate through all rules
   for (const rule of rules) {
+    if (matchedActions.has(rule.action)) {
+      // skip if action already matched
+      continue;
+    }
+
     // create context for this rule
     const context: MatcherContext = { text, rule, naturalLangs, programmingLangs };
 
@@ -491,6 +497,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
     if (matched) {
       if (matchAll) {
         matchedRules.push(matched);
+        matchedActions.add(matched.action);
       } else {
         return matched;
       }

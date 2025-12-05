@@ -25,8 +25,9 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import { Browsers, FolderOpen, Function, TextAa } from 'phosphor-svelte';
+import { Browsers, Copy, FolderOpen, Function, TextAa } from 'phosphor-svelte';
 
+// regular expressions to match URLs and file paths
 const URL_REGEX =
   /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*/gm;
 const PATH_REGEX =
@@ -50,6 +51,23 @@ type Data = {
 type Processor = Option & {
   process: (selection: string) => string;
 };
+
+/**
+ * Default actions.
+ */
+export const DEFAULT_ACTIONS: Processor[] = [
+  {
+    value: 'copy',
+    label: m.copy(),
+    icon: Copy,
+    process: (text: string) => {
+      if (text) {
+        invoke('set_clipboard_text', { text });
+      }
+      return '';
+    }
+  }
+];
 
 /**
  * General actions.
@@ -217,7 +235,7 @@ export const PROCESS_ACTIONS: Processor[] = [
 
 // memoized lookup function
 const findBuiltinAction = memoize((action: string) =>
-  [...GENERAL_ACTIONS, ...CONVERT_ACTIONS, ...PROCESS_ACTIONS].find((a) => a.value === action)
+  [...DEFAULT_ACTIONS, ...GENERAL_ACTIONS, ...CONVERT_ACTIONS, ...PROCESS_ACTIONS].find((a) => a.value === action)
 );
 
 /**

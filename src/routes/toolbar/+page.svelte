@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PROMPT_MARK, SCRIPT_MARK } from '$lib/constants';
-  import { CONVERT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import { CONVERT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS, DEFAULT_ACTIONS } from '$lib/executor';
   import { prompts, scripts } from '$lib/stores.svelte';
   import type { Rule } from '$lib/types';
   import { LogicalSize } from '@tauri-apps/api/dpi';
@@ -77,7 +77,7 @@
         }
       } else {
         // built-in action
-        const builtinAction = [...GENERAL_ACTIONS, ...CONVERT_ACTIONS, ...PROCESS_ACTIONS].find(
+        const builtinAction = [...DEFAULT_ACTIONS, ...GENERAL_ACTIONS, ...CONVERT_ACTIONS, ...PROCESS_ACTIONS].find(
           (a) => a.value === actionId
         );
         if (builtinAction) {
@@ -161,6 +161,7 @@
     const unlisten = listen<string>('show-toolbar', (event) => {
       try {
         // Parse the JSON payload
+        console.info(`Received toolbar data: ${event.payload}`);
         const data = JSON.parse(event.payload);
         updateToolbar(data);
       } catch (error) {

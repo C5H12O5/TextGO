@@ -2,7 +2,7 @@
   import { enhance } from '$app/forms';
   import { alert, Label, Modal, Select } from '$lib/components';
   import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
-  import { CONVERT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { manager } from '$lib/manager';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
@@ -21,7 +21,7 @@
   let textCase: string = $state('');
 
   // action identifier
-  let actionId: string = $state('');
+  let actionId: string = $state('copy');
 
   // rule modal
   let modal: Modal;
@@ -61,7 +61,7 @@
 
   // action identifier options
   const actionIds: Option[] = $derived.by(() => {
-    const options: Option[] = [{ value: '', label: m.show_main_window() }];
+    const options: Option[] = [...DEFAULT_ACTIONS];
     // script
     if (scripts.current && scripts.current.length > 0) {
       options.push({ value: '--script--', label: `-- ${m.script()} --`, disabled: true });
