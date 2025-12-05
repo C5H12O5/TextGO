@@ -48,11 +48,12 @@
         "height": 34,
         "minWidth": 200,
         "visible": false,
-        "skipTaskbar": true,
         "decorations": false,
+        "skipTaskbar": true,
         "alwaysOnTop": true,
         "transparent": true,
         "resizable": false,
+        "shadow": false,
         "focus": false,
         "focusable": false,
         "acceptFirstMouse": true

@@ -45,6 +45,9 @@ pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
 
                     enigo.key(Key::Shift, Direction::Press)?;
                     for _ in 0..chars {
+                        #[cfg(target_os = "windows")]
+                        std::thread::sleep(Duration::from_millis(5));
+
                         enigo.key(Key::LeftArrow, Direction::Click)?;
                     }
                     enigo.key(Key::Shift, Direction::Release)?;
