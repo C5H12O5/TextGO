@@ -15,7 +15,10 @@ const ALL_FORMATS: [ContentFormat; 5] = [
 /// Get clipboard text content.
 #[tauri::command]
 pub fn get_clipboard_text() -> Result<String, AppError> {
-    run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get_text()?))
+    run(|| match CLIPBOARD.lock()?.as_ref()?.get_text() {
+        Ok(text) => Ok(text),
+        Err(_) => Ok(String::new()),
+    })
 }
 
 /// Set clipboard text content.
