@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { m } from '$lib/paraglide/messages';
   import { escape } from 'es-toolkit/string';
-  import { Warning, type IconComponentProps } from 'phosphor-svelte';
+  import { Warning, X, type IconComponentProps } from 'phosphor-svelte';
   import { tick, type Component } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { fade } from 'svelte/transition';
@@ -78,7 +78,7 @@
     </form>
     <div class="modal-box max-w-xl">
       <form method="dialog" class="modal-corner">
-        <button onclick={(event) => close(id, msg.oncancel, event)}>✕</button>
+        <button onclick={(event) => close(id, msg.oncancel, event)}><X /></button>
       </form>
       <!-- message title -->
       <h3 class="modal-title">

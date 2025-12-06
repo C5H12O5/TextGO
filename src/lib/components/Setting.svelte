@@ -40,7 +40,7 @@
     </span>
     {#if tip}
       <span class="cursor-help" use:tooltip={{ content: tip, placement: 'left' }}>
-        <Question class="size-5 opacity-60" />
+        <Question class="size-5 opacity-70" />
       </span>
     {/if}
     {#if moreOptions}

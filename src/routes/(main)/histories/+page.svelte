@@ -11,7 +11,7 @@
     ArrowFatLineRight,
     ArrowLeft,
     ClockCounterClockwise,
-    Copy,
+    CopySimple,
     Cube,
     FileJs,
     FileMd,
@@ -105,7 +105,7 @@
                   </span>
                 {/if}
               </div>
-              <Button icon={Copy} weight="thin" onclick={() => copy(entry.result)} />
+              <Button icon={CopySimple} weight="thin" onclick={() => copy(entry.result)} />
             </div>
             <div class="h-14 overflow-auto overscroll-none rounded-box border bg-base-200 px-2 py-1 text-xs opacity-70">
               {entry.result}
