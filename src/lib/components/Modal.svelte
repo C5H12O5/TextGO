@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import type { IconComponentProps } from 'phosphor-svelte';
+  import { X, type IconComponentProps } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
 
@@ -43,7 +43,13 @@
         return;
       }
       dialog.showModal();
-      // set focus
+
+      // disable spellcheck for all inputs in this modal
+      dialog.querySelectorAll('input, textarea').forEach((element) => {
+        (element as HTMLInputElement | HTMLTextAreaElement).spellcheck = false;
+      });
+
+      // set focus on the first input with autofocus class
       const autofocus = dialog?.querySelector('.autofocus') as HTMLElement | null;
       if (autofocus) {
         setTimeout(() => autofocus.focus(), 0);
@@ -84,7 +90,7 @@
     </form>
     <div class="modal-box {boxClass}" style:max-width={maxWidth}>
       <form method="dialog" class="modal-corner {cornerClass}">
-        <button onclick={close}>✕</button>
+        <button onclick={close}><X /></button>
       </form>
       {#if title}
         <h3 class="modal-title">

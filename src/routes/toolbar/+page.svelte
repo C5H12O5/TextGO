@@ -43,7 +43,6 @@
    */
   function updateToolbar(data: { rules: Rule[]; selection: string }) {
     if (!data || !data.rules || !Array.isArray(data.rules)) {
-      console.error('Invalid toolbar data:', data);
       return;
     }
 
@@ -108,7 +107,7 @@
             await currentWindow.setSize(new LogicalSize(rect.width, rect.height));
           }
         } catch (error) {
-          console.error('Failed to resize window:', error);
+          console.error(`Failed to resize window: ${error}`);
         }
       }
     }, 0);
@@ -123,7 +122,7 @@
       await currentWindow.hide();
       await execute(action.rule, selection);
     } catch (error) {
-      console.error('Failed to execute action:', error);
+      console.error(`Failed to execute action: ${error}`);
     }
   }
 
@@ -152,7 +151,7 @@
       const currentWindow = getCurrentWindow();
       await menu.popup(undefined, currentWindow);
     } catch (error) {
-      console.error('Failed to show overflow menu:', error);
+      console.error(`Failed to show overflow menu: ${error}`);
     }
   }
 
@@ -165,7 +164,7 @@
         const data = JSON.parse(event.payload);
         updateToolbar(data);
       } catch (error) {
-        console.error('Failed to parse toolbar data:', error);
+        console.error(`Failed to parse toolbar data: ${error}`);
       }
     });
 

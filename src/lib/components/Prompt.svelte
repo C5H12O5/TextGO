@@ -14,7 +14,7 @@ ${m.prompt_variables_tip()}
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { CodeMirror, Label, Modal, Select, alert } from '$lib/components';
+  import { CodeMirror, IconSelector, Label, Modal, Select, alert } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { Loading } from '$lib/states.svelte';
   import { markdown } from '@codemirror/lang-markdown';
@@ -110,16 +110,16 @@ ${m.prompt_variables_tip()}
   >
     <fieldset class="fieldset">
       <Label required>{m.action_name()}</Label>
-      <label class="input w-full">
-        <ArrowFatLineRight class="size-5 opacity-50" />
+      <div class="flex items-center gap-2">
+        <IconSelector icon="ArrowFatLineRight" />
         <input
-          class="autofocus grow"
+          class="autofocus input input-sm grow"
           {...schema.name}
           bind:value={promptName}
           bind:this={nameInputElement}
           disabled={!!promptId}
         />
-      </label>
+      </div>
       <div class="grid grid-cols-2 gap-2">
         <span>
           <Label required>{m.model_provider()}</Label>

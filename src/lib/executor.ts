@@ -25,7 +25,7 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import { Browsers, Copy, FolderOpen, Function, TextAa } from 'phosphor-svelte';
+import { Browsers, CopySimple, FolderOpen, Function, TextAa } from 'phosphor-svelte';
 
 // regular expressions to match URLs and file paths
 const URL_REGEX =
@@ -59,7 +59,7 @@ export const DEFAULT_ACTIONS: Processor[] = [
   {
     value: 'copy',
     label: m.copy(),
-    icon: Copy,
+    icon: CopySimple,
     process: (text: string) => {
       if (text) {
         invoke('set_clipboard_text', { text });

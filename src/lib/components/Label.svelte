@@ -46,7 +46,7 @@
   <!-- hover tip -->
   {#if tip && tipPlacement != 'duplex'}
     <span class="cursor-help" use:tooltip={{ content: tip, placement: tipPlacement }}>
-      <Question class="size-5 opacity-60" />
+      <Question class="size-5 opacity-70" />
     </span>
   {/if}
 </div>

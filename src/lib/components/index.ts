@@ -1,7 +1,9 @@
 export { default as Binder } from './Binder.svelte';
-export { default as Kbd } from './Kbd.svelte';
 export { default as Button } from './Button.svelte';
 export { default as CodeMirror } from './CodeMirror.svelte';
+export { default as Icon } from './Icon.svelte';
+export { default as IconSelector } from './IconSelector.svelte';
+export { default as Kbd } from './Kbd.svelte';
 export { default as Label } from './Label.svelte';
 export { default as List } from './List.svelte';
 export { default as Modal } from './Modal.svelte';
