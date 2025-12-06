@@ -26,9 +26,9 @@ type Options<T> = {
  * @returns persisted state object
  */
 function persisted<T>(key: string, initial: T, options?: Options<T>) {
-  let state = $state(initial);
   let initialized = false;
   let syncing = false;
+  let state = $state(initial);
 
   // load data from store
   store.get<T>(key).then((item) => {
@@ -37,7 +37,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
       options?.onload?.(item);
       options?.onchange?.(item);
     }
-    // mark as initialized in next tick to avoid saving loaded data back to store
+    // mark as initialized
     tick().then(() => (initialized = true));
   });
 
@@ -46,7 +46,6 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
     $effect(() => {
       // get snapshot of current state
       const snapshot = $state.snapshot(state);
-
       untrack(() => {
         if (!initialized || syncing) {
           return;
@@ -82,7 +81,12 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
           state = item;
           options?.onchange?.(item);
         }
-        tick().then(() => (syncing = false));
+        // wait two ticks to ensure all effects are processed
+        tick().then(() => {
+          tick().then(() => {
+            syncing = false;
+          });
+        });
       });
     }
   });
