@@ -1,12 +1,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { Classifier } from '$lib/classifier';
-  import { CodeMirror, Label, Modal, alert } from '$lib/components';
+  import { CodeMirror, IconSelector, Label, Modal, alert } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
   import type { Model } from '$lib/types';
-  import { FingerprintSimple, Sphere } from 'phosphor-svelte';
 
   const { models }: { models: Model[] } = $props();
   const loading = new Loading();
@@ -16,6 +15,7 @@
   }));
 
   let modelId: string = $state('');
+  let modelIcon: string = $state('Sphere');
   let modelName: string = $state('');
   let modelSample: string = $state('');
   let modelThreshold: number = $state(0.5);
@@ -31,6 +31,7 @@
       if (model) {
         modelId = id;
         modelName = model.id;
+        modelIcon = model.icon || 'Sphere';
         modelSample = model.sample;
         modelThreshold = model.threshold;
       }
@@ -59,6 +60,7 @@
     loading.start();
     if (model) {
       // update model information
+      model.icon = modelIcon;
       model.threshold = modelThreshold;
       alert(m.model_info_updated());
       loading.end();
@@ -67,6 +69,7 @@
       const id = modelName;
       models.push({
         id: id,
+        icon: modelIcon,
         sample: modelSample,
         threshold: modelThreshold
       });
@@ -82,6 +85,7 @@
           loading.end();
           alert(m.model_training_success());
           // reset form
+          modelIcon = 'Sphere';
           modelName = '';
           modelSample = '';
           modelThreshold = 0.5;
@@ -100,7 +104,7 @@
   }
 </script>
 
-<Modal icon={Sphere} title="{modelId ? m.update() : m.add()}{m.model()}" bind:this={modal}>
+<Modal title="{modelId ? m.update() : m.add()}{m.model()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -110,10 +114,10 @@
   >
     <fieldset class="fieldset">
       <Label required>{m.type_name()}</Label>
-      <label class="input w-full">
-        <FingerprintSimple class="size-5 opacity-50" />
-        <input class="autofocus grow" {...schema.name} bind:value={modelName} disabled={!!modelId} />
-      </label>
+      <div class="flex items-center gap-2">
+        <IconSelector bind:icon={modelIcon} />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={modelName} disabled={!!modelId} />
+      </div>
       <Label required>{m.positive_samples()}</Label>
       <CodeMirror
         title={m.positive_samples()}

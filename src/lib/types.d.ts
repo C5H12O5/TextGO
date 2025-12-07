@@ -31,7 +31,7 @@ export type Option = {
   /** Regular expression. */
   pattern?: RegExp;
   /** Option icon. */
-  icon?: Component<IconComponentProps>;
+  icon?: Component<IconComponentProps> | string;
 };
 
 /**
@@ -97,39 +97,13 @@ export type Shortcut = {
 };
 
 /**
- * Type of script.
- */
-export type Script = {
-  /** Script ID. */
-  id: string;
-  /** Script language. */
-  lang: 'javascript' | 'python';
-  /** Script content. */
-  script: string;
-};
-
-/**
- * Type of prompt.
- */
-export type Prompt = {
-  /** Prompt ID. */
-  id: string;
-  /** Model provider. */
-  provider: 'ollama' | 'lmstudio';
-  /** Model name. */
-  model: string;
-  /** Prompt content. */
-  prompt: string;
-  /** System prompt. */
-  systemPrompt?: string;
-};
-
-/**
  * Type of classification model.
  */
 export type Model = {
   /** Model ID. */
   id: string;
+  /** Model icon. */
+  icon?: string;
   /** Training sample. */
   sample: string;
   /** Confidence threshold. */
@@ -144,8 +118,42 @@ export type Model = {
 export type Regexp = {
   /** Regex ID. */
   id: string;
+  /** Regex icon. */
+  icon?: string;
   /** Regex pattern. */
   pattern: string;
   /** Regex flags. */
   flags?: string;
+};
+
+/**
+ * Type of script.
+ */
+export type Script = {
+  /** Action ID. */
+  id: string;
+  /** Action icon. */
+  icon?: string;
+  /** Script language. */
+  lang: 'javascript' | 'python';
+  /** Script content. */
+  script: string;
+};
+
+/**
+ * Type of prompt.
+ */
+export type Prompt = {
+  /** Action ID. */
+  id: string;
+  /** Action icon. */
+  icon?: string;
+  /** Model provider. */
+  provider: 'ollama' | 'lmstudio';
+  /** Model name. */
+  model: string;
+  /** Prompt content. */
+  prompt: string;
+  /** System prompt. */
+  systemPrompt?: string;
 };

@@ -17,34 +17,34 @@
   // shortcut to bind
   let shortcut: string = $state('');
 
-  // text type
-  let textCase: string = $state('');
+  // case identifier
+  let caseId: string = $state('');
 
   // action identifier
   let actionId: string = $state('copy');
 
-  // rule modal
+  // rule binding modal
   let modal: Modal;
   export const showModal = (value: string) => {
     shortcut = value;
     modal.show();
   };
 
-  // text type options
-  const textCases: Option[] = $derived.by(() => {
+  // available cases
+  const cases: Option[] = $derived.by(() => {
     const options: Option[] = [{ value: '', label: m.skip() }];
     // classification model
     if (models.current && models.current.length > 0) {
       options.push({ value: '--model--', label: `-- ${m.model()} --`, disabled: true });
       for (const model of models.current) {
-        options.push({ value: MODEL_MARK + model.id, label: model.id });
+        options.push({ value: MODEL_MARK + model.id, label: model.id, icon: model.icon });
       }
     }
     // regular expression
     if (regexps.current && regexps.current.length > 0) {
       options.push({ value: '--regexp--', label: `-- ${m.regexp()} --`, disabled: true });
       for (const regexp of regexps.current) {
-        options.push({ value: REGEXP_MARK + regexp.id, label: regexp.id });
+        options.push({ value: REGEXP_MARK + regexp.id, label: regexp.id, icon: regexp.icon });
       }
     }
     // built-in type
@@ -59,21 +59,21 @@
     return options;
   });
 
-  // action identifier options
-  const actionIds: Option[] = $derived.by(() => {
+  // available actions
+  const actions: Option[] = $derived.by(() => {
     const options: Option[] = [...DEFAULT_ACTIONS];
     // script
     if (scripts.current && scripts.current.length > 0) {
       options.push({ value: '--script--', label: `-- ${m.script()} --`, disabled: true });
       for (const script of scripts.current) {
-        options.push({ value: SCRIPT_MARK + script.id, label: script.id });
+        options.push({ value: SCRIPT_MARK + script.id, label: script.id, icon: script.icon });
       }
     }
     // prompt
     if (prompts.current && prompts.current.length > 0) {
       options.push({ value: '--prompt--', label: `-- ${m.conversation()} --`, disabled: true });
       for (const prompt of prompts.current) {
-        options.push({ value: PROMPT_MARK + prompt.id, label: prompt.id });
+        options.push({ value: PROMPT_MARK + prompt.id, label: prompt.id, icon: prompt.icon });
       }
     }
     // built-in action
@@ -87,13 +87,33 @@
   });
 
   /**
+   * Get case option.
+   *
+   * @param value - case value
+   * @returns option instance
+   */
+  export function getCaseOption(value: string): Option | undefined {
+    return cases.find((c) => c.value === value);
+  }
+
+  /**
+   * Get action option.
+   *
+   * @param value - action value
+   * @returns option instance
+   */
+  export function getActionOption(value: string): Option | undefined {
+    return actions.find((a) => a.value === value);
+  }
+
+  /**
    * Register new rule.
    *
    * @param form - form element
    */
   async function register(form: HTMLFormElement) {
     const s = shortcuts.current[shortcut];
-    if (s.rules.find((r) => r.shortcut === shortcut && r.case === textCase && r.action === actionId)) {
+    if (s.rules.find((r) => r.shortcut === shortcut && r.case === caseId && r.action === actionId)) {
       alert({ level: 'error', message: m.rule_already_used() });
       return;
     }
@@ -102,7 +122,7 @@
       await manager.register({
         id: crypto.randomUUID(),
         shortcut: shortcut,
-        case: textCase,
+        case: caseId,
         action: actionId
       });
       form.reset();
@@ -127,26 +147,6 @@
       console.error(`Failed to unregister rule: ${error}`);
     }
   }
-
-  /**
-   * Get text type option.
-   *
-   * @param value - text type value
-   * @returns text type option
-   */
-  export function getCaseOption(value: string): Option | undefined {
-    return textCases.find((c) => c.value === value);
-  }
-
-  /**
-   * Get action identifier option.
-   *
-   * @param value - action identifier value
-   * @returns action identifier option
-   */
-  export function getActionOption(value: string): Option | undefined {
-    return actionIds.find((a) => a.value === value);
-  }
 </script>
 
 <Modal icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={modal}>
@@ -159,9 +159,9 @@
   >
     <fieldset class="fieldset">
       <Label icon={FingerprintSimple} class="mt-4">{m.recognize_type()}</Label>
-      <Select bind:value={textCase} options={textCases} class="w-full" />
+      <Select bind:value={caseId} options={cases} class="w-full" />
       <Label icon={ArrowFatLineRight} class="mt-4">{m.execute_action()}</Label>
-      <Select bind:value={actionId} options={actionIds} class="w-full" />
+      <Select bind:value={actionId} options={actions} class="w-full" />
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal?.close()}>{m.cancel()}</button>

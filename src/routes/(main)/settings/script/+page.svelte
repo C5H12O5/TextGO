@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
+  import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { JavaScript, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
@@ -28,13 +28,18 @@
     oncreate={() => scriptCreator.showModal()}
   >
     {#snippet row(item)}
-      {#if item.lang === 'javascript'}
-        <JavaScript class="h-5" />
-      {:else if item.lang === 'python'}
-        <Python class="h-5" />
-      {/if}
+      <Icon icon={item.icon || 'Code'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
+        <span class="badge badge-ghost badge-sm opacity-80">
+          {#if item.lang === 'javascript'}
+            <JavaScript class="h-4 shrink-0" />
+            JavaScript
+          {:else if item.lang === 'python'}
+            <Python class="h-4 shrink-0" />
+            Python
+          {/if}
+        </span>
       </div>
       <Button
         icon={PencilSimpleLine}

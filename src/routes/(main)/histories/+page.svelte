@@ -14,9 +14,9 @@
     CopySimple,
     Cube,
     FileJs,
-    FileMd,
     FilePy,
     FingerprintSimple,
+    Robot,
     Textbox,
     Trash
   } from 'phosphor-svelte';
@@ -37,7 +37,7 @@
    * @param entry - history entry
    */
   function getActionIcon(entry: Entry) {
-    if (entry.actionType === 'prompt') return FileMd;
+    if (entry.actionType === 'prompt') return Robot;
     if (entry.scriptLang === 'javascript') return FileJs;
     if (entry.scriptLang === 'python') return FilePy;
     return null;
@@ -64,20 +64,22 @@
 {:else}
   <div class="flex flex-col gap-3 overflow-y-auto">
     {#each entries.current as entry, index (entry.id)}
+      {@const historyNum = (index + 1).toString().padStart(2, '0')}
       {@const promptMode = entry.actionType === 'prompt'}
       {@const actionIcon = getActionIcon(entry)}
       <div class="rounded-container" animate:flip={{ duration: 200 }}>
         <div class="flex items-center">
-          <Shortcut shortcut={entry.shortcut} class="[&_kbd]:kbd-sm" />
-          <time class="ml-3 text-sm opacity-30">{formatISO8601(entry.datetime)}</time>
+          <span class="text-lg font-thin opacity-40">{historyNum}</span>
+          <Shortcut shortcut={entry.shortcut} class="ml-3 [&_kbd]:kbd-sm" />
+          <time class="ml-3 text-sm opacity-60">{formatISO8601(entry.datetime)}</time>
           <Button class="ml-auto" size="sm" icon={Trash} onclick={() => entries.current.splice(index, 1)} />
         </div>
         <div class="divider my-0 opacity-60"></div>
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
           <div class="space-y-2">
             <div class="flex h-6 items-center gap-2">
-              <Textbox class="size-4 opacity-60" />
-              <span class="text-sm font-semibold">{m.selected_text()}</span>
+              <Textbox class="size-4 opacity-80" />
+              <span class="text-sm font-medium">{m.selected_text()}</span>
               {#if entry.caseLabel}
                 <span class="badge gap-1 border badge-xs">
                   <FingerprintSimple class="size-3" />
@@ -95,9 +97,9 @@
               <div class="flex items-center gap-2">
                 {#if actionIcon}
                   {@const Icon = actionIcon}
-                  <Icon class="size-4 opacity-60" />
+                  <Icon class="size-4 opacity-80" />
                 {/if}
-                <span class="text-sm font-semibold">{entry.actionLabel}</span>
+                <span class="text-sm font-medium">{entry.actionLabel}</span>
                 {#if promptMode}
                   <span class="badge gap-1 border badge-xs">
                     <Cube class="size-3" />
@@ -105,7 +107,7 @@
                   </span>
                 {/if}
               </div>
-              <Button icon={CopySimple} weight="thin" onclick={() => copy(entry.result)} />
+              <Button icon={CopySimple} onclick={() => copy(entry.result)} />
             </div>
             <div class="h-14 overflow-auto overscroll-none rounded-box border bg-base-200 px-2 py-1 text-xs opacity-70">
               {entry.result}

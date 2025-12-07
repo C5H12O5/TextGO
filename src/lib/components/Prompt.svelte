@@ -18,7 +18,7 @@ ${m.prompt_variables_tip()}
   import { buildFormSchema } from '$lib/constraint';
   import { Loading } from '$lib/states.svelte';
   import { markdown } from '@codemirror/lang-markdown';
-  import { ArrowFatLineRight, Cube, HeadCircuit, Lightbulb } from 'phosphor-svelte';
+  import { Cube, HeadCircuit } from 'phosphor-svelte';
 
   const { prompts }: { prompts: Prompt[] } = $props();
   const loading = new Loading();
@@ -28,6 +28,7 @@ ${m.prompt_variables_tip()}
   }));
 
   let promptId: string = $state('');
+  let promptIcon: string = $state('Robot');
   let promptName: string = $state('');
   let promptText: string = $state('');
   let systemPromptText: string = $state('');
@@ -43,6 +44,7 @@ ${m.prompt_variables_tip()}
       if (prompt) {
         promptId = id;
         promptName = prompt.id;
+        promptIcon = prompt.icon || 'Robot';
         promptText = prompt.prompt;
         systemPromptText = prompt.systemPrompt || '';
         modelProvider = prompt.provider;
@@ -73,6 +75,7 @@ ${m.prompt_variables_tip()}
     loading.start();
     if (prompt) {
       // update prompt
+      prompt.icon = promptIcon;
       prompt.prompt = promptText;
       prompt.systemPrompt = systemPromptText;
       prompt.provider = modelProvider;
@@ -82,12 +85,14 @@ ${m.prompt_variables_tip()}
       // add new prompt
       prompts.push({
         id: promptName,
+        icon: promptIcon,
         prompt: promptText,
         systemPrompt: systemPromptText,
         provider: modelProvider,
         model: modelName
       });
       // reset form
+      promptIcon = 'Robot';
       promptName = '';
       promptText = '';
       systemPromptText = '';
@@ -100,7 +105,7 @@ ${m.prompt_variables_tip()}
   }
 </script>
 
-<Modal icon={Lightbulb} title="{promptId ? m.update() : m.add()}{m.prompt_template()}" bind:this={modal}>
+<Modal title="{promptId ? m.update() : m.add()}{m.prompt_template()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -111,7 +116,7 @@ ${m.prompt_variables_tip()}
     <fieldset class="fieldset">
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
-        <IconSelector icon="ArrowFatLineRight" />
+        <IconSelector bind:icon={promptIcon} />
         <input
           class="autofocus input input-sm grow"
           {...schema.name}
@@ -129,13 +134,13 @@ ${m.prompt_variables_tip()}
               { value: 'ollama', label: 'Ollama' },
               { value: 'lmstudio', label: 'LM Studio' }
             ]}
-            class="w-full"
+            class="w-full select-sm"
             disabled={true}
           />
         </span>
         <span>
           <Label required>{m.model_name()}</Label>
-          <label class="input w-full">
+          <label class="input input-sm w-full">
             <Cube class="size-5 opacity-50" />
             <input class="grow" {...schema.modelName} bind:value={modelName} />
           </label>

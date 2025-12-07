@@ -26,18 +26,18 @@ def process(data):
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { CodeMirror, Label, Modal, Select, alert, confirm } from '$lib/components';
+  import { CodeMirror, IconSelector, Label, Modal, Select, alert, confirm } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { Loading } from '$lib/states.svelte';
   import { javascript } from '@codemirror/lang-javascript';
   import { python } from '@codemirror/lang-python';
-  import { ArrowFatLineRight, Code } from 'phosphor-svelte';
 
   const { scripts }: { scripts: Script[] } = $props();
   const loading = new Loading();
   const schema = buildFormSchema(({ text }) => ({ name: text().maxlength(64) }));
 
   let scriptId: string = $state('');
+  let scriptIcon: string = $state('Code');
   let scriptName: string = $state('');
   let scriptLang: 'javascript' | 'python' = $state('javascript');
   let scriptText: string = $state(JAVASCRIPT_TEMPLATE);
@@ -48,6 +48,7 @@ def process(data):
       const script = scripts.find((s) => s.id === id);
       if (script) {
         scriptId = id;
+        scriptIcon = script.icon || 'Code';
         scriptName = script.id;
         scriptLang = script.lang;
         scriptText = script.script;
@@ -77,6 +78,7 @@ def process(data):
     loading.start();
     if (script) {
       // update script
+      script.icon = scriptIcon;
       script.lang = scriptLang;
       script.script = scriptText;
       alert(m.script_updated_success());
@@ -84,10 +86,12 @@ def process(data):
       // add new script
       scripts.push({
         id: scriptName,
+        icon: scriptIcon,
         lang: scriptLang,
         script: scriptText
       });
       // reset form
+      scriptIcon = 'Code';
       scriptName = '';
       scriptLang = 'javascript';
       scriptText = JAVASCRIPT_TEMPLATE;
@@ -98,7 +102,7 @@ def process(data):
   }
 </script>
 
-<Modal icon={Code} title="{scriptId ? m.update() : m.add()}{m.script()}" bind:this={modal}>
+<Modal title="{scriptId ? m.update() : m.add()}{m.script()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -108,10 +112,10 @@ def process(data):
   >
     <fieldset class="fieldset">
       <Label required>{m.action_name()}</Label>
-      <label class="input w-full">
-        <ArrowFatLineRight class="size-5 opacity-50" />
-        <input class="autofocus grow" {...schema.name} bind:value={scriptName} disabled={!!scriptId} />
-      </label>
+      <div class="flex items-center gap-2">
+        <IconSelector bind:icon={scriptIcon} />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={scriptName} disabled={!!scriptId} />
+      </div>
       <Label required>{m.script_type()}</Label>
       <Select
         value={scriptLang}
@@ -119,7 +123,7 @@ def process(data):
           { value: 'javascript', label: 'JavaScript' },
           { value: 'python', label: 'Python' }
         ]}
-        class="w-full"
+        class="w-full select-sm"
         disabled={!!scriptId}
         onchange={(event) => {
           const target = event.currentTarget;

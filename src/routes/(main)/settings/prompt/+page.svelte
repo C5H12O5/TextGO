@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { Button, Label, List, Modal, Prompt, Setting } from '$lib/components';
+  import { Button, Icon, Label, List, Modal, Prompt, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { LMStudio, Ollama } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { ollamaHost, prompts } from '$lib/stores.svelte';
-  import { Cube, PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
+  import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
@@ -27,15 +27,15 @@
     oncreate={() => promptCreator.showModal()}
   >
     {#snippet row(item)}
-      {#if item.provider === 'ollama'}
-        <Ollama class="h-5" />
-      {:else if item.provider === 'lmstudio'}
-        <LMStudio class="h-5" />
-      {/if}
+      <Icon icon={item.icon || 'Robot'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
-        <span class="badge badge-ghost badge-sm">
-          <Cube class="size-4 shrink-0 opacity-50" />
+        <span class="badge badge-ghost badge-sm opacity-80">
+          {#if item.provider === 'ollama'}
+            <Ollama class="h-4 shrink-0" />
+          {:else if item.provider === 'lmstudio'}
+            <LMStudio class="h-4 shrink-0" />
+          {/if}
           {item.model}
         </span>
       </div>

@@ -1,17 +1,16 @@
 <script lang="ts">
-  import { alert, Binder, Button, confirm, List, Recorder, Shortcut } from '$lib/components';
-  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
+  import { alert, Binder, Button, confirm, Icon, List, Recorder, Shortcut } from '$lib/components';
+  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
-  import { JavaScript, LMStudio, NoData, Ollama, Python, Regexp, Tensorflow } from '$lib/icons';
+  import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { prompts, scripts, shortcuts } from '$lib/stores.svelte';
+  import { shortcuts } from '$lib/stores.svelte';
   import {
     ArrowArcRight,
     ArrowCircleRight,
     ArrowFatLineRight,
     ArrowsClockwise,
     Browser,
-    FingerprintSimple,
     Keyboard,
     MouseLeftClick,
     Sparkle,
@@ -74,26 +73,6 @@
   function swapMode(shortcut: string) {
     const s = shortcuts.current[shortcut];
     s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
-  }
-
-  /**
-   * Get script by action ID.
-   *
-   * @param action - action ID
-   */
-  function getScript(action: string) {
-    const id = action.substring(SCRIPT_MARK.length);
-    return scripts.current.find((item) => item.id === id);
-  }
-
-  /**
-   * Get prompt by action ID.
-   *
-   * @param action - action ID
-   */
-  function getPrompt(action: string) {
-    const id = action.substring(PROMPT_MARK.length);
-    return prompts.current.find((item) => item.id === id);
   }
 
   /**
@@ -270,7 +249,7 @@
           {@const { label: caseLabel, icon: caseIcon } = binder?.getCaseOption(item.case) ?? {}}
           {@const { label: actionLabel, icon: actionIcon } = binder?.getActionOption(item.action) ?? {}}
           <div class="list-col-grow flex items-center gap-4 pl-4">
-            <div class="flex w-1/2 items-center gap-1.5 truncate" title={caseLabel}>
+            <div class="flex w-2/5 items-center gap-1.5 truncate" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->
                 <ArrowArcRight class="size-5 shrink-0 opacity-30" />
@@ -280,22 +259,15 @@
                 <Warning class="size-5 shrink-0 opacity-50" />
                 <span class="truncate opacity-50">{m.invalid_type()}</span>
               {:else}
-                <!-- type name -->
-                {#if item.case.startsWith(MODEL_MARK)}
-                  <Tensorflow class="h-5 shrink-0" />
-                {:else if item.case.startsWith(REGEXP_MARK)}
-                  <Regexp class="h-5 shrink-0" />
-                {:else if caseIcon}
-                  {@const CaseIcon = caseIcon}
-                  <CaseIcon class="size-5 shrink-0 text-emphasis/60" />
-                {:else}
-                  <FingerprintSimple class="size-5 shrink-0 text-emphasis/60" />
+                <!-- valid type -->
+                {#if caseIcon}
+                  <Icon icon={caseIcon} class="size-5 shrink-0 text-emphasis/80" />
                 {/if}
                 <span class="truncate text-base-content/80">{caseLabel}</span>
               {/if}
             </div>
-            <ArrowFatLineRight class="size-5 shrink-0 opacity-15 sm:mx-1 md:mx-2 lg:mx-3 xl:mx-4 2xl:mx-5" />
-            <div class="flex w-1/2 items-center gap-1.5 truncate" title={actionLabel}>
+            <ArrowFatLineRight class="size-5 shrink-0 opacity-15 sm:mx-4 md:mx-8 lg:mx-12 xl:mx-16 2xl:mx-20" />
+            <div class="flex w-3/5 items-center gap-1.5 truncate" title={actionLabel}>
               {#if item.action === ''}
                 <!-- default action -->
                 <Browser class="size-5 shrink-0 opacity-30" />
@@ -305,24 +277,9 @@
                 <Warning class="size-5 shrink-0 opacity-50" />
                 <span class="truncate opacity-50">{m.invalid_action()}</span>
               {:else}
-                <!-- action name -->
-                {#if item.action.startsWith(SCRIPT_MARK)}
-                  {@const script = getScript(item.action)}
-                  {#if script?.lang === 'javascript'}
-                    <JavaScript class="h-5 shrink-0" />
-                  {:else if script?.lang === 'python'}
-                    <Python class="h-5 shrink-0" />
-                  {/if}
-                {:else if item.action.startsWith(PROMPT_MARK)}
-                  {@const prompt = getPrompt(item.action)}
-                  {#if prompt?.provider === 'ollama'}
-                    <Ollama class="h-5 shrink-0" />
-                  {:else if prompt?.provider === 'lmstudio'}
-                    <LMStudio class="h-5 shrink-0" />
-                  {/if}
-                {:else if actionIcon}
-                  {@const ActionIcon = actionIcon}
-                  <ActionIcon class="size-5 shrink-0 text-emphasis/60" />
+                <!-- valid action -->
+                {#if actionIcon}
+                  <Icon icon={actionIcon} class="size-5 shrink-0 text-emphasis/80" />
                 {/if}
                 <span class="truncate text-base-content/80">{actionLabel}</span>
               {/if}

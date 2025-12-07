@@ -4,7 +4,7 @@
   import { phosphorIcons } from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
   import { ArrowsLeftRight, Upload } from 'phosphor-svelte';
-  import { fly } from 'svelte/transition';
+  import { scale } from 'svelte/transition';
 
   let { icon: _icon = $bindable() }: { icon: string } = $props();
 
@@ -148,7 +148,7 @@
       {#key icon}
         <div
           class="flex items-center justify-center gap-2 truncate rounded-box border bg-base-200 p-2"
-          in:fly={{ y: -10, duration: 200 }}
+          in:scale={{ duration: 150 }}
         >
           <Icon {icon} class="size-8" />
           <span class="truncate text-base opacity-80">{icon}</span>

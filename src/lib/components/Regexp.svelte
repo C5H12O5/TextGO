@@ -1,11 +1,10 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { Label, Modal, alert } from '$lib/components';
+  import { IconSelector, Label, Modal, alert } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
   import type { Regexp } from '$lib/types';
-  import { FingerprintSimple, Scroll } from 'phosphor-svelte';
 
   const { regexps }: { regexps: Regexp[] } = $props();
   const loading = new Loading();
@@ -15,6 +14,7 @@
   }));
 
   let regexpId: string = $state('');
+  let regexpIcon: string = $state('Scroll');
   let regexpName: string = $state('');
   let regexpPattern: string = $state('');
 
@@ -24,6 +24,7 @@
       const regexp = regexps.find((p) => p.id === id);
       if (regexp) {
         regexpId = id;
+        regexpIcon = regexp.icon || 'Scroll';
         regexpName = regexp.id;
         regexpPattern = regexp.pattern;
       }
@@ -48,6 +49,7 @@
     loading.start();
     if (regexp) {
       // update regular expression
+      regexp.icon = regexpIcon;
       regexp.pattern = regexpPattern;
       alert(m.regexp_updated_success());
       loading.end();
@@ -55,9 +57,11 @@
       // add new regular expression
       regexps.push({
         id: regexpName,
+        icon: regexpIcon,
         pattern: regexpPattern
       });
       // reset form
+      regexpIcon = 'Scroll';
       regexpName = '';
       regexpPattern = '';
       alert(m.regexp_added_success());
@@ -67,7 +71,7 @@
   }
 </script>
 
-<Modal icon={Scroll} title="{regexpId ? m.update() : m.add()}{m.regexp()}" bind:this={modal}>
+<Modal title="{regexpId ? m.update() : m.add()}{m.regexp()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -77,12 +81,12 @@
   >
     <fieldset class="fieldset">
       <Label required>{m.type_name()}</Label>
-      <label class="input w-full">
-        <FingerprintSimple class="size-5 opacity-50" />
-        <input class="autofocus grow" {...schema.name} bind:value={regexpName} disabled={!!regexpId} />
-      </label>
+      <div class="flex items-center gap-2">
+        <IconSelector bind:icon={regexpIcon} />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={regexpName} disabled={!!regexpId} />
+      </div>
       <Label required>{m.regexp()}</Label>
-      <label class="input w-full">
+      <label class="input input-sm w-full">
         <span class="text-xl text-emphasis">/</span>
         <input class="grow" placeholder={m.regexp_placeholder()} {...schema.pattern} bind:value={regexpPattern} />
         <span class="text-xl text-emphasis">/</span>

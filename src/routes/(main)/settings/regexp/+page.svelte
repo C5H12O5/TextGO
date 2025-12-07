@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { Button, List, Regexp, Setting } from '$lib/components';
-  import { Regexp as RegexpIcon } from '$lib/icons';
+  import { Button, Icon, List, Regexp, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { regexps } from '$lib/stores.svelte';
   import { PencilSimpleLine, Scroll, Sparkle } from 'phosphor-svelte';
@@ -20,7 +19,7 @@
     oncreate={() => regexpCreator.showModal()}
   >
     {#snippet row(item)}
-      <RegexpIcon class="h-5" />
+      <Icon icon={item.icon || 'Scroll'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
       </div>
