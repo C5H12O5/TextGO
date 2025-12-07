@@ -248,8 +248,8 @@
         {#snippet row(item)}
           {@const { label: caseLabel, icon: caseIcon } = binder?.getCaseOption(item.case) ?? {}}
           {@const { label: actionLabel, icon: actionIcon } = binder?.getActionOption(item.action) ?? {}}
-          <div class="list-col-grow flex items-center gap-4 pl-4">
-            <div class="flex w-2/5 items-center gap-1.5 truncate" title={caseLabel}>
+          <div class="list-col-grow grid grid-cols-11 items-center gap-4 pl-4">
+            <div class="col-span-4 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->
                 <ArrowArcRight class="size-5 shrink-0 opacity-30" />
@@ -266,8 +266,10 @@
                 <span class="truncate text-base-content/80">{caseLabel}</span>
               {/if}
             </div>
-            <ArrowFatLineRight class="size-5 shrink-0 opacity-15 sm:mx-4 md:mx-8 lg:mx-12 xl:mx-16 2xl:mx-20" />
-            <div class="flex w-3/5 items-center gap-1.5 truncate" title={actionLabel}>
+            <div class="col-span-1 flex items-center justify-center">
+              <ArrowFatLineRight class="size-5 shrink-0 opacity-15" />
+            </div>
+            <div class="col-span-6 flex items-center gap-1.5" title={actionLabel}>
               {#if item.action === ''}
                 <!-- default action -->
                 <Browser class="size-5 shrink-0 opacity-30" />

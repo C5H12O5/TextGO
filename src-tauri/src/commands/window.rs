@@ -63,9 +63,6 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
-        // show window
-        window.show()?;
-
         // send data
         window.emit("show-toolbar", payload)?;
     } else {

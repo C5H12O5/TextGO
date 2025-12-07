@@ -150,7 +150,7 @@
           class="flex items-center justify-center gap-2 truncate rounded-box border bg-base-200 p-2"
           in:scale={{ duration: 150 }}
         >
-          <Icon {icon} class="size-8" />
+          <Icon {icon} class="size-8 shrink-0" />
           <span class="truncate text-base opacity-80">{icon}</span>
         </div>
       {/key}

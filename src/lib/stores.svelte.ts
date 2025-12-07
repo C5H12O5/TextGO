@@ -2,6 +2,7 @@ import { manager } from '$lib/manager';
 import type { Entry, Model, Prompt, Regexp, Script, Shortcut } from '$lib/types';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';
+import { debounce } from 'es-toolkit';
 import { tick, untrack } from 'svelte';
 
 // create a global LazyStore instance
@@ -67,7 +68,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   });
 
   // listen for localStorage changes to implement cross-window sync
-  window.addEventListener('storage', (event) => {
+  const handleStorageChange = debounce((event: StorageEvent) => {
     if (!initialized) {
       return;
     }
@@ -81,15 +82,13 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
           state = item;
           options?.onchange?.(item);
         }
-        // wait two ticks to ensure all effects are processed
-        tick().then(() => {
-          tick().then(() => {
-            syncing = false;
-          });
-        });
+        // mark syncing as complete
+        tick().then(() => (syncing = false));
       });
     }
-  });
+  }, 100);
+  // register storage event listener
+  window.addEventListener('storage', handleStorageChange);
 
   return {
     get current() {
