@@ -124,7 +124,9 @@ pub fn run() {
             show_toolbar,
             setup_tray,
             check_accessibility,
-            open_accessibility
+            open_accessibility,
+            check_input_monitoring,
+            open_input_monitoring
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

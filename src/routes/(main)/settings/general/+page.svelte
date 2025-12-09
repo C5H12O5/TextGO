@@ -2,7 +2,7 @@
   import { Button, Label, Select, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
-  import { accessibility, autoStart, historySize, minimizeToTray, theme } from '$lib/stores.svelte';
+  import { accessibility, autoStart, historySize, inputMonitoring, minimizeToTray, theme } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { type } from '@tauri-apps/plugin-os';
@@ -56,6 +56,7 @@
     try {
       autoStart.current = await isEnabled();
       accessibility.current = await invoke<boolean>('check_accessibility');
+      inputMonitoring.current = await invoke<boolean>('check_input_monitoring');
     } catch (error) {
       console.error(`Failed to check auto start status: ${error}`);
     }
@@ -126,6 +127,24 @@
             class="border-emphasis/30 bg-base-200 text-emphasis"
             text={m.request_permission()}
             onclick={() => invoke('open_accessibility')}
+          />
+        {/if}
+      </fieldset>
+      <div class="divider my-0 opacity-60"></div>
+      <fieldset class="flex items-center justify-between">
+        <Label tip={m.input_monitoring_explain()} tipPlacement="duplex">{m.input_monitoring()}</Label>
+        {#if inputMonitoring.current}
+          <div class="badge bg-base-200 text-emphasis">
+            <CheckCircle class="size-4" />
+            <span class="text-sm">{m.permission_granted()}</span>
+          </div>
+        {:else}
+          <Button
+            icon={WarningCircle}
+            square={false}
+            class="border-emphasis/30 bg-base-200 text-emphasis"
+            text={m.request_permission()}
+            onclick={() => invoke('open_input_monitoring')}
           />
         {/if}
       </fieldset>

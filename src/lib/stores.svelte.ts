@@ -138,6 +138,9 @@ export const minimizeToTray = persisted<boolean>('minimizeToTray', true);
 // accessibility permission granted
 export const accessibility = persisted<boolean>('accessibility', false);
 
+// input monitoring permission granted
+export const inputMonitoring = persisted<boolean>('inputMonitoring', false);
+
 // Node.js path
 export const nodePath = persisted<string>('nodePath', '');
 
