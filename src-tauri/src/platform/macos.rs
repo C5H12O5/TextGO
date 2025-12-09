@@ -17,7 +17,15 @@ const EDITABLE_AX_ROLES: &[&str] = &["AXTextField", "AXTextArea", "AXComboBox"];
 const AX_VALUE_TYPE_CG_RECT: i32 = 3;
 const AX_VALUE_TYPE_CF_RANGE: i32 = 4;
 
-// CGRect structures for macOS coordinate system
+// NSPoint structure for macOS AppKit
+#[repr(C)]
+#[derive(Clone, Copy)]
+struct NSPoint {
+    x: f64,
+    y: f64,
+}
+
+// CGRect structures for macOS CoreGraphics
 #[repr(C)]
 struct CGRect {
     origin: CGPoint,
@@ -65,6 +73,40 @@ unsafe extern "C" {
     unsafe fn AXValueCreate(value_type: i32, value_ptr: *const c_void) -> CFTypeRef;
 
     unsafe fn AXValueGetValue(value: CFTypeRef, value_type: i32, value_ptr: *mut c_void) -> bool;
+}
+
+// declare external functions from macOS AppKit framework
+#[link(name = "AppKit", kind = "framework")]
+unsafe extern "C" {
+    unsafe fn objc_getClass(name: *const i8) -> *const c_void;
+
+    unsafe fn sel_registerName(str: *const i8) -> *const c_void;
+
+    unsafe fn objc_msgSend() -> *const c_void;
+}
+
+// Type aliases for Objective-C message sending
+type ObjCFnPtr = unsafe extern "C" fn(*const c_void, *const c_void) -> *const c_void;
+type ObjCFnPoint = unsafe extern "C" fn(*const c_void, *const c_void) -> NSPoint;
+
+/// Invokes an Objective-C method that returns a pointer.
+unsafe fn objc_call_ptr(obj: *const c_void, sel: *const c_void) -> *const c_void {
+    let func: ObjCFnPtr = std::mem::transmute(objc_msgSend as *const c_void);
+    func(obj, sel)
+}
+
+/// Invokes an Objective-C method that returns an NSPoint.
+unsafe fn objc_call_point(obj: *const c_void, sel: *const c_void) -> NSPoint {
+    let func: ObjCFnPoint = std::mem::transmute(objc_msgSend as *const c_void);
+    func(obj, sel)
+}
+
+/// Check if two NSPoint values are equal with floating point tolerance.
+#[inline]
+fn ns_point_equals(p1: NSPoint, p2: NSPoint) -> bool {
+    let x_equal = (p1.x - p2.x).abs() < f64::EPSILON;
+    let y_equal = (p1.y - p2.y).abs() < f64::EPSILON;
+    x_equal && y_equal
 }
 
 /// Get UI element attribute value.
@@ -287,6 +329,43 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
             .iter()
             .any(|r| role.to_string().contains(r))
     }))
+}
+
+/// Check if current cursor is I-Beam (text cursor).
+pub fn is_ibeam_cursor() -> bool {
+    unsafe {
+        // get NSCursor class
+        let ns_cursor_class = objc_getClass(c"NSCursor".as_ptr());
+        if ns_cursor_class.is_null() {
+            return false;
+        }
+
+        // get currentSystemCursor selector
+        let current_cursor_sel = sel_registerName(c"currentSystemCursor".as_ptr());
+        if current_cursor_sel.is_null() {
+            return false;
+        }
+
+        // call [NSCursor currentSystemCursor]
+        let current_cursor = objc_call_ptr(ns_cursor_class, current_cursor_sel);
+        if current_cursor.is_null() {
+            return false;
+        }
+
+        // get hotSpot selector
+        let hot_spot_sel = sel_registerName(c"hotSpot".as_ptr());
+        if hot_spot_sel.is_null() {
+            return false;
+        }
+
+        // call [cursor hotSpot]
+        let hot_spot = objc_call_point(current_cursor, hot_spot_sel);
+
+        // check if hotSpot matches known I-Beam cursor hotSpots
+        ns_point_equals(hot_spot, NSPoint { x: 4.0, y: 9.0 })
+            || ns_point_equals(hot_spot, NSPoint { x: 16.0, y: 16.0 })
+            || ns_point_equals(hot_spot, NSPoint { x: 12.0, y: 11.0 })
+    }
 }
 
 /// Select specified number of characters from current cursor position backward.

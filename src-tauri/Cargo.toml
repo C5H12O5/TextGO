@@ -44,4 +44,5 @@ tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", branch = "v2.
 windows = { version = ">=0.59.0, <=0.62.2", features = [
   "Win32_System_Com",
   "Win32_UI_Accessibility",
+  "Win32_UI_WindowsAndMessaging"
 ] }

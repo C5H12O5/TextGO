@@ -1,5 +1,6 @@
 use crate::commands::get_selection;
 use crate::error::AppError;
+use crate::platform;
 use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
 use enigo::Mouse;
 use rdev::{Button, Event, EventType};
@@ -11,8 +12,9 @@ use tauri::{Emitter, Manager};
 // mouse event tracking states
 thread_local! {
     static DRAG_START_POS: Cell<Option<(f64, f64)>> = const { Cell::new(None) };
-    static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static LAST_CLICK: Cell<Option<(Instant, (f64, f64))>> = const { Cell::new(None) };
+    static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
+    static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
 }
 
 // thresholds for drag and double click detection
@@ -52,6 +54,9 @@ fn handle_mouse_press() -> Result<(), AppError> {
     DRAG_START_POS.set(Some(pos));
     IS_DRAGGING.set(false);
 
+    // record if cursor is I-Beam
+    IS_VALID_CURSOR.set(platform::is_ibeam_cursor());
+
     // hide toolbar on mouse press
     hide_toolbar()?;
 
@@ -75,6 +80,14 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
 fn handle_mouse_release() -> Result<(), AppError> {
     // reset drag start position
     DRAG_START_POS.set(None);
+
+    // only process text selection if cursor was valid
+    // inspired by https://github.com/0xfullex/selection-hook
+    let is_valid_cursor = IS_VALID_CURSOR.get() || platform::is_ibeam_cursor();
+    if !is_valid_cursor {
+        IS_DRAGGING.set(false);
+        return Ok(());
+    }
 
     // check for drag end
     if IS_DRAGGING.get() {

@@ -9,6 +9,9 @@ use windows::Win32::UI::Accessibility::{
     TextPatternRangeEndpoint_Start, TextUnit_Character, UIA_DocumentControlTypeId,
     UIA_EditControlTypeId, UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
 };
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetCursorInfo, LoadCursorW, CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
+};
 
 // import SafeArray functions from oleaut32.dll
 #[link(name = "oleaut32")]
@@ -255,6 +258,36 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
         }
 
         Ok(false)
+    }
+}
+
+/// Check if current cursor is I-Beam (text cursor).
+pub fn is_ibeam_cursor() -> bool {
+    unsafe {
+        let mut cursor_info = CURSORINFO {
+            cbSize: std::mem::size_of::<CURSORINFO>() as u32,
+            flags: Default::default(),
+            hCursor: Default::default(),
+            ptScreenPos: Default::default(),
+        };
+
+        // get current cursor information
+        if GetCursorInfo(&mut cursor_info).is_err() {
+            return false;
+        }
+
+        // check if cursor is showing
+        if cursor_info.flags != CURSOR_SHOWING {
+            return false;
+        }
+
+        // load the system I-Beam cursor to get its handle
+        let Ok(ibeam_cursor) = LoadCursorW(None, IDC_IBEAM) else {
+            return false;
+        };
+
+        // compare cursor handles
+        cursor_info.hCursor == ibeam_cursor
     }
 }
 
