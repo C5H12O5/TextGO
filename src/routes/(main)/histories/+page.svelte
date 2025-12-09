@@ -92,14 +92,14 @@
             </div>
           </div>
           <ArrowFatLineRight class="size-6 shrink-0 self-center opacity-20" />
-          <div class="space-y-2">
+          <div class="min-w-0 space-y-2">
             <div class="flex h-6 items-center justify-between gap-2">
-              <div class="flex items-center gap-2">
+              <div class="flex min-w-0 items-center gap-2">
                 {#if actionIcon}
                   {@const Icon = actionIcon}
-                  <Icon class="size-4 opacity-80" />
+                  <Icon class="size-4 shrink-0 opacity-80" />
                 {/if}
-                <span class="text-sm font-medium">{entry.actionLabel}</span>
+                <span class="truncate text-sm font-medium" title={entry.actionLabel}>{entry.actionLabel}</span>
                 {#if promptMode}
                   <span class="badge gap-1 border badge-xs">
                     <Cube class="size-3" />
