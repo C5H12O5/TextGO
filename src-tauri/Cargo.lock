@@ -4655,7 +4655,7 @@ dependencies = [
 
 [[package]]
 name = "text-go"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "clipboard-rs",
  "core-foundation",
