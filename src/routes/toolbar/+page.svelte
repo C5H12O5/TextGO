@@ -15,6 +15,7 @@
   import { Code, DotsThreeVertical, LineVertical, Robot } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
+  import { fly } from 'svelte/transition';
 
   // maximum visible actions in toolbar
   const MAX_VISIBLE_ACTIONS = 6;
@@ -22,8 +23,11 @@
   // operating system type
   const osType = type();
 
-  // main container
-  let container: HTMLDivElement;
+  // toolbar initialized state
+  let initialized = $state(false);
+
+  // main container element
+  let container: HTMLDivElement | null = $state(null);
 
   // current text selection
   let selection: string = $state('');
@@ -106,6 +110,9 @@
       })
       .filter((a) => !!a);
 
+    // mark as initialized
+    initialized = true;
+
     // resize window to fit content after actions are updated
     tick().then(() => {
       if (container) {
@@ -115,8 +122,6 @@
           const currentWindow = getCurrentWindow();
           // set window size with some padding
           currentWindow.setSize(new LogicalSize(rect.width + 10, rect.height + 10));
-          // show window after resize
-          currentWindow.show();
         } catch (error) {
           console.error(`Failed to resize window: ${error}`);
         }
@@ -270,12 +275,16 @@
   }
 
   onMount(() => {
-    // listen to toolbar update events
-    const unlisten = listen<string>('show-toolbar', (event) => {
+    // listen to toolbar show/hide events
+    const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
+      initialized = false;
       setup(JSON.parse(event.payload));
     });
+    const unlistenWindowHide = listen('hide-toolbar', () => {
+      initialized = false;
+    });
 
-    // listen to panel mouse events
+    // listen to mouse enter/exit events
     const unlistenMouseEntered = listen('toolbar-entered', () => {
       mouseEntered = true;
     });
@@ -284,7 +293,8 @@
     });
 
     return () => {
-      unlisten.then((fn) => fn());
+      unlistenWindowShow.then((fn) => fn());
+      unlistenWindowHide.then((fn) => fn());
       unlistenMouseExited.then((fn) => fn());
       unlistenMouseEntered.then((fn) => fn());
     };
@@ -292,43 +302,45 @@
 </script>
 
 <main class="bg-transparent p-1 select-none">
-  <div class="overflow-hidden rounded-box border shadow-sm">
-    <div class="flex size-fit h-8 bg-base-200/95 backdrop-blur-sm" bind:this={container}>
-      <span
-        class="flex cursor-move items-center px-0.5 opacity-20 transition-opacity"
-        class:hover:opacity-60={mouseEntered}
-        data-tauri-drag-region
-      >
-        <LineVertical weight="bold" class="pointer-events-none size-4" />
-      </span>
-      {#if actions.length > 0}
-        {#each visibleActions as action (action.id)}
-          <button
-            class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
-            class:hover:bg-btn-hover={mouseEntered}
-            class:hover:text-primary={mouseEntered}
-            onclick={() => executeAction(action)}
-            title={action.label}
-          >
-            {#if action.icon}
-              <Icon icon={action.icon} class="size-4 shrink-0" />
-            {/if}
-            <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
-          </button>
-        {/each}
-        {#if overflowActions.length > 0}
-          <button
-            class="h-8 cursor-pointer px-0.5 opacity-60 transition-all"
-            class:hover:bg-btn-hover={mouseEntered}
-            class:hover:opacity-100={mouseEntered}
-            onclick={showMoreActions}
-          >
-            <DotsThreeVertical weight="bold" class="size-6" />
-          </button>
+  {#if initialized}
+    <div class="overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
+      <div class="flex size-fit h-8 bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+        <span
+          class="flex cursor-move items-center px-0.5 opacity-20 transition-opacity"
+          class:hover:opacity-60={mouseEntered}
+          data-tauri-drag-region
+        >
+          <LineVertical weight="bold" class="pointer-events-none size-4" />
+        </span>
+        {#if actions.length > 0}
+          {#each visibleActions as action (action.id)}
+            <button
+              class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
+              class:hover:bg-btn-hover={mouseEntered}
+              class:hover:text-primary={mouseEntered}
+              onclick={() => executeAction(action)}
+              title={action.label}
+            >
+              {#if action.icon}
+                <Icon icon={action.icon} class="size-4 shrink-0" />
+              {/if}
+              <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
+            </button>
+          {/each}
+          {#if overflowActions.length > 0}
+            <button
+              class="h-8 cursor-pointer px-0.5 opacity-60 transition-all"
+              class:hover:bg-btn-hover={mouseEntered}
+              class:hover:opacity-100={mouseEntered}
+              onclick={showMoreActions}
+            >
+              <DotsThreeVertical weight="bold" class="size-6" />
+            </button>
+          {/if}
         {/if}
-      {/if}
+      </div>
     </div>
-  </div>
+  {/if}
 </main>
 
 <style>

@@ -157,10 +157,15 @@ fn hide_toolbar() -> Result<(), AppError> {
     // get toolbar position and size
     let toolbar_pos = toolbar.outer_position()?;
     let toolbar_size = toolbar.outer_size()?;
-    let toolbar_x = toolbar_pos.x as f64;
-    let toolbar_y = toolbar_pos.y as f64;
-    let toolbar_width = toolbar_size.width as f64;
-    let toolbar_height = toolbar_size.height as f64;
+    let scale_factor = toolbar
+        .current_monitor()?
+        .map(|m| m.scale_factor())
+        .unwrap_or(1.0);
+
+    let toolbar_x = toolbar_pos.x as f64 / scale_factor;
+    let toolbar_y = toolbar_pos.y as f64 / scale_factor;
+    let toolbar_width = toolbar_size.width as f64 / scale_factor;
+    let toolbar_height = toolbar_size.height as f64 / scale_factor;
 
     // check if click is outside toolbar bounds
     let is_outside = click_x < toolbar_x
@@ -169,8 +174,8 @@ fn hide_toolbar() -> Result<(), AppError> {
         || click_y > toolbar_y + toolbar_height;
 
     if is_outside {
-        // hide toolbar
-        let _ = toolbar.hide();
+        // the close request is intercepted in lib.rs to emit hide event
+        let _ = toolbar.close();
     }
 
     Ok(())

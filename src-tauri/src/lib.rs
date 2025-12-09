@@ -13,7 +13,7 @@ use rdev::listen;
 use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{LazyLock, Mutex};
-use tauri::{App, AppHandle, Manager, RunEvent, WebviewWindow, WindowEvent};
+use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
@@ -186,8 +186,6 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             // convert to panel on macOS
             #[cfg(target_os = "macos")]
             {
-                use tauri::Emitter;
-
                 if let Ok(panel) = window.to_panel::<ToolbarPanel>() {
                     let handler = ToolbarPanelEventHandler::new();
 
@@ -263,6 +261,9 @@ where
         if let WindowEvent::CloseRequested { api, .. } = event {
             api.prevent_close();
             hide_window(&app_handle, &label);
+            // emit window hide event
+            let hide_event = format!("hide-{}", label);
+            let _ = app_handle.emit(&hide_event, ());
         }
     });
 
