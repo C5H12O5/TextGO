@@ -44,6 +44,19 @@
   }
 </script>
 
+<svelte:window
+  onkeydown={(event) => {
+    // prevent backspace from navigating back
+    if (event.key === 'Backspace') {
+      // check if the target is not an input or textarea
+      const target = event.target as HTMLElement;
+      if (target?.tagName !== 'INPUT' && target?.tagName !== 'TEXTAREA' && !target?.isContentEditable) {
+        event.preventDefault();
+      }
+    }
+  }}
+/>
+
 {@render children()}
 
 <!-- global alert component -->
