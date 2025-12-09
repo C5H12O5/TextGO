@@ -63,6 +63,9 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
+        // show window
+        window.show()?;
+
         // send data
         window.emit("show-toolbar", payload)?;
     } else {
@@ -91,10 +94,27 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let window_width = window_size.width as i32;
     let window_height = window_size.height as i32;
 
-    // get current monitor info
+    // get monitor at cursor position
     let monitor = window
-        .current_monitor()?
+        .available_monitors()?
+        .into_iter()
+        .find(|m| {
+            let pos = m.position();
+            let size = m.size();
+            let scale = m.scale_factor();
+            let logical_x = (pos.x as f64 / scale) as i32;
+            let logical_y = (pos.y as f64 / scale) as i32;
+            let logical_width = (size.width as f64 / scale) as i32;
+            let logical_height = (size.height as f64 / scale) as i32;
+
+            x >= logical_x
+                && x < logical_x + logical_width
+                && y >= logical_y
+                && y < logical_y + logical_height
+        })
+        .or_else(|| window.current_monitor().ok().flatten())
         .ok_or_else(|| AppError::from("No monitor found"))?;
+
     let monitor_size = monitor.size();
     let monitor_position = monitor.position();
     let scale_factor = monitor.scale_factor();
