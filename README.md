@@ -1,30 +1,34 @@
-![TextGO](https://socialify.git.ci/C5H12O5/TextGO/image?font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2FC5H12O5%2FTextGO%2Frefs%2Fheads%2Fmain%2Fapp-icon.png&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
-
 <div align="center">
 
-[![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat-square)](https://github.com/C5H12O5/TextGO/releases)
-[![GPLv3 License](https://img.shields.io/badge/License-GPLv3-BD0000.svg?style=flat-square)](LICENSE)
-[![Tauri Version](https://img.shields.io/badge/Tauri-v2.9.4-24C8D8.svg?style=flat-square&logo=tauri)](https://tauri.app/)
-[![Svelte Version](https://img.shields.io/badge/Svelte-v5.45.5-FF3E00.svg?style=flat-square&logo=svelte)](https://svelte.dev/)
-![macOS](https://img.shields.io/badge/macOS-333333.svg?style=flat-square&logo=apple)
-![Windows](https://img.shields.io/badge/Windows-0078D4.svg?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA0IDE0NHY1MS42NGE4IDggMCAwIDEtOCA4YTguNSA4LjUgMCAwIDEtMS40My0uMTNsLTY0LTExLjY0QTggOCAwIDAgMSAyNCAxODR2LTQwYTggOCAwIDAgMSA4LThoNjRhOCA4IDAgMCAxIDggOG0tMi44Ny04OS43OGE4IDggMCAwIDAtNi41Ni0xLjczbC02NCAxMS42NEE4IDggMCAwIDAgMjQgNzJ2NDBhOCA4IDAgMCAwIDggOGg2NGE4IDggMCAwIDAgOC04VjYwLjM2YTggOCAwIDAgMC0yLjg3LTYuMTRNMjA4IDEzNmgtODBhOCA4IDAgMCAwLTggOHY1Ny40NWE4IDggMCAwIDAgNi41NyA3Ljg4bDgwIDE0LjU0YTcuNiA3LjYgMCAwIDAgMS40My4xM2E4IDggMCAwIDAgOC04di03MmE4IDggMCAwIDAtOC04bTUuMTMtMTAyLjE0YTggOCAwIDAgMC02LjU2LTEuNzNsLTgwIDE0LjU1YTggOCAwIDAgMC02LjU3IDcuODdWMTEyYTggOCAwIDAgMCA4IDhoODBhOCA4IDAgMCAwIDgtOFY0MGE4IDggMCAwIDAtMi44Ny02LjE0IiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlPSIjZmZmIiAvPgo8L3N2Zz4=)
+<img src="app-icon.png" alt="logo" width="80">
+
+<h1>TextGO</h1>
+
+[![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat)](https://github.com/C5H12O5/TextGO/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/C5H12O5/TextGO?logo=github&label=Stars&style=flat&color=yellow)](https://github.com/C5H12O5/TextGO/stargazers)
+[![GPLv3 License](https://img.shields.io/badge/License-GPLv3-BD0000.svg?style=flat)](LICENSE)
+[![Tauri Version](https://img.shields.io/badge/Tauri-v2.9.4-24C8D8.svg?style=flat&logo=tauri)](https://tauri.app/)
+[![Svelte Version](https://img.shields.io/badge/Svelte-v5.45.5-FF3E00.svg?style=flat&logo=svelte)](https://svelte.dev/)
+![macOS](https://img.shields.io/badge/macOS-333333.svg?style=flat&logo=apple)
+![Windows](https://img.shields.io/badge/Windows-0078D4.svg?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA0IDE0NHY1MS42NGE4IDggMCAwIDEtOCA4YTguNSA4LjUgMCAwIDEtMS40My0uMTNsLTY0LTExLjY0QTggOCAwIDAgMSAyNCAxODR2LTQwYTggOCAwIDAgMSA4LThoNjRhOCA4IDAgMCAxIDggOG0tMi44Ny04OS43OGE4IDggMCAwIDAtNi41Ni0xLjczbC02NCAxMS42NEE4IDggMCAwIDAgMjQgNzJ2NDBhOCA4IDAgMCAwIDggOGg2NGE4IDggMCAwIDAgOC04VjYwLjM2YTggOCAwIDAgMC0yLjg3LTYuMTRNMjA4IDEzNmgtODBhOCA4IDAgMCAwLTggOHY1Ny40NWE4IDggMCAwIDAgNi41NyA3Ljg4bDgwIDE0LjU0YTcuNiA3LjYgMCAwIDAgMS40My4xM2E4IDggMCAwIDAgOC04di03MmE4IDggMCAwIDAtOC04bTUuMTMtMTAyLjE0YTggOCAwIDAgMC02LjU2LTEuNzNsLTgwIDE0LjU1YTggOCAwIDAgMC02LjU3IDcuODdWMTEyYTggOCAwIDAgMCA4IDhoODBhOCA4IDAgMCAwIDgtOFY0MGE4IDggMCAwIDAtMi44Ny02LjE0IiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlPSIjZmZmIiAvPgo8L3N2Zz4=)
 
 📖 English / [简体中文](README.zh-CN.md)
 
 </div>
 
-> TextGO is a cross-platform text processing tool that automatically recognizes text types and executes custom actions via a global hotkey.
+> TextGO is a cross-platform text processing tool that automatically recognizes text types and executes custom actions. Trigger it with hotkeys, mouse double-click, or text selection, and choose between instant execution or interactive toolbar mode.
 
 ## ✨ Core Features
 
-1. **Effortless Operation**: Bind multiple rules to a single hotkey, eliminating the need to remember complex key combinations.
-2. **Ready to Use**: Comes with a rich set of built-in text types and processing actions, allowing for quick setup with simple configuration.
-3. **Highly Extensible**: Supports extending text recognition types via regular expressions or machine learning models, and allows for custom processing logic using scripts or local AI.
-4. **Cross-Platform**: Built with Tauri for native support on macOS and Windows.
+1. **Multiple Trigger Methods**: Global hotkeys, mouse double-click, or text selection - each with independent rule configurations.
+2. **Flexible Execution Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
+3. **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
+4. **Highly Extensible**: Extend with regex, ML models, scripts, or local AI for custom recognition and processing.
+5. **Customizable Icons**: Choose from built-in icon library or upload custom SVG icons to create a personalized toolbar.
 
 ## 🚀 Use Cases
 
-_With a single hotkey, you can perform all of the following actions:_
+_With keyboard shortcuts or mouse gestures, you can perform all of the following actions:_
 
 - **Format Conversion**: Automatically recognize variable naming formats and convert them to the target style
 

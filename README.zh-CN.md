@@ -1,30 +1,34 @@
-![TextGO](https://socialify.git.ci/C5H12O5/TextGO/image?font=Raleway&forks=1&issues=1&logo=https%3A%2F%2Fraw.githubusercontent.com%2FC5H12O5%2FTextGO%2Frefs%2Fheads%2Fmain%2Fapp-icon.png&name=1&owner=1&pattern=Plus&pulls=1&stargazers=1&theme=Auto)
-
 <div align="center">
 
-[![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat-square)](https://github.com/C5H12O5/TextGO/releases)
-[![GPLv3 License](https://img.shields.io/badge/License-GPLv3-BD0000.svg?style=flat-square)](LICENSE)
-[![Tauri Version](https://img.shields.io/badge/Tauri-v2.9.4-24C8D8.svg?style=flat-square&logo=tauri)](https://tauri.app/)
-[![Svelte Version](https://img.shields.io/badge/Svelte-v5.45.5-FF3E00.svg?style=flat-square&logo=svelte)](https://svelte.dev/)
-![macOS](https://img.shields.io/badge/macOS-333333.svg?style=flat-square&logo=apple)
-![Windows](https://img.shields.io/badge/Windows-0078D4.svg?style=flat-square&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA0IDE0NHY1MS42NGE4IDggMCAwIDEtOCA4YTguNSA4LjUgMCAwIDEtMS40My0uMTNsLTY0LTExLjY0QTggOCAwIDAgMSAyNCAxODR2LTQwYTggOCAwIDAgMSA4LThoNjRhOCA4IDAgMCAxIDggOG0tMi44Ny04OS43OGE4IDggMCAwIDAtNi41Ni0xLjczbC02NCAxMS42NEE4IDggMCAwIDAgMjQgNzJ2NDBhOCA4IDAgMCAwIDggOGg2NGE4IDggMCAwIDAgOC04VjYwLjM2YTggOCAwIDAgMC0yLjg3LTYuMTRNMjA4IDEzNmgtODBhOCA4IDAgMCAwLTggOHY1Ny40NWE4IDggMCAwIDAgNi41NyA3Ljg4bDgwIDE0LjU0YTcuNiA3LjYgMCAwIDAgMS40My4xM2E4IDggMCAwIDAgOC04di03MmE4IDggMCAwIDAtOC04bTUuMTMtMTAyLjE0YTggOCAwIDAgMC02LjU2LTEuNzNsLTgwIDE0LjU1YTggOCAwIDAgMC02LjU3IDcuODdWMTEyYTggOCAwIDAgMCA4IDhoODBhOCA4IDAgMCAwIDgtOFY0MGE4IDggMCAwIDAtMi44Ny02LjE0IiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlPSIjZmZmIiAvPgo8L3N2Zz4=)
+<img src="app-icon.png" alt="logo" width="80">
+
+<h1>TextGO</h1>
+
+[![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat)](https://github.com/C5H12O5/TextGO/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/C5H12O5/TextGO?logo=github&label=Stars&style=flat&color=yellow)](https://github.com/C5H12O5/TextGO/stargazers)
+[![GPLv3 License](https://img.shields.io/badge/License-GPLv3-BD0000.svg?style=flat)](LICENSE)
+[![Tauri Version](https://img.shields.io/badge/Tauri-v2.9.4-24C8D8.svg?style=flat&logo=tauri)](https://tauri.app/)
+[![Svelte Version](https://img.shields.io/badge/Svelte-v5.45.5-FF3E00.svg?style=flat&logo=svelte)](https://svelte.dev/)
+![macOS](https://img.shields.io/badge/macOS-333333.svg?style=flat&logo=apple)
+![Windows](https://img.shields.io/badge/Windows-0078D4.svg?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA0IDE0NHY1MS42NGE4IDggMCAwIDEtOCA4YTguNSA4LjUgMCAwIDEtMS40My0uMTNsLTY0LTExLjY0QTggOCAwIDAgMSAyNCAxODR2LTQwYTggOCAwIDAgMSA4LThoNjRhOCA4IDAgMCAxIDggOG0tMi44Ny04OS43OGE4IDggMCAwIDAtNi41Ni0xLjczbC02NCAxMS42NEE4IDggMCAwIDAgMjQgNzJ2NDBhOCA4IDAgMCAwIDggOGg2NGE4IDggMCAwIDAgOC04VjYwLjM2YTggOCAwIDAgMC0yLjg3LTYuMTRNMjA4IDEzNmgtODBhOCA4IDAgMCAwLTggOHY1Ny40NWE4IDggMCAwIDAgNi41NyA3Ljg4bDgwIDE0LjU0YTcuNiA3LjYgMCAwIDAgMS40My4xM2E4IDggMCAwIDAgOC04di03MmE4IDggMCAwIDAtOC04bTUuMTMtMTAyLjE0YTggOCAwIDAgMC02LjU2LTEuNzNsLTgwIDE0LjU1YTggOCAwIDAgMC02LjU3IDcuODdWMTEyYTggOCAwIDAgMCA4IDhoODBhOCA4IDAgMCAwIDgtOFY0MGE4IDggMCAwIDAtMi44Ny02LjE0IiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlPSIjZmZmIiAvPgo8L3N2Zz4=)
 
 📖 [English](README.md) / 简体中文
 
 </div>
 
-> TextGO 是一个跨平台的文本处理工具，通过全局快捷键选中文本后，自动识别文本类型并执行对应的自定义操作。
+> TextGO 是一个跨平台的文本处理工具，能够自动识别文本类型并执行自定义操作。可通过快捷键、鼠标双击或文本选中等方式触发，支持立即执行或弹出工具栏供交互选择。
 
 ## ✨ 核心特性
 
-1. **零记忆负担**：同一快捷键可以绑定多个规则，无需记忆复杂的按键组合
-2. **开箱即用**：内置丰富的文本类型和处理动作，通过简单配置即可快速上手
-3. **灵活扩展**：支持通过正则表达式或机器学习模型扩展文本识别类型，并可利用脚本或本地 AI 实现自定义处理逻辑
-4. **跨平台支持**：基于 Tauri 构建，原生支持 macOS 和 Windows 平台
+1. **多种触发方式**：支持快捷键、鼠标双击或文本选中触发，每种方式可独立配置规则
+2. **灵活执行模式**：支持立即执行或工具栏交互模式，自由切换以适应不同场景
+3. **开箱即用**：内置丰富的文本类型和处理动作，简单配置即可使用
+4. **高度可定制**：通过正则、机器学习模型、脚本或接入本地 AI 扩展识别和处理能力
+5. **个性化图标**: 支持从内置图标库选择或上传自定义 SVG 图标，打造个性化的工具栏
 
 ## 🚀 应用场景
 
-_使用同一个快捷键，即可实现以下所有功能：_
+_通过键盘快捷键或鼠标操作,即可实现以下所有功能:_
 
 - **格式转换**：自动识别变量名格式，一键转换为目标命名风格
 
