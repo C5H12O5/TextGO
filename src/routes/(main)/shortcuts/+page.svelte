@@ -89,6 +89,17 @@
     return a.localeCompare(b);
   }
 
+  /**
+   * Get shortcut hint text.
+   *
+   * @param shortcut - shortcut string
+   */
+  function shortcutHint(shortcut: string) {
+    if (shortcut === DBCLICK_SHORTCUT) return m.mouse_dbclick_hint();
+    if (shortcut === DRAG_SHORTCUT) return m.mouse_drag_hint();
+    return m.keyboard_shortcut_hint();
+  }
+
   // control display delay when no data to avoid flickering
   let showNoData = $state(false);
   onMount(() => {
@@ -230,7 +241,7 @@
       </div>
       <List
         name={m.rule()}
-        hint={m.rule_hint()}
+        hint={shortcutHint(shortcut)}
         bind:data={shortcuts.current[shortcut].rules}
         oncreate={() => binder?.showModal(shortcut)}
         ondelete={(item) => binder?.unregister(item)}
