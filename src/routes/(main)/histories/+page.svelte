@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { Button, Shortcut, Title } from '$lib/components';
+  import { Button, Shortcut, Title, confirm } from '$lib/components';
   import { formatISO8601 } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
@@ -10,6 +10,7 @@
   import {
     ArrowFatLineRight,
     ArrowLeft,
+    Broom,
     ClockCounterClockwise,
     CopySimple,
     Cube,
@@ -55,6 +56,22 @@
     <ClockCounterClockwise class="size-5 opacity-80" />
     <span class="tracking-wider">{m.histories()}</span>
   </div>
+  <Button
+    size="sm"
+    weight="duotone"
+    icon={Broom}
+    onclick={() => {
+      if (entries.current.length === 0) {
+        return;
+      }
+      confirm({
+        message: m.clear_histories_message(),
+        onconfirm: () => {
+          entries.current = [];
+        }
+      });
+    }}
+  />
 </Title>
 
 {#if entries.current.length === 0}

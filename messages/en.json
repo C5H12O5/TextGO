@@ -127,6 +127,7 @@
   "history_recent_5": "Recent 5",
   "history_recent_10": "Recent 10",
   "history_recent_20": "Recent 20",
+  "clear_histories_message": "Are you sure you want to clear all history records?",
   "script_options": "Script Execution Options",
   "nodejs_path": "Node.js Path",
   "nodejs_path_placeholder": "e.g., /usr/local/bin/node",

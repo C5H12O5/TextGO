@@ -127,6 +127,7 @@
   "history_recent_5": "最近 5 条",
   "history_recent_10": "最近 10 条",
   "history_recent_20": "最近 20 条",
+  "clear_histories_message": "是否清空所有历史记录？",
   "script_options": "脚本执行选项",
   "nodejs_path": "Node.js 路径",
   "nodejs_path_placeholder": "例如: /usr/local/bin/node",
