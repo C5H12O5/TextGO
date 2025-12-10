@@ -66,7 +66,7 @@ console.log(typeof result === 'string' ? result : JSON.stringify(result));
                         return Ok(stdout.trim().to_string());
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        return Err(format!("JavaScript execution failed: {}", stderr).into());
+                        return Err(format!("JavaScript execution failed:\n\n{}", stderr).into());
                     }
                 }
                 Err(e) => {
@@ -150,7 +150,7 @@ console.log(typeof result === 'string' ? result : JSON.stringify(result));
                     {
                         continue;
                     }
-                    return Err(format!("JavaScript execution failed: {}", stderr).into());
+                    return Err(format!("JavaScript execution failed:\n\n{}", stderr).into());
                 }
             }
             Err(_) => continue, // try next command
@@ -226,7 +226,7 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
                         return Ok(stdout.trim().to_string());
                     } else {
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        return Err(format!("Python execution failed: {}", stderr).into());
+                        return Err(format!("Python execution failed:\n\n{}", stderr).into());
                     }
                 }
                 Err(e) => {
@@ -327,7 +327,7 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
                     {
                         continue;
                     }
-                    return Err(format!("Python execution failed: {}", stderr).into());
+                    return Err(format!("Python execution failed:\n\n{}", stderr).into());
                 }
             }
             Err(_) => continue, // try next command

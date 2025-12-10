@@ -46,6 +46,14 @@ type Data = {
 };
 
 /**
+ * Result type of script execution.
+ */
+type Result = {
+  text: string;
+  error?: boolean;
+};
+
+/**
  * Built-in action type.
  */
 type Processor = Option & {
@@ -279,11 +287,10 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
     if (script) {
       console.debug(`Executing script: ${scriptId}`);
       const result = await executeScript(script, data);
-      console.debug(`Script executed successfully: ${result}`);
       // save record
       entry.actionType = 'script';
       entry.actionLabel = scriptId;
-      entry.result = result;
+      entry.result = result.text;
       entry.scriptLang = script.lang;
       entries.current.unshift(entry);
       // remove excess records
@@ -291,7 +298,9 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
         entries.current = entries.current.slice(0, historySize.current);
       }
       // directly replace selected text
-      await invoke('enter_text', { text: result });
+      if (!result.error) {
+        await invoke('enter_text', result);
+      }
     }
   } else if (action.startsWith(PROMPT_MARK)) {
     const promptId = action.substring(PROMPT_MARK.length);
@@ -299,7 +308,6 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
     if (prompt) {
       console.debug(`Generating prompt: ${promptId}`);
       const result = await renderPrompt(prompt, data);
-      console.debug(`Prompt generated successfully: ${result}`);
       // save record
       entry.actionType = 'prompt';
       entry.actionLabel = promptId;
@@ -320,7 +328,6 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
     if (builtin) {
       console.debug(`Executing builtin action: ${action}`);
       const result = builtin.process(selection);
-      console.debug(`Builtin action executed successfully: ${result}`);
       await invoke('enter_text', { text: result });
     }
   }
@@ -333,7 +340,7 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
  * @param data - data object
  * @returns script execution result
  */
-export async function executeScript(script: Script, data: Data): Promise<string> {
+export async function executeScript(script: Script, data: Data): Promise<Result> {
   try {
     if (script.lang === 'javascript') {
       const result = await invoke<string>('execute_javascript', {
@@ -341,20 +348,19 @@ export async function executeScript(script: Script, data: Data): Promise<string>
         data: JSON.stringify(data),
         nodePath: nodePath.current
       });
-      return result;
+      return { text: result };
     } else if (script.lang === 'python') {
       const result = await invoke<string>('execute_python', {
         code: script.script,
         data: JSON.stringify(data),
         pythonPath: pythonPath.current
       });
-      return result;
+      return { text: result };
     } else {
       throw new Error(`unsupported script language: ${script.lang}`);
     }
   } catch (error) {
-    console.error(`Script execution failed: ${error}`);
-    throw error;
+    return { text: String(error), error: true };
   }
 }
 
