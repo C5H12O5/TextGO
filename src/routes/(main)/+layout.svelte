@@ -12,16 +12,15 @@
 
   let { children }: { children: Snippet } = $props();
 
-  // whether to show title bar bottom border
-  let titleBorder = $state(false);
+  // whether to show the shadow under the title bar
+  let titleShadow = $state(false);
   let sentinelElement: HTMLElement;
 
   onMount(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
-        // show title bar bottom border when sentinel element is invisible
-        titleBorder = !entry.isIntersecting;
+        titleShadow = !entry.isIntersecting;
       },
       {
         // 40px is the height of the Title component
@@ -82,7 +81,7 @@
 </script>
 
 <main class="h-screen w-screen overflow-auto overscroll-none bg-base-300">
-  <Title class="sticky top-0 z-101 bg-base-300/80 backdrop-blur-sm {titleBorder ? 'border-b' : ''}">
+  <Title class="sticky top-0 z-101 bg-base-300/80 backdrop-blur-sm {titleShadow ? 'title-shadow' : ''}">
     {#snippet fallback()}
       <!-- shortcuts -->
       <div class="pointer-events-none flex items-center gap-1 rounded-field gradient bg-base-300 px-2 py-0.5">
