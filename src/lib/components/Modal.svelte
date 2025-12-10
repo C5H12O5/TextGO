@@ -26,35 +26,48 @@
 
 <script lang="ts">
   import { Alert } from '$lib/components';
+  import { invoke } from '@tauri-apps/api/core';
   import { tick } from 'svelte';
   import { fade } from 'svelte/transition';
 
   let { icon, title, children, maxWidth, class: _class, boxClass, cornerClass, onclose }: ModalProps = $props();
-  let dialog: HTMLDialogElement | null = $state(null);
+
+  // unique modal dialog ID
   const id: string = `modal-${crypto.randomUUID()}`;
+
+  // modal dialog element
+  let dialog: HTMLDialogElement | null = $state(null);
+
+  // shortcut handling resume flag
+  let resume: boolean = false;
 
   /**
    * Show modal dialog.
    */
-  export function show() {
+  export async function show() {
+    // register modal dialog
     modals.set(id, { onclose });
-    tick().then(() => {
-      if (!dialog) {
-        return;
-      }
-      dialog.showModal();
+    await tick();
+    if (!dialog) {
+      return;
+    }
 
-      // disable spellcheck for all inputs in this modal
-      dialog.querySelectorAll('input, textarea').forEach((element) => {
-        (element as HTMLInputElement | HTMLTextAreaElement).spellcheck = false;
-      });
+    // pause shortcut handling
+    resume = await invoke<boolean>('pause_shortcut_handling');
 
-      // set focus on the first input with autofocus class
-      const autofocus = dialog?.querySelector('.autofocus') as HTMLElement | null;
-      if (autofocus) {
-        setTimeout(() => autofocus.focus(), 0);
-      }
+    // disable spellcheck for all inputs in this modal
+    dialog.querySelectorAll('input, textarea').forEach((element) => {
+      (element as HTMLInputElement | HTMLTextAreaElement).spellcheck = false;
     });
+
+    // set focus on the first input with autofocus class
+    const autofocus = dialog?.querySelector('.autofocus') as HTMLElement | null;
+    if (autofocus) {
+      setTimeout(() => autofocus.focus(), 0);
+    }
+
+    // show dialog
+    dialog.showModal();
   }
 
   /**
@@ -70,6 +83,11 @@
     if (modal) {
       modal.onclose?.();
       modals.delete(id);
+
+      // resume shortcut handling
+      if (resume) {
+        invoke('resume_shortcut_handling');
+      }
     }
   }
 

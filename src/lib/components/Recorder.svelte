@@ -2,7 +2,6 @@
   import { Kbd, Modal } from '$lib/components';
   import { Keyboard } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { invoke } from '@tauri-apps/api/core';
   import { Lightbulb, StackPlus } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
@@ -35,7 +34,6 @@
     stopRecording();
     // wait a moment to avoid immediate key capture
     setTimeout(() => (recording = true), 200);
-    invoke('pause_shortcut_handling');
   }
 
   /**
@@ -46,7 +44,6 @@
     pressedModifiers = [];
     pressedKey = '';
     recording = false;
-    invoke('resume_shortcut_handling');
   }
 
   /**

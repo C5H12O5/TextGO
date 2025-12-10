@@ -22,7 +22,12 @@ impl Drop for ShortcutHandlerGuard {
 
 /// Pause shortcut event handling by unregistering all shortcuts.
 #[tauri::command]
-pub fn pause_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
+pub fn pause_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
+    // check if already paused
+    if SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+        return Ok(false);
+    }
+
     // set paused flag to true
     SHORTCUT_PAUSED.store(true, Ordering::Relaxed);
 
@@ -37,12 +42,17 @@ pub fn pause_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
         app.global_shortcut().unregister(hotkey).ok();
     }
 
-    Ok(())
+    Ok(true)
 }
 
 /// Resume shortcut event handling by re-registering all shortcuts.
 #[tauri::command]
-pub fn resume_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
+pub fn resume_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
+    // check if already resumed
+    if !SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+        return Ok(false);
+    }
+
     // re-register all shortcuts
     let shortcuts: Vec<String> = {
         let registered = REGISTERED_SHORTCUTS.lock()?;
@@ -57,7 +67,7 @@ pub fn resume_shortcut_handling(app: AppHandle) -> Result<(), AppError> {
     // set paused flag to false
     SHORTCUT_PAUSED.store(false, Ordering::Relaxed);
 
-    Ok(())
+    Ok(true)
 }
 
 /// Register global shortcut.
