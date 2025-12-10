@@ -5,7 +5,7 @@
   import { models } from '$lib/stores.svelte';
   import { Package, PencilSimpleLine, Sparkle, Sphere, TextT, Warning } from 'phosphor-svelte';
 
-  // classification model
+  // classification model components
   let modelCreator: Model;
   let modelUpdater: Model;
 </script>
@@ -13,7 +13,7 @@
 <Setting icon={Sphere} title={m.model()} class="min-h-(--app-h)">
   <List
     icon={Sparkle}
-    title={m.models_count({ count: models.current.length })}
+    title={m.model_count({ count: models.current.length })}
     name={m.model()}
     hint={m.model_hint()}
     bind:data={models.current}

@@ -123,7 +123,7 @@
     <span class="pl-1 text-sm opacity-60">
       {m.shortcuts_count()}: {Object.keys(shortcuts.current).length}
       {#if totalRules > 0}
-        <span class="text-xs tracking-wider opacity-50">({m.rules_count({ count: totalRules })})</span>
+        <span class="text-xs tracking-wider opacity-50">({m.rule_count({ count: totalRules })})</span>
       {/if}
     </span>
     <details class="dropdown dropdown-end" bind:this={dropdown} bind:open={dropdownOpen}>
@@ -250,9 +250,9 @@
           <Sparkle class="mx-1 size-4 opacity-60" />
           <span class="text-sm tracking-wide opacity-60">
             {#if rules.length > 0}
-              {m.rules_count({ count: rules.length })}
+              {m.rule_count({ count: rules.length })}
             {:else}
-              {m.rules_empty()}
+              {m.rule_empty()}
             {/if}
           </span>
         {/snippet}

@@ -34,13 +34,25 @@
   });
 
   onMount(() => {
+    let focused = false;
+    let focusedTimeout: ReturnType<typeof setTimeout> | null = null;
+
     const oninvalid = (event: Event) => {
-      if (event.target instanceof HTMLInputElement) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
         // prevent default validation bubble display
         event.preventDefault();
-        // focus on the input box that failed validation
-        if (document.activeElement !== event.target) {
+
+        // focus on the first invalid input
+        if (!focused && document.activeElement !== event.target) {
           event.target.focus();
+          focused = true;
+
+          // reset the flag after a short delay
+          // this allows a new validation cycle to start
+          if (focusedTimeout) {
+            clearTimeout(focusedTimeout);
+          }
+          focusedTimeout = setTimeout(() => (focused = false), 100);
         }
       }
     };
@@ -49,6 +61,9 @@
     return () => {
       // clean up event listeners
       document.removeEventListener('invalid', oninvalid, true);
+      if (focusedTimeout) {
+        clearTimeout(focusedTimeout);
+      }
     };
   });
 

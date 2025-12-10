@@ -27,3 +27,8 @@ export const SCRIPT_MARK = 'script-';
  * Prompt prefix.
  */
 export const PROMPT_MARK = 'prompt-';
+
+/**
+ * Searcher prefix.
+ */
+export const SEARCHER_MARK = 'searcher-';

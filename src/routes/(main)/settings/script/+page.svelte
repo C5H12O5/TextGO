@@ -12,7 +12,7 @@
     pythonPath: text().maxlength(256)
   }));
 
-  // script
+  // script components
   let scriptCreator: ScriptModal;
   let scriptUpdater: ScriptModal;
   let scriptOptions: Modal;
@@ -21,7 +21,7 @@
 <Setting icon={Code} title={m.script_execution()} moreOptions={() => scriptOptions.show()} class="min-h-(--app-h)">
   <List
     icon={Sparkle}
-    title={m.scripts_count({ count: scripts.current.length })}
+    title={m.script_count({ count: scripts.current.length })}
     name={m.script()}
     hint={m.script_execution_hint()}
     bind:data={scripts.current}

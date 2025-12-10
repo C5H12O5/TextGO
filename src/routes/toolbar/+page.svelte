@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Icon } from '$lib/components';
-  import { PROMPT_MARK, SCRIPT_MARK } from '$lib/constants';
+  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
-  import { prompts, scripts } from '$lib/stores.svelte';
+  import { prompts, scripts, searchers } from '$lib/stores.svelte';
   import type { Rule } from '$lib/types';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
@@ -12,7 +12,7 @@
   import { type } from '@tauri-apps/plugin-os';
   import { memoize } from 'es-toolkit/function';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { Code, DotsThreeVertical, LineVertical, Robot } from 'phosphor-svelte';
+  import { Code, DotsThreeVertical, LineVertical, MagnifyingGlass, Robot } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -48,10 +48,67 @@
   let visibleActions: Action[] = $derived(actions.slice(0, MAX_VISIBLE_ACTIONS));
   let overflowActions: Action[] = $derived(actions.slice(MAX_VISIBLE_ACTIONS));
 
-  // memoized lookup function
+  // custom action types
+  let actionTypes = $derived([
+    {
+      mark: SCRIPT_MARK,
+      collection: scripts.current,
+      defaultIcon: Code
+    },
+    {
+      mark: PROMPT_MARK,
+      collection: prompts.current,
+      defaultIcon: Robot
+    },
+    {
+      mark: SEARCHER_MARK,
+      collection: searchers.current,
+      defaultIcon: MagnifyingGlass
+    }
+  ]);
+
+  // memoized function to find built-in action
   const findBuiltinAction = memoize((action: string) =>
     [...DEFAULT_ACTIONS, ...GENERAL_ACTIONS, ...CONVERT_ACTIONS, ...PROCESS_ACTIONS].find((a) => a.value === action)
   );
+
+  /**
+   * Map rule to toolbar action.
+   *
+   * @param rule - rule object
+   */
+  function mapToAction(rule: Rule): Action | undefined {
+    const actionId = rule.action;
+
+    // check for custom action types
+    for (const type of actionTypes) {
+      if (actionId.startsWith(type.mark)) {
+        const itemId = actionId.substring(type.mark.length);
+        const item = type.collection.find((i) => i.id === itemId);
+        if (item) {
+          return {
+            id: actionId,
+            icon: item.icon || type.defaultIcon,
+            label: itemId,
+            rule: rule
+          };
+        }
+      }
+    }
+
+    // check for built-in action
+    const builtin = findBuiltinAction(actionId);
+    if (builtin) {
+      return {
+        id: actionId,
+        icon: builtin.icon,
+        label: builtin.label,
+        rule: rule
+      };
+    }
+
+    return undefined;
+  }
 
   /**
    * Setup toolbar with given rules and selection.
@@ -67,48 +124,7 @@
     selection = data.selection || '';
 
     // map rules to actions
-    actions = data.rules
-      .map((rule) => {
-        const actionId = rule.action;
-
-        if (actionId.startsWith(SCRIPT_MARK)) {
-          // script action
-          const scriptId = actionId.substring(SCRIPT_MARK.length);
-          const script = scripts.current.find((s) => s.id === scriptId);
-          if (script) {
-            return {
-              id: actionId,
-              icon: script.icon || Code,
-              label: scriptId,
-              rule: rule
-            };
-          }
-        } else if (actionId.startsWith(PROMPT_MARK)) {
-          // prompt action
-          const promptId = actionId.substring(PROMPT_MARK.length);
-          const prompt = prompts.current.find((p) => p.id === promptId);
-          if (prompt) {
-            return {
-              id: actionId,
-              icon: prompt.icon || Robot,
-              label: promptId,
-              rule: rule
-            };
-          }
-        } else {
-          // built-in action
-          const builtin = findBuiltinAction(actionId);
-          if (builtin) {
-            return {
-              id: actionId,
-              icon: builtin.icon,
-              label: builtin.label,
-              rule: rule
-            };
-          }
-        }
-      })
-      .filter((a) => !!a);
+    actions = data.rules.map(mapToAction).filter((a) => !!a);
 
     // mark as initialized
     initialized = true;

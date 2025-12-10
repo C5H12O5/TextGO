@@ -1,7 +1,7 @@
-import { PROMPT_MARK, SCRIPT_MARK } from '$lib/constants';
+import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
-import { entries, historySize, nodePath, prompts, pythonPath, scripts } from '$lib/stores.svelte';
+import { entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
 import type { Entry, Option, Prompt, Rule, Script } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
@@ -322,6 +322,24 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
       }
       // show popup window
       await showPopup(entry);
+    }
+  } else if (action.startsWith(SEARCHER_MARK)) {
+    const searcherId = action.substring(SEARCHER_MARK.length);
+    const searcher = searchers.current.find((s) => s.id === searcherId);
+    if (searcher) {
+      console.debug(`Opening URL for searcher: ${searcherId}`);
+      const result = searcher.url.replace(/\{\{selection\}\}/g, data.selection);
+      // save record
+      entry.actionType = 'searcher';
+      entry.actionLabel = searcherId;
+      entry.result = result;
+      entries.current.unshift(entry);
+      // remove excess records
+      if (entries.current.length > historySize.current) {
+        entries.current = entries.current.slice(0, historySize.current);
+      }
+      // open URL
+      await openUrl(result, searcher.browser);
     }
   } else {
     const builtin = findBuiltinAction(action);

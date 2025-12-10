@@ -17,6 +17,7 @@
     FileJs,
     FilePy,
     FingerprintSimple,
+    MagnifyingGlass,
     Robot,
     Textbox,
     Trash
@@ -39,6 +40,7 @@
    */
   function getActionIcon(entry: Entry) {
     if (entry.actionType === 'prompt') return Robot;
+    if (entry.actionType === 'searcher') return MagnifyingGlass;
     if (entry.scriptLang === 'javascript') return FileJs;
     if (entry.scriptLang === 'python') return FilePy;
     return null;
@@ -88,7 +90,7 @@
         <div class="flex items-center">
           <span class="text-lg font-thin opacity-40">{historyNum}</span>
           <Shortcut shortcut={entry.shortcut} class="ml-3 [&_kbd]:kbd-sm" />
-          <time class="ml-3 text-sm opacity-60">{formatISO8601(entry.datetime)}</time>
+          <time class="ml-3 text-sm text-emphasis/60">{formatISO8601(entry.datetime)}</time>
           <Button class="ml-auto" size="sm" icon={Trash} onclick={() => entries.current.splice(index, 1)} />
         </div>
         <div class="divider my-0 opacity-60"></div>

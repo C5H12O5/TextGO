@@ -53,7 +53,7 @@ export type Entry = {
   /** Triggered action. */
   actionLabel?: string;
   /** Action type. */
-  actionType?: 'script' | 'prompt';
+  actionType?: 'script' | 'prompt' | 'searcher';
   /** Execution result (script return value / prompt content). */
   result?: string;
   /** Script language. */
@@ -156,4 +156,18 @@ export type Prompt = {
   prompt: string;
   /** System prompt. */
   systemPrompt?: string;
+};
+
+/**
+ * Type of searcher.
+ */
+export type Searcher = {
+  /** Action ID. */
+  id: string;
+  /** Action icon. */
+  icon?: string;
+  /** Browser to use. */
+  browser?: string;
+  /** Search URL. */
+  url: string;
 };

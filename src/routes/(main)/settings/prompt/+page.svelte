@@ -11,7 +11,7 @@
     ollamaHost: text().maxlength(256)
   }));
 
-  // prompt
+  // prompt components
   let promptCreator: Prompt;
   let promptUpdater: Prompt;
   let promptOptions: Modal;
@@ -20,7 +20,7 @@
 <Setting icon={Robot} title={m.ai_conversation()} moreOptions={() => promptOptions.show()} class="min-h-(--app-h)">
   <List
     icon={Sparkle}
-    title={m.prompts_count({ count: prompts.current.length })}
+    title={m.prompt_template_count({ count: prompts.current.length })}
     name={m.prompt_template()}
     hint={m.ai_conversation_hint()}
     bind:data={prompts.current}

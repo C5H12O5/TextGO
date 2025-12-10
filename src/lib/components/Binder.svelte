@@ -1,13 +1,13 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { alert, Label, Modal, Select } from '$lib/components';
-  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK } from '$lib/constants';
+  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { manager } from '$lib/manager';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
-  import { models, prompts, regexps, scripts, shortcuts } from '$lib/stores.svelte';
+  import { models, prompts, regexps, scripts, shortcuts, searchers } from '$lib/stores.svelte';
   import type { Option, Rule } from '$lib/types';
   import { ArrowFatLineRight, Code, FingerprintSimple, Sparkle, Translate } from 'phosphor-svelte';
 
@@ -62,6 +62,13 @@
   // available actions
   const actions: Option[] = $derived.by(() => {
     const options: Option[] = [...DEFAULT_ACTIONS];
+    // prompt
+    if (prompts.current && prompts.current.length > 0) {
+      options.push({ value: '--prompt--', label: `-- ${m.conversation()} --`, disabled: true });
+      for (const prompt of prompts.current) {
+        options.push({ value: PROMPT_MARK + prompt.id, label: prompt.id, icon: prompt.icon });
+      }
+    }
     // script
     if (scripts.current && scripts.current.length > 0) {
       options.push({ value: '--script--', label: `-- ${m.script()} --`, disabled: true });
@@ -69,11 +76,11 @@
         options.push({ value: SCRIPT_MARK + script.id, label: script.id, icon: script.icon });
       }
     }
-    // prompt
-    if (prompts.current && prompts.current.length > 0) {
-      options.push({ value: '--prompt--', label: `-- ${m.conversation()} --`, disabled: true });
-      for (const prompt of prompts.current) {
-        options.push({ value: PROMPT_MARK + prompt.id, label: prompt.id, icon: prompt.icon });
+    // searcher
+    if (searchers.current && searchers.current.length > 0) {
+      options.push({ value: '--searcher--', label: `-- ${m.web_search()} --`, disabled: true });
+      for (const searcher of searchers.current) {
+        options.push({ value: SEARCHER_MARK + searcher.id, label: searcher.id, icon: searcher.icon });
       }
     }
     // built-in action

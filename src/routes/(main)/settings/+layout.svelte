@@ -5,7 +5,17 @@
   import { Button, Title } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { deLocalizeHref } from '$lib/paraglide/runtime';
-  import { ArrowLeft, Code, Gear, GearSix, Robot, Scroll, Sphere, type IconComponentProps } from 'phosphor-svelte';
+  import {
+    ArrowLeft,
+    Code,
+    Gear,
+    GearSix,
+    MagnifyingGlass,
+    Robot,
+    Scroll,
+    Sphere,
+    type IconComponentProps
+  } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -49,6 +59,7 @@
       <li class="menu-title pl-1 text-xs">{m.custom_action()}</li>
       {@render menu(Robot, m.ai_conversation(), resolve('/settings/prompt'))}
       {@render menu(Code, m.script_execution(), resolve('/settings/script'))}
+      {@render menu(MagnifyingGlass, m.web_search(), resolve('/settings/searcher'))}
       <div class="divider my-0 opacity-50"></div>
       {@render menu(Gear, m.general_settings(), resolve('/settings/general'))}
     </ul>

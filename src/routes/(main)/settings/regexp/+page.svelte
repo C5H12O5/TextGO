@@ -4,7 +4,7 @@
   import { regexps } from '$lib/stores.svelte';
   import { PencilSimpleLine, Scroll, Sparkle } from 'phosphor-svelte';
 
-  // regular expression
+  // regular expression components
   let regexpCreator: Regexp;
   let regexpUpdater: Regexp;
 </script>
@@ -12,7 +12,7 @@
 <Setting icon={Scroll} title={m.regexp()} class="min-h-(--app-h)">
   <List
     icon={Sparkle}
-    title={m.regexps_count({ count: regexps.current.length })}
+    title={m.regexp_count({ count: regexps.current.length })}
     name={m.regexp()}
     hint={m.regexp_hint()}
     bind:data={regexps.current}
