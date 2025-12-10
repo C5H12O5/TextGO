@@ -9,10 +9,13 @@ use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
+/// Type alias for mouse click data (time, position, is_valid_cursor).
+type Click = (Instant, (f64, f64), bool);
+
 // mouse event tracking states
 thread_local! {
     static DRAG_START_POS: Cell<Option<(f64, f64)>> = const { Cell::new(None) };
-    static LAST_CLICK: Cell<Option<(Instant, (f64, f64))>> = const { Cell::new(None) };
+    static LAST_CLICK: Cell<Option<Click>> = const { Cell::new(None) };
     static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
 }
@@ -67,8 +70,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
 fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
     if let Some((start_x, start_y)) = DRAG_START_POS.get() {
         // check if moved enough to be considered a drag
-        let distance = ((x - start_x).powi(2) + (y - start_y).powi(2)).sqrt();
-        if distance > MIN_DRAG_DISTANCE {
+        if distance((x, y), (start_x, start_y)) >= MIN_DRAG_DISTANCE {
             IS_DRAGGING.set(true);
         }
     }
@@ -84,15 +86,13 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // only process text selection if cursor was valid
     // inspired by https://github.com/0xfullex/selection-hook
     let is_valid_cursor = IS_VALID_CURSOR.get() || platform::is_ibeam_cursor();
-    if !is_valid_cursor {
-        IS_DRAGGING.set(false);
-        return Ok(());
-    }
 
     // check for drag end
     if IS_DRAGGING.get() {
-        // emit drag end event
-        emit_event("MouseClick+MouseMove")?;
+        if is_valid_cursor {
+            // emit drag end event
+            emit_event("MouseClick+MouseMove")?;
+        }
         IS_DRAGGING.set(false);
         return Ok(());
     }
@@ -100,22 +100,28 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // check for double click
     let pos = mouse_pos()?;
     let now = Instant::now();
-    if let Some((last_time, last_pos)) = LAST_CLICK.get() {
-        let interval = now.duration_since(last_time);
-        let distance = ((pos.0 - last_pos.0).powi(2) + (pos.1 - last_pos.1).powi(2)).sqrt();
-        if (interval < MAX_DBCLICK_INTERVAL) && (distance < MAX_DBCLICK_DISTANCE) {
+    if let Some((last_time, last_pos, last_valid_cursor)) = LAST_CLICK.get() {
+        let valid_cursor = is_valid_cursor || last_valid_cursor;
+        let valid_interval = now.duration_since(last_time) < MAX_DBCLICK_INTERVAL;
+        let valid_distance = distance(pos, last_pos) < MAX_DBCLICK_DISTANCE;
+        if valid_cursor && valid_interval && valid_distance {
             // emit double click event
             emit_event("MouseClick+MouseClick")?;
             // reset last click state
             LAST_CLICK.set(None);
         } else {
-            LAST_CLICK.set(Some((now, pos)));
+            LAST_CLICK.set(Some((now, pos, is_valid_cursor)));
         }
     } else {
-        LAST_CLICK.set(Some((now, pos)));
+        LAST_CLICK.set(Some((now, pos, is_valid_cursor)));
     }
 
     Ok(())
+}
+
+/// Calculate distance between two points.
+fn distance(p1: (f64, f64), p2: (f64, f64)) -> f64 {
+    ((p1.0 - p2.0).powi(2) + (p1.1 - p2.1).powi(2)).sqrt()
 }
 
 /// Get current mouse position using enigo.
