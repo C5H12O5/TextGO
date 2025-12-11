@@ -1,4 +1,7 @@
+import { m } from '$lib/paraglide/messages';
 import * as stores from '$lib/stores.svelte';
+import { invoke } from '@tauri-apps/api/core';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
 import tippy, { followCursor } from 'tippy.js';
 import type { LayoutLoad } from './$types';
@@ -10,6 +13,13 @@ import type { LayoutLoad } from './$types';
 export const ssr = false;
 
 export const load: LayoutLoad = async () => {
+  // forward console logs to Tauri logger plugin
+  forwardConsole('log', trace);
+  forwardConsole('debug', debug);
+  forwardConsole('info', info);
+  forwardConsole('warn', warn);
+  forwardConsole('error', error);
+
   // set default properties for Tippy.js globally
   // https://atomiks.github.io/tippyjs/v6/methods/#setdefaultprops
   tippy.setDefaultProps({
@@ -23,12 +33,19 @@ export const load: LayoutLoad = async () => {
     plugins: [followCursor]
   });
 
-  // forward console logs to Tauri logger plugin
-  forwardConsole('log', trace);
-  forwardConsole('debug', debug);
-  forwardConsole('info', info);
-  forwardConsole('warn', warn);
-  forwardConsole('error', error);
+  // initialize tray menu language
+  if (getCurrentWindow().label === 'main') {
+    try {
+      await invoke('setup_tray', {
+        mainWindowText: m.tray_main_window(),
+        shortcutsText: m.tray_shortcuts(),
+        aboutText: m.tray_about(),
+        quitText: m.tray_quit()
+      });
+    } catch (error) {
+      console.error(`Failed to initialize tray menu language: ${error}`);
+    }
+  }
 
   // initialize all stores immediately on import
   return { stores };
