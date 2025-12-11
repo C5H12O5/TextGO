@@ -3,7 +3,7 @@ name = "text-go"
 version = "0.3.0"
 description = "Auto-detect text types and trigger custom actions with one hotkey."
 authors = ["Xylitol <jam.xylitol@gmail.com>"]
-license = "MIT"
+license = "GPL-3.0-or-later"
 edition = "2021"
 
 [lib]
@@ -17,7 +17,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.5.3", features = [] }
 
 [dependencies]
-tauri = { version = "2.9.4", features = ["macos-private-api", "tray-icon"] }
+tauri = { version = "2.9.5", features = ["macos-private-api", "tray-icon"] }
 tauri-plugin-os = "2.3.2"
 tauri-plugin-store = "2.4.1"
 tauri-plugin-dialog = "2.4.2"
