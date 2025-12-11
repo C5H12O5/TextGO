@@ -44,7 +44,7 @@ pub fn handle_mouse_event(event: Event) {
         }
         EventType::Wheel { .. } | EventType::KeyPress(_) => {
             // hide toolbar on wheel scroll or key press
-            let _ = hide_toolbar();
+            let _ = hide_toolbar(false);
         }
         _ => (),
     }
@@ -61,7 +61,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
     IS_VALID_CURSOR.set(platform::is_ibeam_cursor());
 
     // hide toolbar on mouse press
-    hide_toolbar()?;
+    hide_toolbar(true)?;
 
     Ok(())
 }
@@ -157,7 +157,7 @@ fn emit_event(shortcut: &str) -> Result<(), AppError> {
 }
 
 /// Hide toolbar if click is outside its bounds.
-fn hide_toolbar() -> Result<(), AppError> {
+fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
     // get toolbar window
     let toolbar = APP_HANDLE
         .lock()?
@@ -167,6 +167,12 @@ fn hide_toolbar() -> Result<(), AppError> {
 
     // check if toolbar is visible
     if !toolbar.is_visible().unwrap_or(false) {
+        return Ok(());
+    }
+
+    // if no need to check position, hide directly
+    if !check_position {
+        let _ = toolbar.close();
         return Ok(());
     }
 
