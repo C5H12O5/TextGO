@@ -94,11 +94,17 @@ pub fn run() {
                 .clear_targets()
                 .target(Target::new(TargetKind::Stdout))
                 .with_colors(ColoredLevelConfig::default())
-                .level(if cfg!(dev) {
-                    LevelFilter::Info
-                } else {
-                    LevelFilter::Off
-                })
+                .level(
+                    // load log level from RUST_LOG env variable
+                    std::env::var("RUST_LOG")
+                        .ok()
+                        .and_then(|level| level.parse().ok())
+                        .unwrap_or(if cfg!(dev) {
+                            LevelFilter::Info
+                        } else {
+                            LevelFilter::Off
+                        }),
+                )
                 .build(),
         )
         .setup(setup_app)

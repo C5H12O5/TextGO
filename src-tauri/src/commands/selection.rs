@@ -5,9 +5,13 @@ use crate::platform;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 use log::warn;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
 use tokio::time::sleep;
+
+// maximum wait time in milliseconds for clipboard to update
+static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);
 
 /// Get selected text.
 #[tauri::command]
@@ -41,7 +45,7 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
         });
 
         // wait for clipboard content to change in a loop
-        let max_wait_time = Duration::from_millis(200); // max wait time 200ms
+        let max_wait_time = Duration::from_millis(MAX_WAIT_TIME.load(Ordering::Relaxed));
         let check_interval = Duration::from_millis(5); // check interval 5ms
         let max_attempts = max_wait_time.as_millis() / check_interval.as_millis();
 
@@ -65,6 +69,17 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
                 "Clipboard did not change within {} ms, possibly no text selected",
                 max_wait_time.as_millis()
             );
+        } else {
+            // adjust max wait time for next time
+            MAX_WAIT_TIME
+                .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+                    if current > 200 {
+                        Some((current - 100).max(200))
+                    } else {
+                        Some(current)
+                    }
+                })
+                .ok();
         }
 
         Ok(selected_text)
