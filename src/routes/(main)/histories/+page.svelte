@@ -88,10 +88,15 @@
       {@const actionIcon = getActionIcon(entry)}
       <div class="rounded-container" animate:flip={{ duration: 200 }}>
         <div class="flex items-center">
-          <span class="text-lg font-thin opacity-40">{historyNum}</span>
-          <Shortcut shortcut={entry.shortcut} class="ml-3 [&_kbd]:kbd-sm" />
-          <time class="ml-3 text-sm text-emphasis/60">{formatISO8601(entry.datetime)}</time>
-          <Button class="ml-auto" size="sm" icon={Trash} onclick={() => entries.current.splice(index, 1)} />
+          <span class="text-lg font-thin text-primary/50">{historyNum}</span>
+          <Shortcut small shortcut={entry.shortcut} class="ml-3 text-primary" />
+          <time class="ml-3 text-sm text-emphasis/80">{formatISO8601(entry.datetime)}</time>
+          <Button
+            icon={Trash}
+            size="sm"
+            class="ml-auto text-emphasis"
+            onclick={() => entries.current.splice(index, 1)}
+          />
         </div>
         <div class="divider my-0 opacity-60"></div>
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">

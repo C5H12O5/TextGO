@@ -198,14 +198,14 @@
     {@const rules = shortcuts.current[shortcut].rules}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
       <div class="flex items-center gap-4 pt-8 pb-2">
-        <Shortcut {shortcut} />
+        <Shortcut {shortcut} class="text-primary" />
         <button
           class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis"
           onclick={() => swapMode(shortcut)}
         >
           <label class="swap swap-rotate group-hover:swap-active">
-            <ArrowsClockwise class="swap-on size-4" />
-            <ArrowCircleRight class="swap-off size-4" />
+            <ArrowsClockwise weight="bold" class="swap-on size-4" />
+            <ArrowCircleRight weight="bold" class="swap-off size-4" />
           </label>
           <span class="text-sm">
             {#if mode === 'toolbar'}
@@ -217,6 +217,7 @@
         </button>
         <Button
           icon={Trash}
+          size="sm"
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {

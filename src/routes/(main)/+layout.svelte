@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { Title } from '$lib/components';
   import { Moon, Sun } from '$lib/icons';
@@ -11,6 +11,12 @@
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
+
+  // scroll to top after navigation
+  let main: HTMLElement;
+  afterNavigate(() => {
+    main.scrollTo(0, 0);
+  });
 
   // whether to show the shadow under the title bar
   let titleShadow = $state(false);
@@ -95,7 +101,7 @@
   });
 </script>
 
-<main class="h-screen w-screen overflow-auto overscroll-none bg-base-300">
+<main class="h-screen w-screen overflow-auto overscroll-none bg-base-300" bind:this={main}>
   <Title class="sticky top-0 z-101 bg-base-300/80 backdrop-blur-sm {titleShadow ? 'title-shadow' : ''}">
     {#snippet fallback()}
       <!-- shortcuts -->

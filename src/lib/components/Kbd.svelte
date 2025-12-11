@@ -50,16 +50,24 @@
 </script>
 
 <script lang="ts">
-  const { key, class: _class }: { key: string; class?: string } = $props();
+  const {
+    key,
+    small = false,
+    class: _class
+  }: {
+    key: string;
+    small?: boolean;
+    class?: string;
+  } = $props();
 
   const kbd = $derived(getLabelOrIcon(key));
 </script>
 
-<kbd class="kbd min-w-8 font-sans {_class}">
+<kbd class="kbd min-w-8 font-sans {small ? 'kbd-sm' : ''} {_class}">
   {#if typeof kbd === 'string'}
-    <span class="text-sm font-light">{kbd}</span>
+    <span class="font-light {small ? 'text-sm' : 'text-base'}">{kbd}</span>
   {:else}
     {@const Icon = kbd}
-    <Icon class="size-3.5" />
+    <Icon class={small ? 'size-3.5' : 'size-4'} />
   {/if}
 </kbd>
