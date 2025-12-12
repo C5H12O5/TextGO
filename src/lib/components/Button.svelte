@@ -8,7 +8,7 @@
     children: Snippet;
     /** Button icon. */
     icon: Component<IconComponentProps>;
-    /** Icon weight. */
+    /** Button icon weight. */
     weight: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
     /** Button text. */
     text: string;
@@ -30,7 +30,7 @@
     class: string;
     iconClass: string;
     textClass: string;
-    /** Button click event callback. */
+    /** Callback function when clicking the button. */
     onclick: MouseEventHandler<HTMLButtonElement>;
   }>;
 

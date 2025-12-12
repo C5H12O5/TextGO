@@ -4,6 +4,8 @@
   import {
     ArrowCircleDown,
     ArrowCircleUp,
+    CaretDown,
+    CaretRight,
     DotsThree,
     Lightbulb,
     PlusCircle,
@@ -12,13 +14,14 @@
   } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { slide } from 'svelte/transition';
 
   type ListProps = {
     /** List title. */
     title?: string | Snippet;
-    /** Title icon. */
+    /** List icon. */
     icon?: Component<IconComponentProps>;
-    /** Tip text. */
+    /** Hint message when the list is empty. */
     hint?: string;
     /** Data name. */
     name?: string;
@@ -26,6 +29,10 @@
     data: T[];
     /** Data row snippet. */
     row: Snippet<[T]>;
+    /** Whether the list is collapsed. */
+    collapsed?: boolean;
+    /** Whether the list is collapsible. */
+    collapsible?: boolean;
     /** Custom style class name. */
     class?: string;
     /** Callback function when clicking create. */
@@ -43,6 +50,8 @@
     name = '',
     data = $bindable(),
     row,
+    collapsed = $bindable(),
+    collapsible = false,
     class: _class,
     oncreate,
     ondelete,
@@ -75,8 +84,19 @@
 </script>
 
 <div class="overflow-hidden rounded-box border shadow-xs {_class}">
-  <div class="flex items-center justify-between border-b gradient px-2 py-1">
+  <div
+    class="flex items-center justify-between gradient px-2 py-1"
+    style="border-bottom: 1px inset var(--color-border)"
+  >
     <span class="flex items-center gap-1 text-base-content/80">
+      <!-- collapse/expand button -->
+      {#if collapsible}
+        <Button class="swap swap-rotate {collapsed ? '' : 'swap-active'}" onclick={() => (collapsed = !collapsed)}>
+          <CaretDown class="swap-on size-4.5" />
+          <CaretRight class="swap-off size-4.5" />
+        </Button>
+      {/if}
+      <!-- icon and title -->
       {#if icon}
         {@const Icon = icon}
         <Icon class="mx-1 size-4 opacity-60" />
@@ -87,6 +107,7 @@
         {@render title()}
       {/if}
     </span>
+    <!-- action buttons -->
     <span class="flex items-center gap-1">
       <Button
         icon={PlusCircle}
@@ -163,38 +184,44 @@
       {/if}
     </span>
   </div>
-  <ul class="list overflow-y-auto bg-base-100 scrollbar-none [&_.list-row]:min-h-10 [&_.list-row]:py-1">
-    {#if data.length === 0 && hint}
-      <li class="list-row mx-auto items-center gap-1 text-surface/35">
-        <Lightbulb class="size-3.5" />{hint}
-      </li>
-    {/if}
-    {#each data as item, index (item.id)}
-      {@const itemNum = (index + 1).toString().padStart(2, '0')}
-      {@const evenIdx = index % 2 === 0}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-      <li
-        class="list-row cursor-pointer items-center rounded-none hover:bg-base-300 {evenIdx ? '' : 'bg-base-150'}"
-        onclick={(event) => {
-          if (selectedId === item.id) {
-            selectedId = '';
-            selectedNum = '';
-            selectedElement = null;
-          } else {
-            selectedId = item.id;
-            selectedNum = itemNum;
-            selectedElement = event.currentTarget as HTMLLIElement;
-          }
-        }}
-        animate:flip={{ duration: 200 }}
-      >
-        <span class="flex items-center gap-1">
-          <input type="radio" class="pointer-events-none radio radio-xs" checked={selectedId === item.id} />
-          <span class="text-base font-thin {selectedId === item.id ? '' : 'opacity-60'}">{itemNum}</span>
-        </span>
-        {@render row(item)}
-      </li>
-    {/each}
-  </ul>
+  <!-- data list -->
+  {#if !collapsed}
+    <ul
+      class="list overflow-y-auto bg-base-100 scrollbar-none [&_.list-row]:min-h-10 [&_.list-row]:py-1"
+      transition:slide={{ duration: 300 }}
+    >
+      {#if data.length === 0 && hint}
+        <li class="list-row mx-auto items-center gap-1 text-surface/35">
+          <Lightbulb class="size-3.5" />{hint}
+        </li>
+      {/if}
+      {#each data as item, index (item.id)}
+        {@const itemNum = (index + 1).toString().padStart(2, '0')}
+        {@const evenIdx = index % 2 === 0}
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+        <li
+          class="list-row cursor-pointer items-center rounded-none hover:bg-base-300 {evenIdx ? '' : 'bg-base-150'}"
+          onclick={(event) => {
+            if (selectedId === item.id) {
+              selectedId = '';
+              selectedNum = '';
+              selectedElement = null;
+            } else {
+              selectedId = item.id;
+              selectedNum = itemNum;
+              selectedElement = event.currentTarget as HTMLLIElement;
+            }
+          }}
+          animate:flip={{ duration: 200 }}
+        >
+          <span class="flex items-center gap-1">
+            <input type="radio" class="pointer-events-none radio radio-xs" checked={selectedId === item.id} />
+            <span class="text-base font-thin {selectedId === item.id ? '' : 'opacity-60'}">{itemNum}</span>
+          </span>
+          {@render row(item)}
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </div>

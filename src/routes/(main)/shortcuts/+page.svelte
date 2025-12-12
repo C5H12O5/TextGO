@@ -244,6 +244,8 @@
         name={m.rule()}
         hint={shortcutHint(shortcut)}
         bind:data={shortcuts.current[shortcut].rules}
+        bind:collapsed={shortcuts.current[shortcut].collapsed}
+        collapsible
         oncreate={() => binder?.showModal(shortcut)}
         ondelete={(item) => binder?.unregister(item)}
       >

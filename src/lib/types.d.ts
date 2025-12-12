@@ -19,28 +19,28 @@ type Nullable<T> = T | null | undefined;
 export type OptionValue = string | number | boolean | null | undefined;
 
 /**
- * Type of option.
+ * Type of selectable option.
  */
 export type Option = {
   /** Option value. */
   value: OptionValue;
   /** Option label. */
   label: string;
-  /** Whether disabled. */
-  disabled?: boolean;
-  /** Regular expression. */
-  pattern?: RegExp;
   /** Option icon. */
   icon?: Component<IconComponentProps> | string;
+  /** Regular expression. */
+  pattern?: RegExp;
+  /** Whether disabled. */
+  disabled?: boolean;
 };
 
 /**
- * Type of triggered record.
+ * Type of shortcut-triggered record.
  */
 export type Entry = {
   /** Record ID. */
   id: string;
-  /** Triggered shortcut. */
+  /** Shortcut string. */
   shortcut: string;
   /** Trigger time. */
   datetime: string;
@@ -48,12 +48,12 @@ export type Entry = {
   clipboard: string;
   /** Selected text. */
   selection: string;
-  /** Text type. */
+  /** Text type label. */
   caseLabel?: string;
-  /** Triggered action. */
-  actionLabel?: string;
   /** Action type. */
   actionType?: 'script' | 'prompt' | 'searcher';
+  /** Action label. */
+  actionLabel?: string;
   /** Execution result (script return value / prompt content). */
   result?: string;
   /** Script language. */
@@ -69,7 +69,7 @@ export type Entry = {
 };
 
 /**
- * Type of rule.
+ * Type of rule within a shortcut.
  */
 export type Rule = {
   /** Rule ID. */
@@ -78,26 +78,32 @@ export type Rule = {
   shortcut: string;
   /** Bound text type. */
   case: string;
-  /** Case label. */
+  /** Text type label. */
   caseLabel?: string;
-  /** ID of the action to execute. */
+  /** Bound action ID. */
   action: string;
   /** Action label. */
   actionLabel?: string;
 };
 
 /**
- * Type of shortcut.
+ * Mouse or keyboard shortcut type.
  */
 export type Shortcut = {
   /** Execution mode. */
   mode: 'quiet' | 'toolbar';
   /** List of rules. */
   rules: Rule[];
+  /** Whether the shortcut is disabled. */
+  disabled?: boolean;
+  /** Whether the rules are collapsed in the UI. */
+  collapsed?: boolean;
+  /** Blacklisted application bundle IDs. */
+  blacklist?: string[];
 };
 
 /**
- * Type of classification model.
+ * Classification model type.
  */
 export type Model = {
   /** Model ID. */
@@ -113,7 +119,7 @@ export type Model = {
 };
 
 /**
- * Type of regular expression.
+ * Regular expression type.
  */
 export type Regexp = {
   /** Regex ID. */
@@ -127,7 +133,7 @@ export type Regexp = {
 };
 
 /**
- * Type of script.
+ * Script action.
  */
 export type Script = {
   /** Action ID. */
@@ -141,7 +147,7 @@ export type Script = {
 };
 
 /**
- * Type of prompt.
+ * AI conversation action.
  */
 export type Prompt = {
   /** Action ID. */
@@ -159,7 +165,7 @@ export type Prompt = {
 };
 
 /**
- * Type of searcher.
+ * Web search action.
  */
 export type Searcher = {
   /** Action ID. */
