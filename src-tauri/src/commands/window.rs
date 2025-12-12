@@ -3,6 +3,7 @@ use crate::platform;
 use crate::ENIGO;
 use enigo::Mouse;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
+use tauri_nspanel::ManagerExt;
 
 // window position offset from cursor
 const WINDOW_OFFSET: i32 = 5;
@@ -63,7 +64,12 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
-        // show window
+        // bring to front without making key
+        #[cfg(target_os = "macos")]
+        if let Ok(toolbar) = app.get_webview_panel("toolbar") {
+            toolbar.order_front_regardless();
+        }
+        #[cfg(not(target_os = "macos"))]
         window.show()?;
 
         // send data

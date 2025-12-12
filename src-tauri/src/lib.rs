@@ -49,10 +49,18 @@ use tauri_nspanel::{
 tauri_panel! {
     panel!(ToolbarPanel {
         config: {
+            // can receive keyboard input
             can_become_main_window: false,
+            // can't be the main window
             can_become_key_window: true,
+            // only becomes key when needed
             becomes_key_only_if_needed: true,
-            is_floating_panel: true
+            // floats above other windows
+            is_floating_panel: true,
+            // works with modal dialogs
+            works_when_modal: true,
+            // doesn't hide when app deactivates
+            hides_on_deactivate: false
         }
         with: {
             // enable mouse tracking for the panel
@@ -229,13 +237,6 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                             .can_join_all_spaces()
                             .into(),
                     );
-
-                    // don't hide when app deactivates
-                    panel.set_hides_on_deactivate(false);
-
-                    // receive keyboard and mouse events even
-                    // when another window in the application is running modally
-                    panel.set_works_when_modal(true);
 
                     // attach the event handler
                     panel.set_event_handler(Some(handler.as_ref()));
