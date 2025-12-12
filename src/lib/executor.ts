@@ -25,7 +25,7 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import { Browsers, CopySimple, FolderOpen, Function, TextAa } from 'phosphor-svelte';
+import { ArrowsClockwise, Browsers, CopySimple, FolderOpen, Function } from 'phosphor-svelte';
 
 // regular expressions to match URLs and file paths
 const URL_REGEX =
@@ -122,49 +122,49 @@ export const CONVERT_ACTIONS: Processor[] = [
   {
     value: 'camel_case',
     label: m.camel_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: camelCase
   },
   {
     value: 'pascal_case',
     label: m.pascal_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: pascalCase
   },
   {
     value: 'snake_case',
     label: m.snake_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: snakeCase
   },
   {
     value: 'kebab_case',
     label: m.kebab_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: kebabCase
   },
   {
     value: 'start_case',
     label: m.start_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: startCase
   },
   {
     value: 'lower_case',
     label: m.lower_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: lowerCase
   },
   {
     value: 'upper_case',
     label: m.upper_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: upperCase
   },
   {
     value: 'constant_case',
     label: m.constant_case(),
-    icon: TextAa,
+    icon: ArrowsClockwise,
     process: constantCase
   }
 ];

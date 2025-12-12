@@ -30,6 +30,7 @@
   --color-surface: color-mix(in oklab, var(--color-primary) 30%, var(--color-base-content) 70%);
   --color-inactive: color-mix(in oklab, var(--color-neutral) 30%, var(--color-base-content) 40%);
   --color-emphasis: color-mix(in oklab, var(--color-primary) 40%, var(--color-neutral) 60%);
+  --color-shortcut: color-mix(in oklab, var(--color-primary) 80%, var(--color-neutral) 20%);
   --color-base-150: color-mix(in oklab, var(--color-base-100) 50%, var(--color-base-200) 50%);
   --color-btn-hover: color-mix(in oklab, var(--color-base-200), #000 5%);
 

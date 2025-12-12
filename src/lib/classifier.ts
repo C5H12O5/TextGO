@@ -35,12 +35,12 @@ const MODEL_CACHE = new Map<string, ModelCache>();
  * Text classifier based on synthetic negative samples.
  */
 export class Classifier {
+  private id: string;
   private model: tf.LayersModel | null = null;
   private tokenizer: Map<string, number> = new Map();
   private maxSequenceLength = 50; // shorten sequence length, suitable for small samples
   private embeddingDim = 32; // embedding dimension
   private modelTrained = false;
-  private id: string; // model ID
 
   // create a new classifier instance
   constructor(id: string) {

@@ -88,9 +88,9 @@
       {@const actionIcon = getActionIcon(entry)}
       <div class="rounded-container" animate:flip={{ duration: 200 }}>
         <div class="flex items-center">
-          <span class="text-lg font-thin text-primary/50">{historyNum}</span>
-          <Shortcut small shortcut={entry.shortcut} class="ml-3 text-primary" />
-          <time class="ml-3 text-sm text-emphasis/80">{formatISO8601(entry.datetime)}</time>
+          <span class="text-lg font-thin opacity-25">{historyNum}</span>
+          <Shortcut small shortcut={entry.shortcut} class="ml-3 text-shortcut" />
+          <time class="ml-3 text-sm text-emphasis/50">{formatISO8601(entry.datetime)}</time>
           <Button
             icon={Trash}
             size="sm"
@@ -102,10 +102,10 @@
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
           <div class="space-y-2">
             <div class="flex h-6 items-center gap-2">
-              <Textbox class="size-4 opacity-80" />
-              <span class="text-sm font-medium">{m.selected_text()}</span>
+              <Textbox class="size-4.5 opacity-80" />
+              <span class="text-sm opacity-60">{m.selected_text()}</span>
               {#if entry.caseLabel}
-                <span class="badge gap-1 border badge-xs">
+                <span class="badge gap-1 border badge-xs opacity-80">
                   <FingerprintSimple class="size-3" />
                   {entry.caseLabel}
                 </span>
@@ -121,7 +121,7 @@
               <div class="flex min-w-0 items-center gap-2">
                 {#if actionIcon}
                   {@const Icon = actionIcon}
-                  <Icon class="size-4 shrink-0 opacity-80" />
+                  <Icon class="size-4.5 shrink-0 opacity-80" />
                 {/if}
                 <span class="truncate text-sm font-medium" title={entry.actionLabel}>{entry.actionLabel}</span>
                 {#if promptMode}

@@ -198,7 +198,7 @@
     {@const rules = shortcuts.current[shortcut].rules}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
       <div class="flex items-center gap-4 pt-8 pb-2">
-        <Shortcut {shortcut} class="text-primary" />
+        <Shortcut {shortcut} class="text-shortcut" />
         <button
           class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis"
           onclick={() => swapMode(shortcut)}
@@ -275,9 +275,9 @@
               {:else}
                 <!-- valid type -->
                 {#if caseIcon}
-                  <Icon icon={caseIcon} class="size-5 shrink-0 text-emphasis/80" />
+                  <Icon icon={caseIcon} class="size-5 shrink-0" />
                 {/if}
-                <span class="truncate text-base-content/80">{caseLabel}</span>
+                <span class="truncate opacity-80">{caseLabel}</span>
               {/if}
             </div>
             <div class="col-span-1 flex items-center justify-center">
@@ -295,9 +295,9 @@
               {:else}
                 <!-- valid action -->
                 {#if actionIcon}
-                  <Icon icon={actionIcon} class="size-5 shrink-0 text-emphasis/80" />
+                  <Icon icon={actionIcon} class="size-5 shrink-0" />
                 {/if}
-                <span class="truncate text-base-content/80">{actionLabel}</span>
+                <span class="truncate opacity-80">{actionLabel}</span>
               {/if}
             </div>
           </div>
