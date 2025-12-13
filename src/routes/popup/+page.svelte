@@ -3,7 +3,9 @@
   import { ollamaHost } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
+  import { LogicalPosition } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { type } from '@tauri-apps/plugin-os';
   import { marked } from 'marked';
   import { Ollama } from 'ollama/browser';
@@ -12,6 +14,9 @@
 
   // operating system type
   const osType = type();
+
+  // current window
+  const currentWindow = getCurrentWindow();
 
   // shortcut trigger record
   let entry: Entry | null = $state(null);
@@ -163,14 +168,22 @@
       entry = data;
       abort();
     };
-    // listen to events sent by main process
-    const unlisten = listen<string>('show-popup', (event) => {
+
+    // listen to window show/hide events
+    const unlistenWindowShow = listen<string>('show-popup', (event) => {
       setup(JSON.parse(event.payload) as Entry);
       chat();
     });
+    const unlistenWindowHide = listen('hide-popup', () => {
+      setup(null);
+      // move window off-screen to prevent flickering
+      currentWindow.setPosition(new LogicalPosition({ x: -10000, y: -10000 }));
+    });
+
     return () => {
       setup(null);
-      unlisten.then((fn) => fn());
+      unlistenWindowShow.then((fn) => fn());
+      unlistenWindowHide.then((fn) => fn());
     };
   });
 </script>

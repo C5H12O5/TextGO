@@ -49,9 +49,9 @@ use tauri_nspanel::{
 tauri_panel! {
     panel!(ToolbarPanel {
         config: {
-            // can receive keyboard input
-            can_become_main_window: false,
             // can't be the main window
+            can_become_main_window: false,
+            // can receive keyboard input
             can_become_key_window: true,
             // only becomes key when needed
             becomes_key_only_if_needed: true,

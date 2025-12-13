@@ -14,7 +14,7 @@ const WINDOW_OFFSET: i32 = 5;
 const SAFE_AREA_BOTTOM: i32 = 80;
 
 // maximum wait time for window initialization
-const INITIALIZATION_TIMEOUT_MS: u64 = 1000;
+const INITIALIZATION_TIMEOUT_MS: u64 = 5000;
 
 // initialization flags for popup and toolbar windows
 static POPUP_INITIALIZED: AtomicBool = AtomicBool::new(false);
@@ -199,11 +199,6 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
         x: (x + WINDOW_OFFSET).clamp(min_x, max_x) as f64,
         y: (y + WINDOW_OFFSET).clamp(min_y, max_y) as f64,
     }))?;
-
-    // add some delay to prevent flickering
-    if !window.is_visible()? {
-        std::thread::sleep(std::time::Duration::from_millis(100));
-    }
 
     Ok(())
 }

@@ -24,6 +24,9 @@
   // operating system type
   const osType = type();
 
+  // current window
+  const currentWindow = getCurrentWindow();
+
   // toolbar initialized state
   let initialized = $state(false);
 
@@ -136,7 +139,6 @@
         try {
           // get container size
           const rect = container.getBoundingClientRect();
-          const currentWindow = getCurrentWindow();
           // set window size with some padding
           currentWindow.setSize(new LogicalSize(rect.width + 10, rect.height + 10));
         } catch (error) {
@@ -164,9 +166,6 @@
           })
         )
       });
-
-      // get current window
-      const currentWindow = getCurrentWindow();
 
       // calculate bottom-right corner position
       const size = await currentWindow.innerSize();
@@ -283,7 +282,6 @@
    */
   async function executeAction(action: Action) {
     try {
-      const currentWindow = getCurrentWindow();
       await currentWindow.hide();
       await execute(action.rule, selection);
     } catch (error) {
@@ -297,13 +295,15 @@
   });
 
   onMount(() => {
-    // listen to toolbar show/hide events
+    // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
       initialized = false;
       setup(JSON.parse(event.payload));
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
       initialized = false;
+      // move window off-screen to prevent flickering
+      currentWindow.setPosition(new LogicalPosition({ x: -10000, y: -10000 }));
     });
 
     // listen to mouse enter/exit events
@@ -324,7 +324,7 @@
 </script>
 
 <main class="bg-transparent p-1 select-none">
-  {#if initialized}
+  {#if initialized && actions.length > 0}
     <div class="overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
       <div class="flex size-fit h-8 bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
@@ -334,31 +334,29 @@
         >
           <LineVertical weight="bold" class="pointer-events-none size-4" />
         </span>
-        {#if actions.length > 0}
-          {#each visibleActions as action (action.id)}
-            <button
-              class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
-              class:hover:bg-btn-hover={mouseEntered}
-              class:hover:text-primary={mouseEntered}
-              onclick={() => executeAction(action)}
-              title={action.label}
-            >
-              {#if action.icon}
-                <Icon icon={action.icon} class="size-4 shrink-0" />
-              {/if}
-              <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
-            </button>
-          {/each}
-          {#if overflowActions.length > 0}
-            <button
-              class="h-8 cursor-pointer px-0.5 opacity-60 transition-all"
-              class:hover:bg-btn-hover={mouseEntered}
-              class:hover:opacity-100={mouseEntered}
-              onclick={showMoreActions}
-            >
-              <DotsThreeVertical weight="bold" class="size-6" />
-            </button>
-          {/if}
+        {#each visibleActions as action (action.id)}
+          <button
+            class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
+            class:hover:bg-btn-hover={mouseEntered}
+            class:hover:text-primary={mouseEntered}
+            onclick={() => executeAction(action)}
+            title={action.label}
+          >
+            {#if action.icon}
+              <Icon icon={action.icon} class="size-4 shrink-0" />
+            {/if}
+            <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
+          </button>
+        {/each}
+        {#if overflowActions.length > 0}
+          <button
+            class="h-8 cursor-pointer px-0.5 opacity-60 transition-all"
+            class:hover:bg-btn-hover={mouseEntered}
+            class:hover:opacity-100={mouseEntered}
+            onclick={showMoreActions}
+          >
+            <DotsThreeVertical weight="bold" class="size-6" />
+          </button>
         {/if}
       </div>
     </div>
