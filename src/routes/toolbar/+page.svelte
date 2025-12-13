@@ -302,11 +302,15 @@
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
       initialized = false;
       setup(JSON.parse(event.payload));
+      // show window without focusing
+      currentWindow.isVisible().then((visible) => {
+        if (!visible) {
+          invoke('show_toolbar_regardless');
+        }
+      });
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
       initialized = false;
-      // move window off-screen to prevent flickering
-      currentWindow.setPosition(new LogicalPosition({ x: -10000, y: -10000 }));
     });
 
     // listen to mouse enter/exit events

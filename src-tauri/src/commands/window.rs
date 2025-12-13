@@ -67,7 +67,9 @@ pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Resul
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
         // show and focus window
-        show_window(&app, "popup");
+        if !POPUP_INITIALIZED.load(Ordering::Relaxed) {
+            show_window(&app, "popup");
+        }
 
         // wait for initialization and emit event
         wait_and_emit(&POPUP_INITIALIZED, window, payload);
@@ -85,22 +87,37 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
-        // bring to front without making key
-        #[cfg(target_os = "macos")]
-        {
-            use tauri_nspanel::ManagerExt;
-
-            if let Ok(toolbar) = app.get_webview_panel("toolbar") {
-                toolbar.order_front_regardless();
-            }
+        // show window without focusing
+        if !TOOLBAR_INITIALIZED.load(Ordering::Relaxed) {
+            show_toolbar_regardless(app.clone())?;
         }
-        #[cfg(not(target_os = "macos"))]
-        window.show()?;
 
         // wait for initialization and emit event
         wait_and_emit(&TOOLBAR_INITIALIZED, window, payload);
     } else {
         return Err("Toolbar window not found".into());
+    }
+
+    Ok(())
+}
+
+/// Show toolbar window without focusing it.
+#[tauri::command]
+pub fn show_toolbar_regardless(app: AppHandle) -> Result<(), AppError> {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri_nspanel::ManagerExt;
+
+        if let Ok(panel) = app.get_webview_panel("toolbar") {
+            // bring to front without making key
+            panel.order_front_regardless();
+        }
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        if let Some(window) = app.get_webview_window("toolbar") {
+            window.show()?;
+        }
     }
 
     Ok(())

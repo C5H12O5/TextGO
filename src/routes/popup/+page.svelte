@@ -3,7 +3,6 @@
   import { ollamaHost, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
-  import { LogicalPosition } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { type } from '@tauri-apps/plugin-os';
@@ -181,12 +180,18 @@
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-popup', (event) => {
       setup(JSON.parse(event.payload) as Entry);
+      // start chat if in prompt mode
       chat();
+      // show and focus window
+      currentWindow.isVisible().then((visible) => {
+        if (!visible) {
+          currentWindow.show();
+          currentWindow.setFocus();
+        }
+      });
     });
     const unlistenWindowHide = listen('hide-popup', () => {
       setup(null);
-      // move window off-screen to prevent flickering
-      currentWindow.setPosition(new LogicalPosition({ x: -10000, y: -10000 }));
     });
 
     return () => {
