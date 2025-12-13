@@ -10,6 +10,34 @@ const STORAGE = {
 } as const;
 
 /**
+ * Training parameters configuration.
+ */
+export interface TrainingConfig {
+  epochs?: number; // training epochs, default 50
+  batchSize?: number; // batch size, default 8
+  validationSplit?: number; // validation split ratio, default 0.2
+  learningRate?: number; // learning rate, default 0.001
+  maxSequenceLength?: number; // max sequence length, default 50
+  embeddingDim?: number; // embedding dimension, default 32
+  negativeRatio?: number; // negative samples ratio relative to positive, default 1.0
+  maxNegativeSamples?: number; // max negative samples, default 50
+}
+
+/**
+ * Default training configuration.
+ */
+const DEFAULT_TRAINING_CONFIG: Required<TrainingConfig> = {
+  epochs: 50,
+  batchSize: 8,
+  validationSplit: 0.2,
+  learningRate: 0.001,
+  maxSequenceLength: 50,
+  embeddingDim: 32,
+  negativeRatio: 1.0,
+  maxNegativeSamples: 50
+};
+
+/**
  * Model cache interface.
  */
 interface ModelCache {
@@ -38,13 +66,29 @@ export class Classifier {
   private id: string;
   private model: tf.LayersModel | null = null;
   private tokenizer: Map<string, number> = new Map();
-  private maxSequenceLength = 50; // shorten sequence length, suitable for small samples
-  private embeddingDim = 32; // embedding dimension
-  private modelTrained = false;
+  private embeddingDim: number;
+  private maxSequenceLength: number;
+  private trainingConfig: Required<TrainingConfig>;
+  private modelTrained = false; // whether the model has been trained
 
-  // create a new classifier instance
-  constructor(id: string) {
+  // create a new classifier instance with optional configuration
+  constructor(id: string, config?: TrainingConfig) {
     this.id = id;
+    this.trainingConfig = { ...DEFAULT_TRAINING_CONFIG, ...config };
+    this.maxSequenceLength = this.trainingConfig.maxSequenceLength;
+    this.embeddingDim = this.trainingConfig.embeddingDim;
+  }
+
+  // create classifier instance from cache
+  static fromCache(id: string, cached: ModelCache): Classifier {
+    const classifier = new Classifier(id, {
+      maxSequenceLength: cached.config.maxSequenceLength,
+      embeddingDim: cached.config.embeddingDim
+    });
+    classifier.model = cached.model;
+    classifier.tokenizer = new Map(cached.tokenizer);
+    classifier.modelTrained = cached.config.modelTrained;
+    return classifier;
   }
 
   // train single-class text classification model
@@ -71,11 +115,12 @@ export class Classifier {
       this.model = this.createModel();
 
       // 4. train
-      console.debug('Starting to train single-class model...');
+      const { epochs, batchSize, validationSplit } = this.trainingConfig;
+      console.debug(`Starting to train single-class model (epochs=${epochs}, batchSize=${batchSize})...`);
       const history = await this.model.fit(inputs, labels, {
-        epochs: 50, // increase training epochs
-        batchSize: 8, // small batch training
-        validationSplit: 0.2,
+        epochs,
+        batchSize,
+        validationSplit,
         shuffle: true,
         verbose: 1,
         callbacks: {
@@ -135,7 +180,7 @@ export class Classifier {
 
     // use binary classification loss function
     model.compile({
-      optimizer: tf.train.adam(0.001),
+      optimizer: tf.train.adam(this.trainingConfig.learningRate),
       loss: 'binaryCrossentropy',
       metrics: ['accuracy']
     });
@@ -373,13 +418,15 @@ export class Classifier {
       labels.push(1); // mark positive samples as 1
     });
 
-    // generate negative samples (through randomization and noise injection)
-    const negativeCount = Math.min(positiveData.length, 20); // limit negative sample count
-    for (let i = 0; i < negativeCount; i++) {
-      const negativeSequence = this.generateNegativeSample();
+    // generate negative samples using improved data augmentation
+    const { negativeRatio, maxNegativeSamples } = this.trainingConfig;
+    const targetNegativeCount = Math.min(Math.ceil(positiveData.length * negativeRatio), maxNegativeSamples);
+    const negativeSamples = this.generateNegativeSamples(positiveData, targetNegativeCount);
+
+    negativeSamples.forEach((negativeSequence) => {
       sequences.push(negativeSequence);
       labels.push(0); // mark negative samples as 0
-    }
+    });
 
     // convert to tensors
     const inputTensor = tf.tensor2d(sequences, [sequences.length, this.maxSequenceLength], 'float32');
@@ -387,7 +434,7 @@ export class Classifier {
 
     console.debug(`Creating tensors - Input: shape=${inputTensor.shape}, dtype=${inputTensor.dtype}`);
     console.debug(`Creating tensors - Labels: shape=${labelsTensor.shape}, dtype=${labelsTensor.dtype}`);
-    console.debug(`Creating tensors - Samples: positive=${positiveData.length}, negative=${negativeCount}`);
+    console.debug(`Creating tensors - Samples: positive=${positiveData.length}, negative=${negativeSamples.length}`);
 
     return {
       inputs: inputTensor,
@@ -395,20 +442,143 @@ export class Classifier {
     };
   }
 
-  // generate negative sample
-  private generateNegativeSample(): number[] {
+  // generate negative samples using data augmentation
+  private generateNegativeSamples(positiveData: string[], count: number): number[][] {
+    const negativeSamples: number[][] = [];
+    const strategies = [
+      this.augmentByShuffling.bind(this),
+      this.augmentByDeletion.bind(this),
+      this.augmentByInsertion.bind(this),
+      this.augmentByReplacement.bind(this),
+      this.augmentByTruncation.bind(this),
+      this.generateRandomSample.bind(this)
+    ];
+
+    let attempts = 0;
+    const maxAttempts = count * 3; // prevent infinite loop
+
+    while (negativeSamples.length < count && attempts < maxAttempts) {
+      attempts++;
+
+      // select a random positive sample as base
+      const baseText = positiveData[Math.floor(Math.random() * positiveData.length)];
+
+      // select a random augmentation strategy
+      const strategy = strategies[Math.floor(Math.random() * strategies.length)];
+      const augmentedSequence = strategy(baseText);
+
+      if (augmentedSequence) {
+        negativeSamples.push(augmentedSequence);
+      }
+    }
+
+    // fill remaining with random samples if needed
+    while (negativeSamples.length < count) {
+      negativeSamples.push(this.generateRandomSample());
+    }
+
+    console.debug(`Generated ${negativeSamples.length} negative samples using data augmentation`);
+    return negativeSamples;
+  }
+
+  // augment by shuffling characters
+  private augmentByShuffling(text: string): number[] {
+    const chars = text.split('');
+    // Fisher-Yates shuffle
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return this.textToSequence(chars.join(''));
+  }
+
+  // augment by deleting random characters (30-70%)
+  private augmentByDeletion(text: string): number[] {
+    const deleteRatio = 0.3 + Math.random() * 0.4; // 30-70% deletion
+    const chars = text.split('');
+    const keepCount = Math.max(1, Math.floor(chars.length * (1 - deleteRatio)));
+    const indices = new Set<number>();
+
+    while (indices.size < keepCount) {
+      indices.add(Math.floor(Math.random() * chars.length));
+    }
+
+    const result = chars.filter((_, i) => indices.has(i)).join('');
+    return this.textToSequence(result);
+  }
+
+  // augment by inserting random characters
+  private augmentByInsertion(text: string): number[] {
+    const chars = text.split('');
+    const insertCount = Math.floor(Math.random() * text.length * 0.5) + 1;
+    const randomChars = 'abcdefghijklmnopqrstuvwxyz0123456789-_.';
+
+    for (let i = 0; i < insertCount; i++) {
+      const pos = Math.floor(Math.random() * (chars.length + 1));
+      const char = randomChars[Math.floor(Math.random() * randomChars.length)];
+      chars.splice(pos, 0, char);
+    }
+
+    return this.textToSequence(chars.join(''));
+  }
+
+  // augment by replacing random characters
+  private augmentByReplacement(text: string): number[] {
+    const replaceRatio = 0.2 + Math.random() * 0.3; // 20-50% replacement
+    const chars = text.split('');
+    const replaceCount = Math.max(1, Math.floor(chars.length * replaceRatio));
+    const randomChars = 'abcdefghijklmnopqrstuvwxyz0123456789-_.';
+
+    for (let i = 0; i < replaceCount; i++) {
+      const pos = Math.floor(Math.random() * chars.length);
+      chars[pos] = randomChars[Math.floor(Math.random() * randomChars.length)];
+    }
+
+    return this.textToSequence(chars.join(''));
+  }
+
+  // augment by truncating from start or end
+  private augmentByTruncation(text: string): number[] {
+    if (text.length <= 2) {
+      return this.generateRandomSample();
+    }
+
+    const truncateRatio = 0.3 + Math.random() * 0.4; // 30-70% truncation
+    const keepLength = Math.max(1, Math.floor(text.length * (1 - truncateRatio)));
+
+    // randomly truncate from start or end
+    const fromStart = Math.random() > 0.5;
+    const result = fromStart ? text.slice(text.length - keepLength) : text.slice(0, keepLength);
+
+    return this.textToSequence(result);
+  }
+
+  // generate completely random sample
+  private generateRandomSample(): number[] {
     const sequence: number[] = [];
     const vocabSize = this.tokenizer.size;
 
-    // generate random sequence
+    // generate random sequence with varying density
+    const density = 0.1 + Math.random() * 0.4; // 10-50% non-zero
     for (let i = 0; i < this.maxSequenceLength; i++) {
-      if (Math.random() < 0.3) {
-        // 30% probability to add random vocabulary
+      if (Math.random() < density) {
         sequence.push(Math.floor(Math.random() * vocabSize) + 1);
       } else {
-        // 70% probability to pad with 0
         sequence.push(0);
       }
+    }
+
+    return sequence;
+  }
+
+  // helper function to convert text to sequence
+  private textToSequence(text: string): number[] {
+    const tokens = this.tokenizeText(text);
+    const sequence = tokens.map((token) => this.tokenizer.get(token) || 0).slice(0, this.maxSequenceLength);
+
+    // pad to fixed length
+    while (sequence.length < this.maxSequenceLength) {
+      sequence.push(0);
     }
 
     return sequence;
@@ -418,6 +588,12 @@ export class Classifier {
   predict(text: string): number {
     if (!this.model || !this.modelTrained) {
       console.warn('Model not loaded or not trained');
+      return 0;
+    }
+
+    // validation for empty input
+    if (!text || text.trim().length === 0) {
+      console.warn('Empty input text');
       return 0;
     }
 
@@ -456,23 +632,16 @@ export class Classifier {
       }
     }
 
-    try {
-      // use float32 to maintain consistency with training
+    // use tf.tidy to ensure proper memory cleanup even if errors occur
+    return tf.tidy(() => {
       const input = tf.tensor2d([sequence], [1, this.maxSequenceLength], 'float32');
-      const prediction = this.model.predict(input) as tf.Tensor;
+      const prediction = this.model!.predict(input) as tf.Tensor;
       const confidence = prediction.dataSync()[0]; // probability value of sigmoid output
 
       console.debug(`Raw prediction confidence: ${confidence}`);
 
-      // clean up memory
-      input.dispose();
-      prediction.dispose();
-
       return confidence;
-    } catch (error) {
-      console.error(`Prediction error: ${error}`);
-      return 0;
-    }
+    });
   }
 
   // save model
@@ -603,7 +772,7 @@ export class Classifier {
     }
   }
 
-  // debug method: check data and model status
+  // debug method
   debugInfo() {
     console.debug(`=== Classifier Debug Info ===`);
     console.debug(`Model ID: ${this.id}`);
@@ -668,10 +837,7 @@ export class Classifier {
   }
 
   // get model detailed info (including storage size and vocabulary count)
-  static getModelInfo(id: string): {
-    sizeKB: number;
-    vocabulary: number;
-  } {
+  static getModelInfo(id: string): { sizeKB: number; vocabulary: number } {
     let sizeKB = 0;
     let vocabulary = 0;
 
@@ -745,17 +911,6 @@ export class Classifier {
   clearSavedModel() {
     Classifier.clearSavedModel(this.id);
   }
-
-  // static method: create classifier instance from cache
-  static fromCache(id: string, cached: ModelCache): Classifier {
-    const classifier = new Classifier(id);
-    classifier.model = cached.model;
-    classifier.tokenizer = new Map(cached.tokenizer);
-    classifier.maxSequenceLength = cached.config.maxSequenceLength;
-    classifier.embeddingDim = cached.config.embeddingDim;
-    classifier.modelTrained = cached.config.modelTrained;
-    return classifier;
-  }
 }
 
 /**
@@ -814,7 +969,7 @@ export async function predict(modelId: string, text: string): Promise<number | n
  *
  * @param maxAge - maximum lifetime (milliseconds), default 1 hour
  */
-export function cleanupCache(maxAge: number = 60 * 60 * 1000) {
+export function cleanup(maxAge: number = 60 * 60 * 1000) {
   const now = Date.now();
   const toDelete: string[] = [];
 
