@@ -92,8 +92,8 @@
 
   onMount(() => {
     // listen to navigation events from backend
-    const unlisten = listen('goto-shortcuts', async () => {
-      goto(resolve('/shortcuts'));
+    const unlisten = listen<string>('goto', async (event) => {
+      goto(resolve(event.payload as '/shortcuts' | '/histories' | '/settings'));
     });
     return () => {
       unlisten.then((fn) => fn());

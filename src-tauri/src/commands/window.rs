@@ -28,12 +28,12 @@ pub fn toggle_main_window(app: AppHandle) {
     toggle_window(&app, "main");
 }
 
-/// Navigate to shortcut registration page.
+/// Navigate to a specific page in the main window.
 #[tauri::command]
-pub fn goto_shortcuts(app: AppHandle) {
+pub fn navigate_to(app: AppHandle, url: String) {
     if let Some(window) = show_window(&app, "main") {
         // emit page navigation event
-        let _ = window.emit("goto-shortcuts", ());
+        let _ = window.emit("goto", url);
     }
 }
 

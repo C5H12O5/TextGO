@@ -120,7 +120,7 @@ pub fn run() {
             show_main_window,
             hide_main_window,
             toggle_main_window,
-            goto_shortcuts,
+            navigate_to,
             register_shortcut,
             unregister_shortcut,
             is_shortcut_registered,
@@ -170,8 +170,9 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // setup system tray
     setup_tray(
         app_handle.clone(),
-        "Show / Hide".to_string(),
-        "Edit Shortcuts...".to_string(),
+        "Manage Shortcuts".to_string(),
+        "View History".to_string(),
+        "Settings...".to_string(),
         "About TextGO".to_string(),
         "Quit".to_string(),
     )?;

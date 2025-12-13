@@ -7,8 +7,9 @@ use tauri::AppHandle;
 #[tauri::command]
 pub fn setup_tray(
     app: AppHandle,
-    main_window_text: String,
     shortcuts_text: String,
+    histories_text: String,
+    settings_text: String,
     about_text: String,
     quit_text: String,
 ) -> Result<(), AppError> {
@@ -16,8 +17,9 @@ pub fn setup_tray(
     let menu = Menu::with_items(
         &app,
         &[
-            &MenuItem::with_id(&app, "main_window", main_window_text, true, None::<&str>)?,
-            &MenuItem::with_id(&app, "shortcuts", shortcuts_text, true, Some("CmdOrCtrl+,"))?,
+            &MenuItem::with_id(&app, "shortcuts", shortcuts_text, true, None::<&str>)?,
+            &MenuItem::with_id(&app, "histories", histories_text, true, None::<&str>)?,
+            &MenuItem::with_id(&app, "settings", settings_text, true, Some("CmdOrCtrl+,"))?,
             &PredefinedMenuItem::separator(&app)?,
             #[cfg(target_os = "macos")]
             &PredefinedMenuItem::about(&app, Some(&about_text), None)?,
@@ -39,11 +41,14 @@ pub fn setup_tray(
             .icon_as_template(true)
             .show_menu_on_left_click(true)
             .on_menu_event(|app, event| match event.id.as_ref() {
-                "main_window" => {
-                    crate::commands::toggle_main_window(app.clone());
-                }
                 "shortcuts" => {
-                    crate::commands::goto_shortcuts(app.clone());
+                    crate::commands::navigate_to(app.clone(), "/shortcuts".to_string());
+                }
+                "histories" => {
+                    crate::commands::navigate_to(app.clone(), "/histories".to_string());
+                }
+                "settings" => {
+                    crate::commands::navigate_to(app.clone(), "/settings".to_string());
                 }
                 "about" => {
                     show_about(app.clone());
