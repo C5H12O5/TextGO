@@ -27,23 +27,27 @@ import {
 } from 'es-toolkit/string';
 import { ArrowsClockwise, Browsers, CopySimple, FolderOpen, Function } from 'phosphor-svelte';
 
-// regular expressions to match URLs and file paths
-const URL_REGEX =
-  /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*/gm;
-const PATH_REGEX =
-  /(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)/gm;
-
 /**
- * Type of data passed to scripts and prompts.
+ * Executor context to pass to executors.
  */
-type Data = {
-  /** Selected text. */
-  selection: string;
-  /** Clipboard text. */
-  clipboard: string;
+interface ExecutorContext {
+  /** Action ID. */
+  action: string;
   /** Current datetime. */
   datetime: string;
-};
+  /** Clipboard text. */
+  clipboard: string;
+  /** Selected text. */
+  selection: string;
+  /** History record. */
+  entry: Entry;
+}
+
+/**
+ * Executor function type.
+ * Returns true if the action was handled, false otherwise.
+ */
+type Executor = (context: ExecutorContext) => Promise<boolean>;
 
 /**
  * Result type of script execution.
@@ -59,6 +63,12 @@ type Result = {
 type Processor = Option & {
   process: (selection: string) => string;
 };
+
+// regular expressions to match URLs and file paths
+const URL_REGEX =
+  /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*/gm;
+const PATH_REGEX =
+  /(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)/gm;
 
 /**
  * Default actions.
@@ -247,107 +257,157 @@ const findBuiltinAction = memoize((action: string) =>
 );
 
 /**
+ * Default executor - shows main window when no action is specified.
+ */
+const defaultExecutor: Executor = async (context) => {
+  const { action } = context;
+  if (action === '') {
+    await invoke('show_main_window');
+    return true;
+  }
+  return false;
+};
+
+/**
+ * Script executor - executes user-defined scripts.
+ */
+const scriptExecutor: Executor = async (context) => {
+  const { action, entry } = context;
+  if (!action.startsWith(SCRIPT_MARK)) {
+    return false;
+  }
+
+  const scriptId = action.substring(SCRIPT_MARK.length);
+  const script = scripts.current.find((s) => s.id === scriptId);
+  if (script) {
+    console.debug(`Executing script: ${scriptId}`);
+    const result = await executeScript(script, context);
+    // save history record
+    entry.actionType = 'script';
+    entry.actionLabel = scriptId;
+    entry.result = result.text;
+    entry.scriptLang = script.lang;
+    saveEntry(entry);
+    // directly replace selected text
+    if (!result.error) {
+      await invoke('enter_text', result);
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Prompt executor - generates AI prompts and shows popup window.
+ */
+const promptExecutor: Executor = async (context) => {
+  const { action, entry } = context;
+  if (!action.startsWith(PROMPT_MARK)) {
+    return false;
+  }
+
+  const promptId = action.substring(PROMPT_MARK.length);
+  const prompt = prompts.current.find((p) => p.id === promptId);
+  if (prompt) {
+    console.debug(`Generating prompt: ${promptId}`);
+    const result = renderPrompt(prompt, context);
+    // save history record
+    entry.actionType = 'prompt';
+    entry.actionLabel = promptId;
+    entry.result = result;
+    entry.systemPrompt = prompt.systemPrompt;
+    entry.provider = prompt.provider;
+    entry.model = prompt.model;
+    saveEntry(entry);
+    // show popup window
+    await showPopup(entry);
+  }
+
+  return true;
+};
+
+/**
+ * Searcher executor - opens search URLs in specified browser.
+ */
+const searcherExecutor: Executor = async (context) => {
+  const { action, selection, entry } = context;
+  if (!action.startsWith(SEARCHER_MARK)) {
+    return false;
+  }
+
+  const searcherId = action.substring(SEARCHER_MARK.length);
+  const searcher = searchers.current.find((s) => s.id === searcherId);
+  if (searcher) {
+    console.debug(`Opening URL for searcher: ${searcherId}`);
+    const result = searcher.url.replace(/\{\{selection\}\}/g, selection);
+    // save history record
+    entry.actionType = 'searcher';
+    entry.actionLabel = searcherId;
+    entry.result = result;
+    saveEntry(entry);
+    // open URL
+    await openUrl(result, searcher.browser);
+  }
+
+  return true;
+};
+
+/**
+ * Builtin executor - executes built-in text processing actions.
+ */
+const builtinExecutor: Executor = async (context) => {
+  const { action, selection } = context;
+  const builtin = findBuiltinAction(action);
+  if (!builtin) {
+    return false;
+  }
+
+  console.debug(`Executing builtin action: ${action}`);
+  const result = builtin.process(selection);
+  // directly replace selected text
+  await invoke('enter_text', { text: result });
+
+  return true;
+};
+
+/**
+ * Chain of executors to try.
+ */
+const EXECUTORS: Executor[] = [defaultExecutor, scriptExecutor, promptExecutor, searcherExecutor, builtinExecutor];
+
+/**
  * Execute action.
  *
  * @param rule - rule object
  * @param selection - selected text
  */
 export async function execute(rule: Rule, selection: string): Promise<void> {
-  // action identifier
-  const action = rule.action;
-
-  // execute default action
-  if (action === '') {
-    await invoke('show_main_window');
-    return;
-  }
-
-  // assemble data
-  const data: Data = {
-    selection: selection,
-    clipboard: await invoke<string>('get_clipboard_text'),
-    datetime: new Date().toISOString()
-  };
+  const datetime = new Date().toISOString();
+  const clipboard = await invoke<string>('get_clipboard_text');
 
   // generate record
   const entry: Entry = {
     id: crypto.randomUUID(),
     shortcut: rule.shortcut,
     caseLabel: rule.caseLabel,
-    // actionLabel: rule.actionLabel,
-    datetime: data.datetime,
-    clipboard: data.clipboard,
-    selection: data.selection
+    datetime: datetime,
+    clipboard: clipboard,
+    selection: selection
   };
 
-  // execute action based on identifier
-  if (action.startsWith(SCRIPT_MARK)) {
-    const scriptId = action.substring(SCRIPT_MARK.length);
-    const script = scripts.current.find((s) => s.id === scriptId);
-    if (script) {
-      console.debug(`Executing script: ${scriptId}`);
-      const result = await executeScript(script, data);
-      // save record
-      entry.actionType = 'script';
-      entry.actionLabel = scriptId;
-      entry.result = result.text;
-      entry.scriptLang = script.lang;
-      entries.current.unshift(entry);
-      // remove excess records
-      if (entries.current.length > historySize.current) {
-        entries.current = entries.current.slice(0, historySize.current);
-      }
-      // directly replace selected text
-      if (!result.error) {
-        await invoke('enter_text', result);
-      }
-    }
-  } else if (action.startsWith(PROMPT_MARK)) {
-    const promptId = action.substring(PROMPT_MARK.length);
-    const prompt = prompts.current.find((p) => p.id === promptId);
-    if (prompt) {
-      console.debug(`Generating prompt: ${promptId}`);
-      const result = await renderPrompt(prompt, data);
-      // save record
-      entry.actionType = 'prompt';
-      entry.actionLabel = promptId;
-      entry.result = result;
-      entry.systemPrompt = prompt.systemPrompt;
-      entry.provider = prompt.provider;
-      entry.model = prompt.model;
-      entries.current.unshift(entry);
-      // remove excess records
-      if (entries.current.length > historySize.current) {
-        entries.current = entries.current.slice(0, historySize.current);
-      }
-      // show popup window
-      await showPopup(entry);
-    }
-  } else if (action.startsWith(SEARCHER_MARK)) {
-    const searcherId = action.substring(SEARCHER_MARK.length);
-    const searcher = searchers.current.find((s) => s.id === searcherId);
-    if (searcher) {
-      console.debug(`Opening URL for searcher: ${searcherId}`);
-      const result = searcher.url.replace(/\{\{selection\}\}/g, data.selection);
-      // save record
-      entry.actionType = 'searcher';
-      entry.actionLabel = searcherId;
-      entry.result = result;
-      entries.current.unshift(entry);
-      // remove excess records
-      if (entries.current.length > historySize.current) {
-        entries.current = entries.current.slice(0, historySize.current);
-      }
-      // open URL
-      await openUrl(result, searcher.browser);
-    }
-  } else {
-    const builtin = findBuiltinAction(action);
-    if (builtin) {
-      console.debug(`Executing builtin action: ${action}`);
-      const result = builtin.process(selection);
-      await invoke('enter_text', { text: result });
-    }
+  // create context
+  const context: ExecutorContext = {
+    action: rule.action,
+    datetime: datetime,
+    clipboard: clipboard,
+    selection: selection,
+    entry: entry
+  };
+
+  // execute executors in chain until one succeeds
+  for (const executor of EXECUTORS) {
+    const handled = await executor(context);
+    if (handled) break;
   }
 }
 
@@ -355,11 +415,16 @@ export async function execute(rule: Rule, selection: string): Promise<void> {
  * Execute input script and return result.
  *
  * @param script - script object
- * @param data - data object
+ * @param context - executor context
  * @returns script execution result
  */
-export async function executeScript(script: Script, data: Data): Promise<Result> {
+async function executeScript(script: Script, context: ExecutorContext): Promise<Result> {
   try {
+    const data = {
+      datetime: context.datetime,
+      clipboard: context.clipboard,
+      selection: context.selection
+    };
     if (script.lang === 'javascript') {
       const result = await invoke<string>('execute_javascript', {
         code: script.script,
@@ -386,18 +451,31 @@ export async function executeScript(script: Script, data: Data): Promise<Result>
  * Render the input prompt and return the result.
  *
  * @param prompt - prompt object
- * @param data - data object
+ * @param context - executor context
  * @returns rendering result
  */
-export async function renderPrompt(prompt: Prompt, data: Data): Promise<string> {
+function renderPrompt(prompt: Prompt, context: ExecutorContext): string {
   let result = prompt.prompt || '';
 
   // use regular expression to replace template parameters
-  result = result.replace(/\{\{clipboard\}\}/g, data.clipboard);
-  result = result.replace(/\{\{selection\}\}/g, data.selection);
-  result = result.replace(/\{\{datetime\}\}/g, data.datetime);
+  result = result.replace(/\{\{clipboard\}\}/g, context.clipboard);
+  result = result.replace(/\{\{selection\}\}/g, context.selection);
+  result = result.replace(/\{\{datetime\}\}/g, context.datetime);
 
   return result;
+}
+
+/**
+ * Save entry to history.
+ *
+ * @param entry - record object to save
+ */
+function saveEntry(entry: Entry): void {
+  entries.current.unshift(entry);
+  // remove excess records
+  if (entries.current.length > historySize.current) {
+    entries.current = entries.current.slice(0, historySize.current);
+  }
 }
 
 /**

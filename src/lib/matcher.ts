@@ -22,6 +22,26 @@ import {
 } from 'phosphor-svelte';
 
 /**
+ * Matcher context to share state across matchers.
+ */
+interface MatcherContext {
+  /** Text to match */
+  text: string;
+  /** Rule to match against */
+  rule: Rule;
+  /** Natural language detection results */
+  naturalLangs: TrigramTuple[] | null;
+  /** Programming language detection results */
+  programmingLangs: ModelResult[] | null;
+}
+
+/**
+ * Matcher function type.
+ * Returns the matched rule with label if successful, null otherwise.
+ */
+type Matcher = (context: MatcherContext) => Promise<Rule | null>;
+
+/**
  * General recognition options.
  */
 export const GENERAL_CASES: Option[] = [
@@ -288,44 +308,6 @@ const findNaturalCase = memoize((_case: string) => NATURAL_CASES.find((c) => c.v
 const findProgrammingCase = memoize((_case: string) => PROGRAMMING_CASES.find((c) => c.value === _case));
 
 /**
- * Find the first matching rule for the given text.
- *
- * @param text - text to match
- * @param rules - list of rules to check
- * @returns the first matched rule object, or null if no match is found
- */
-export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null> {
-  return (await match(text, rules, false)) as Rule | null;
-}
-
-/**
- * Find all matching rules for the given text.
- *
- * @param text - text to match
- * @param rules - list of rules to check
- * @returns array of matched rule objects, or empty array if no match is found
- */
-export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
-  return (await match(text, rules, true)) as Rule[];
-}
-
-/**
- * Matcher context to share state across matchers.
- */
-interface MatcherContext {
-  text: string;
-  rule: Rule;
-  naturalLangs: TrigramTuple[] | null;
-  programmingLangs: ModelResult[] | null;
-}
-
-/**
- * Matcher function type.
- * Returns the matched rule with label if successful, null otherwise.
- */
-type Matcher = (context: MatcherContext) => Promise<Rule | null>;
-
-/**
  * Skip matcher - matches empty case (no recognition).
  */
 const skipMatcher: Matcher = async (context) => {
@@ -340,7 +322,9 @@ const skipMatcher: Matcher = async (context) => {
  * Builtin regex matcher - matches against predefined patterns.
  */
 const builtinMatcher: Matcher = async (context) => {
-  if (!context.text) return null;
+  if (!context.text) {
+    return null;
+  }
 
   const builtin = findBuiltinCase(context.rule.case);
   if (builtin && builtin.pattern && builtin.pattern.test(context.text)) {
@@ -354,23 +338,25 @@ const builtinMatcher: Matcher = async (context) => {
  * Natural language matcher - detects natural languages using franc (https://github.com/wooorm/franc).
  */
 const naturalMatcher: Matcher = async (context) => {
-  if (!context.text) return null;
+  if (!context.text) {
+    return null;
+  }
 
   const natural = findNaturalCase(context.rule.case);
-  if (!natural) return null;
-
-  try {
-    // lazy load natural language detection results
-    if (context.naturalLangs === null) {
-      context.naturalLangs = francAll(context.text, FRANC_OPTIONS);
-      console.debug(`Natural language detection result: ${JSON.stringify(context.naturalLangs)}`);
+  if (natural) {
+    try {
+      // lazy load natural language detection results
+      if (context.naturalLangs === null) {
+        context.naturalLangs = francAll(context.text, FRANC_OPTIONS);
+        console.debug(`Natural language detection result: ${JSON.stringify(context.naturalLangs)}`);
+      }
+      if (matchNaturalCase(context.rule.case, context.naturalLangs)) {
+        console.debug(`Natural language detected: ${natural.label}`);
+        return { ...context.rule, caseLabel: natural.label };
+      }
+    } catch (error) {
+      console.error(`Natural language detection failed: ${error}`);
     }
-    if (matchNaturalCase(context.rule.case, context.naturalLangs)) {
-      console.debug(`Natural language detected: ${natural.label}`);
-      return { ...context.rule, caseLabel: natural.label };
-    }
-  } catch (error) {
-    console.error(`Natural language detection failed: ${error}`);
   }
   return null;
 };
@@ -379,23 +365,25 @@ const naturalMatcher: Matcher = async (context) => {
  * Programming language matcher - detects programming languages using guesslang (https://github.com/yoeo/guesslang).
  */
 const programmingMatcher: Matcher = async (context) => {
-  if (!context.text) return null;
+  if (!context.text) {
+    return null;
+  }
 
   const programming = findProgrammingCase(context.rule.case);
-  if (!programming) return null;
-
-  try {
-    // lazy load programming language detection results
-    if (context.programmingLangs === null) {
-      context.programmingLangs = await MODEL_OPERATIONS.runModel(context.text);
-      console.debug(`Programming language detection result: ${JSON.stringify(context.programmingLangs)}`);
+  if (programming) {
+    try {
+      // lazy load programming language detection results
+      if (context.programmingLangs === null) {
+        context.programmingLangs = await MODEL_OPERATIONS.runModel(context.text);
+        console.debug(`Programming language detection result: ${JSON.stringify(context.programmingLangs)}`);
+      }
+      if (matchProgrammingCase(context.rule.case, context.programmingLangs)) {
+        console.debug(`Programming language detected: ${programming.label}`);
+        return { ...context.rule, caseLabel: programming.label };
+      }
+    } catch (error) {
+      console.error(`Programming language detection failed: ${error}`);
     }
-    if (matchProgrammingCase(context.rule.case, context.programmingLangs)) {
-      console.debug(`Programming language detected: ${programming.label}`);
-      return { ...context.rule, caseLabel: programming.label };
-    }
-  } catch (error) {
-    console.error(`Programming language detection failed: ${error}`);
   }
   return null;
 };
@@ -404,11 +392,15 @@ const programmingMatcher: Matcher = async (context) => {
  * Custom regex matcher - matches against user-defined regex patterns.
  */
 const customRegexMatcher: Matcher = async (context) => {
-  if (!context.text || !context.rule.case.startsWith(REGEXP_MARK)) return null;
+  if (!context.text || !context.rule.case.startsWith(REGEXP_MARK)) {
+    return null;
+  }
 
   const regexpId = context.rule.case.substring(REGEXP_MARK.length);
   const regexp = regexps.current.find((r) => r.id === regexpId);
-  if (!regexp || !regexp.pattern) return null;
+  if (!regexp || !regexp.pattern) {
+    return null;
+  }
 
   try {
     const pattern = new RegExp(regexp.pattern, regexp.flags);
@@ -426,11 +418,15 @@ const customRegexMatcher: Matcher = async (context) => {
  * Custom model matcher - matches using user-trained ML models.
  */
 const customModelMatcher: Matcher = async (context) => {
-  if (!context.text || !context.rule.case.startsWith(MODEL_MARK)) return null;
+  if (!context.text || !context.rule.case.startsWith(MODEL_MARK)) {
+    return null;
+  }
 
   const modelId = context.rule.case.substring(MODEL_MARK.length);
   const model = models.current.find((m) => m.id === modelId);
-  if (!model) return null;
+  if (!model) {
+    return null;
+  }
 
   try {
     if (await matchModelCase(model, context.text)) {
@@ -444,7 +440,7 @@ const customModelMatcher: Matcher = async (context) => {
 };
 
 /**
- * Chain of matchers to execute in order.
+ * Chain of matchers to match against rules.
  */
 const MATCHERS: Matcher[] = [
   skipMatcher,
@@ -505,6 +501,28 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
   }
 
   return matchAll ? matchedRules : null;
+}
+
+/**
+ * Find the first matching rule for the given text.
+ *
+ * @param text - text to match
+ * @param rules - list of rules to check
+ * @returns the first matched rule object, or null if no match is found
+ */
+export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null> {
+  return (await match(text, rules, false)) as Rule | null;
+}
+
+/**
+ * Find all matching rules for the given text.
+ *
+ * @param text - text to match
+ * @param rules - list of rules to check
+ * @returns array of matched rule objects, or empty array if no match is found
+ */
+export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
+  return (await match(text, rules, true)) as Rule[];
 }
 
 /**
