@@ -2,13 +2,23 @@ use crate::error::AppError;
 use crate::platform;
 use crate::ENIGO;
 use enigo::Mouse;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Duration;
 use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
+use tokio::time::sleep;
 
 // window position offset from cursor
 const WINDOW_OFFSET: i32 = 5;
 
 // bottom safe area offset to avoid taskbar/dock
 const SAFE_AREA_BOTTOM: i32 = 80;
+
+// maximum wait time for window initialization
+const INITIALIZATION_TIMEOUT_MS: u64 = 1000;
+
+// initialization flags for popup and toolbar windows
+static POPUP_INITIALIZED: AtomicBool = AtomicBool::new(false);
+static TOOLBAR_INITIALIZED: AtomicBool = AtomicBool::new(false);
 
 /// Show main window.
 #[tauri::command]
@@ -37,6 +47,18 @@ pub fn navigate_to(app: AppHandle, url: String) {
     }
 }
 
+/// Mark popup window as initialized.
+#[tauri::command]
+pub fn mark_popup_initialized() {
+    POPUP_INITIALIZED.store(true, Ordering::Relaxed);
+}
+
+/// Mark toolbar window as initialized.
+#[tauri::command]
+pub fn mark_toolbar_initialized() {
+    TOOLBAR_INITIALIZED.store(true, Ordering::Relaxed);
+}
+
 /// Show popup and position it near the cursor.
 #[tauri::command]
 pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
@@ -47,8 +69,8 @@ pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Resul
         // show and focus window
         show_window(&app, "popup");
 
-        // send data
-        window.emit("show-popup", payload)?;
+        // wait for initialization and emit event
+        wait_and_emit(&POPUP_INITIALIZED, window, payload);
     } else {
         return Err("Popup window not found".into());
     }
@@ -75,13 +97,45 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
         #[cfg(not(target_os = "macos"))]
         window.show()?;
 
-        // send data
-        window.emit("show-toolbar", payload)?;
+        // wait for initialization and emit event
+        wait_and_emit(&TOOLBAR_INITIALIZED, window, payload);
     } else {
         return Err("Toolbar window not found".into());
     }
 
     Ok(())
+}
+
+/// Wait for window initialization and emit event.
+///
+/// If already initialized, emit event immediately.
+/// Otherwise, spawn async task to wait and then emit.
+fn wait_and_emit(flag: &'static AtomicBool, window: WebviewWindow, payload: String) {
+    // get window label and construct event name
+    let window_label = window.label().to_string();
+    let event_name = format!("show-{}", window_label);
+
+    // if already initialized, emit immediately
+    if flag.load(Ordering::Relaxed) {
+        let _ = window.emit(&event_name, payload);
+        return;
+    }
+
+    // spawn async task to wait for initialization and send data
+    tauri::async_runtime::spawn(async move {
+        // wait for initialization with timeout
+        const CHECK_INTERVAL_MS: u64 = 10;
+        const MAX_CHECKS: u64 = INITIALIZATION_TIMEOUT_MS / CHECK_INTERVAL_MS;
+        for _ in 0..MAX_CHECKS {
+            sleep(Duration::from_millis(CHECK_INTERVAL_MS)).await;
+            if flag.load(Ordering::Relaxed) {
+                break;
+            }
+        }
+
+        // emit event after initialization or timeout
+        let _ = window.emit(&event_name, payload);
+    });
 }
 
 /// Position a window near the mouse or selection with safe area constraints.

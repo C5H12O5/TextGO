@@ -4,6 +4,7 @@
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { prompts, scripts, searchers } from '$lib/stores.svelte';
   import type { Rule } from '$lib/types';
+  import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
   import { Image } from '@tauri-apps/api/image';
@@ -289,6 +290,11 @@
       console.error(`Failed to execute action: ${error}`);
     }
   }
+
+  onMount(async () => {
+    // mark toolbar as initialized
+    await invoke('mark_toolbar_initialized');
+  });
 
   onMount(() => {
     // listen to toolbar show/hide events

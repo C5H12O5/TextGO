@@ -2,6 +2,7 @@
   import { Button, CodeMirror } from '$lib/components';
   import { ollamaHost } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
+  import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { type } from '@tauri-apps/plugin-os';
   import { marked } from 'marked';
@@ -152,6 +153,10 @@
       }
     }
   }
+  onMount(async () => {
+    // mark popup as initialized
+    await invoke('mark_popup_initialized');
+  });
 
   onMount(() => {
     const setup = (data: Entry | null) => {
