@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { Button, CodeMirror } from '$lib/components';
-  import { ollamaHost } from '$lib/stores.svelte';
+  import { Button, CodeMirror, Icon } from '$lib/components';
+  import { ollamaHost, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition } from '@tauri-apps/api/dpi';
@@ -9,7 +9,7 @@
   import { type } from '@tauri-apps/plugin-os';
   import { marked } from 'marked';
   import { Ollama } from 'ollama/browser';
-  import { ArrowCounterClockwise, CopySimple, Robot, StopCircle, TextIndent } from 'phosphor-svelte';
+  import { ArrowCounterClockwise, CopySimple, StopCircle, TextIndent } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
   // operating system type
@@ -21,20 +21,28 @@
   // shortcut trigger record
   let entry: Entry | null = $state(null);
 
+  // check if in prompt mode
+  let promptMode: boolean = $derived.by(() => entry?.actionType === 'prompt');
+  let promptIcon: string = $derived.by(() => {
+    let icon = 'Robot';
+    if (promptMode) {
+      const prompt = prompts.current.find((p) => p.id === entry?.actionLabel);
+      icon = prompt?.icon || icon;
+    }
+    return icon;
+  });
+
   // CodeMirror instance
   let codeMirror: CodeMirror | null = $state(null);
-
-  // whether in prompt mode
-  let promptMode: boolean = $derived.by(() => entry?.actionType === 'prompt');
-
-  // streaming status
-  let streaming: boolean = $state(false);
 
   // Ollama instance
   let ollama = new Ollama();
   $effect(() => {
     ollama = new Ollama({ host: ollamaHost.current || undefined });
   });
+
+  // streaming status
+  let streaming: boolean = $state(false);
 
   // auto scroll status
   let autoScroll = $state(false);
@@ -158,6 +166,7 @@
       }
     }
   }
+
   onMount(async () => {
     // mark popup as initialized
     await invoke('mark_popup_initialized');
@@ -191,8 +200,8 @@
 {#snippet panel()}
   <div class="pointer-events-none flex items-center gap-2 truncate">
     {#if promptMode}
-      <Robot class="size-4.5 shrink-0" />
-      <span class="truncate text-sm text-base-content/80">{entry?.model}</span>
+      <Icon icon={promptIcon} class="size-4.5 shrink-0" />
+      <span class="truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
     {/if}
   </div>
   <div class="flex items-center gap-1">
