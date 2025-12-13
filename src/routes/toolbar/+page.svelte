@@ -169,7 +169,10 @@
 
       // calculate bottom-right corner position
       const size = await currentWindow.innerSize();
-      const bottomRightPosition = new LogicalPosition(size.width - 32, size.height + 2);
+      const scale = await currentWindow.scaleFactor();
+      const width = size.width / scale;
+      const height = size.height / scale;
+      const bottomRightPosition = new LogicalPosition(width - 32, height - 2);
 
       // popup menu at bottom-right corner of toolbar window
       await menu.popup(bottomRightPosition, currentWindow);

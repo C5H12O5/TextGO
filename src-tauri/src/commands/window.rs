@@ -183,6 +183,8 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let scale_factor = monitor.scale_factor();
 
     // convert physical pixels to logical pixels
+    let window_width = (window_width as f64 / scale_factor) as i32;
+    let window_height = (window_height as f64 / scale_factor) as i32;
     let screen_width = (monitor_size.width as f64 / scale_factor) as i32;
     let screen_height = (monitor_size.height as f64 / scale_factor) as i32;
     let screen_x = (monitor_position.x as f64 / scale_factor) as i32;
@@ -190,9 +192,9 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
 
     // calculate safe area for window
     let min_x = screen_x;
-    let max_x = screen_x + screen_width - window_width;
+    let max_x = (screen_x + screen_width - window_width).max(min_x);
     let min_y = screen_y;
-    let max_y = screen_y + screen_height - window_height - SAFE_AREA_BOTTOM;
+    let max_y = (screen_y + screen_height - window_height - SAFE_AREA_BOTTOM).max(min_y);
 
     // set adjusted window position
     window.set_position(tauri::Position::Logical(tauri::LogicalPosition {

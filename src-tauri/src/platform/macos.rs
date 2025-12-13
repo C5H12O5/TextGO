@@ -238,7 +238,7 @@ pub fn get_selection() -> Result<String, AppError> {
     Ok(String::new())
 }
 
-/// Get the physical coordinates of the bottom-right corner of the selected text.
+/// Get the logical coordinates of the bottom-right corner of the selected text.
 pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
     unsafe {
         // get focused element
