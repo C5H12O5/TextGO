@@ -62,6 +62,26 @@ _Follow these steps to resolve:_
 
 </details>
 
+## 🛠️ Development
+
+1. Refer to [Tauri official documentation](https://v2.tauri.app/start/prerequisites/) to install Rust and Node.js (use [pnpm](https://pnpm.io/) as the package manager)
+2. Clone and setup:
+   ```bash
+   git clone https://github.com/C5H12O5/TextGO.git
+   cd TextGO
+   pnpm install
+   ```
+3. Run development mode:
+   ```bash
+   pnpm tauri dev
+   # or with debug logs
+   RUST_LOG=debug pnpm tauri dev
+   ```
+4. Build installer:
+   ```bash
+   pnpm tauri build
+   ```
+
 ## 🎉 Acknowledgments
 
 This project is built upon many excellent open source projects. We would like to express our sincere gratitude to all the developers and contributors of these projects.
