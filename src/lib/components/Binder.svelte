@@ -10,6 +10,7 @@
   import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
   import type { Option, Rule } from '$lib/types';
   import { ArrowArcRight, ArrowFatLineRight, Code, Sparkle, Translate } from 'phosphor-svelte';
+  import { untrack } from 'svelte';
 
   // loading status
   const loading = new Loading();
@@ -99,6 +100,50 @@
     return options;
   });
 
+  // unused cases and actions
+  const { unusedCases, unusedActions } = $derived.by(() => {
+    const rules = shortcuts.current[shortcut]?.rules || [];
+
+    // helper function to get used actions
+    const getUsedActions = (value: string) => {
+      return new Set(rules.filter((r) => r.case === value).map((r) => r.action));
+    };
+
+    // helper function to get unused actions
+    const getUnusedActions = (value: string) => {
+      return actions.filter((a) => !getUsedActions(value).has(a.value as string));
+    };
+
+    // calculate total available actions
+    const totalAvailableActions = actions.filter((a) => !a.disabled).length;
+
+    // get unused cases
+    const unusedCases = cases.filter(
+      (c) => c.disabled || getUsedActions(c.value as string).size < totalAvailableActions
+    );
+
+    // check if current case is still available
+    if (!unusedCases.some((c) => c.value === caseId)) {
+      untrack(() => {
+        const availableCase = unusedCases.find((c) => !c.disabled && c.value !== caseId);
+        caseId = availableCase ? (availableCase.value as string) : '';
+      });
+    }
+
+    // get unused actions
+    const unusedActions = getUnusedActions(caseId);
+
+    // check if current action is still available
+    if (!unusedActions.some((a) => a.value === actionId)) {
+      untrack(() => {
+        const availableAction = unusedActions.find((a) => !a.disabled && a.value !== actionId);
+        actionId = availableAction ? (availableAction.value as string) : 'copy';
+      });
+    }
+
+    return { unusedCases, unusedActions };
+  });
+
   /**
    * Get case option.
    *
@@ -124,7 +169,7 @@
    *
    * @param form - form element
    */
-  async function register(form: HTMLFormElement) {
+  export async function register(form: HTMLFormElement) {
     const s = shortcuts.current[shortcut];
     if (s.rules.find((r) => r.shortcut === shortcut && r.case === caseId && r.action === actionId)) {
       alert({ level: 'error', message: m.rule_already_used() });
@@ -132,14 +177,17 @@
     }
     loading.start();
     try {
+      // close modal first
+      modal.close();
+      // register new rule
       await manager.register({
         id: crypto.randomUUID(),
         shortcut: shortcut,
         case: caseId,
         action: actionId
       });
+      // reset form fields
       form.reset();
-      modal.close();
       alert(m.rule_added_success());
     } catch (error) {
       console.error(`Failed to register rule: ${error}`);
@@ -183,7 +231,7 @@
                 <Icon icon={ArrowArcRight} class="m-auto size-6 opacity-50" />
               {/if}
             </span>
-            <Select bind:value={caseId} options={cases} class="w-full select-sm" />
+            <Select bind:value={caseId} options={unusedCases} class="w-full select-sm" />
           </div>
         </div>
 
@@ -201,7 +249,7 @@
                 <Icon icon={selectedAction.icon} class="m-auto size-6" />
               {/if}
             </span>
-            <Select bind:value={actionId} options={actions} class="w-full select-sm" />
+            <Select bind:value={actionId} options={unusedActions} class="w-full select-sm" />
           </div>
         </div>
       </div>
