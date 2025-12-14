@@ -1,6 +1,6 @@
 # Third-Party License Notices
 
-> This document was automatically generated on December 14, 2025 at 08:32 AM GMT+8
+> This document was automatically generated on December 14, 2025 at 11:28 PM GMT+8
 
 ## Frontend Dependencies
 
@@ -38,7 +38,7 @@
 | [@tauri-apps/plugin-os](https://github.com/tauri-apps/plugins-workspace)                   | 2.3.2   | MIT OR Apache-2.0 | ![plugin-os](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/os/banner.png)                                                        |
 | [@tauri-apps/plugin-store](https://github.com/tauri-apps/plugins-workspace)                | 2.4.1   | MIT OR Apache-2.0 | Simple, persistent key-value store.                                                                                                               |
 | [@tensorflow/tfjs](https://github.com/tensorflow/tfjs)                                     | 4.22.0  | Apache-2.0        | An open-source machine learning framework.                                                                                                        |
-| [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped)                          | 25.0.1  | MIT               | TypeScript definitions for node                                                                                                                   |
+| [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped)                          | 25.0.2  | MIT               | TypeScript definitions for node                                                                                                                   |
 | [@vscode/vscode-languagedetection](https://github.com/microsoft/vscode-languagedetection)  | 1.0.22  | MIT               | An npm package that uses guesslang's ML model to detect source code languages                                                                     |
 | [codemirror](https://github.com/codemirror/basic-setup)                                    | 6.0.2   | MIT               | Basic configuration for the CodeMirror code editor                                                                                                |
 | [daisyui](https://github.com/saadeghi/daisyui)                                             | 5.5.13  | MIT               | daisyUI 5 - The Tailwind CSS Component Library                                                                                                    |
