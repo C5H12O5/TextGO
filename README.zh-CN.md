@@ -1,8 +1,6 @@
 <div align="center">
 
-<img src="app-icon.png" alt="logo" width="80">
-
-<h1>TextGO</h1>
+<img src="app-logo.png" alt="logo" height="80">
 
 [![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat)](https://github.com/C5H12O5/TextGO/releases)
 [![GitHub Stars](https://img.shields.io/github/stars/C5H12O5/TextGO?logo=github&label=Stars&style=flat&color=yellow)](https://github.com/C5H12O5/TextGO/stargazers)
