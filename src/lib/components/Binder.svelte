@@ -1,15 +1,15 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { alert, Label, Modal, Select } from '$lib/components';
+  import { alert, Icon, Label, Modal, Select } from '$lib/components';
   import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { manager } from '$lib/manager';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
-  import { models, prompts, regexps, scripts, shortcuts, searchers } from '$lib/stores.svelte';
+  import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
   import type { Option, Rule } from '$lib/types';
-  import { ArrowFatLineRight, Code, FingerprintSimple, Sparkle, Translate } from 'phosphor-svelte';
+  import { ArrowArcRight, ArrowFatLineRight, Code, Sparkle, Translate } from 'phosphor-svelte';
 
   // loading status
   const loading = new Loading();
@@ -17,18 +17,24 @@
   // shortcut to bind
   let shortcut: string = $state('');
 
-  // case identifier
-  let caseId: string = $state('');
-
-  // action identifier
-  let actionId: string = $state('copy');
-
   // rule binding modal
   let modal: Modal;
   export const showModal = (value: string) => {
     shortcut = value;
     modal.show();
   };
+
+  // case identifier
+  let caseId: string = $state('');
+
+  // action identifier
+  let actionId: string = $state('copy');
+
+  // current selected case option
+  let selectedCase = $derived(getCaseOption(caseId));
+
+  // current selected action option
+  let selectedAction = $derived(getActionOption(actionId));
 
   // available cases
   const cases: Option[] = $derived.by(() => {
@@ -156,7 +162,7 @@
   }
 </script>
 
-<Modal icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={modal}>
+<Modal maxWidth="36rem" icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ formElement, cancel }) => {
@@ -165,10 +171,40 @@
     }}
   >
     <fieldset class="fieldset">
-      <Label icon={FingerprintSimple} class="mt-4">{m.recognize_type()}</Label>
-      <Select bind:value={caseId} options={cases} class="w-full" />
-      <Label icon={ArrowFatLineRight} class="mt-4">{m.execute_action()}</Label>
-      <Select bind:value={actionId} options={actions} class="w-full" />
+      <div class="mt-4 grid grid-cols-11 gap-2">
+        <!-- case selection -->
+        <div class="col-span-5">
+          <Label>{m.recognize_type()}</Label>
+          <div class="flex items-center gap-1">
+            <span class="flex size-8 shrink-0 rounded-field bg-base-200">
+              {#if selectedCase?.icon}
+                <Icon icon={selectedCase.icon} class="m-auto size-6" />
+              {:else if caseId == ''}
+                <Icon icon={ArrowArcRight} class="m-auto size-6 opacity-50" />
+              {/if}
+            </span>
+            <Select bind:value={caseId} options={cases} class="w-full select-sm" />
+          </div>
+        </div>
+
+        <!-- arrow separator -->
+        <div class="col-span-1 flex items-center justify-center">
+          <ArrowFatLineRight class="size-6 opacity-15" />
+        </div>
+
+        <!-- action selection -->
+        <div class="col-span-5">
+          <Label>{m.execute_action()}</Label>
+          <div class="flex items-center gap-1">
+            <span class="flex size-8 shrink-0 rounded-field bg-base-200">
+              {#if selectedAction?.icon}
+                <Icon icon={selectedAction.icon} class="m-auto size-6" />
+              {/if}
+            </span>
+            <Select bind:value={actionId} options={actions} class="w-full select-sm" />
+          </div>
+        </div>
+      </div>
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal?.close()}>{m.cancel()}</button>
