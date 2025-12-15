@@ -72,11 +72,17 @@ _可以按照以下步骤解决：_
    pnpm install
    ```
 3. 运行开发环境：
+
    ```bash
    pnpm tauri dev
-   # 或开启 debug 模式
+
+   # 类 Unix 系统下启用调试日志
    RUST_LOG=debug pnpm tauri dev
+
+   # Windows PowerShell 下启用调试日志
+   $env:RUST_LOG="debug"; pnpm tauri dev
    ```
+
 4. 构建安装包：
    ```bash
    pnpm tauri build

@@ -72,11 +72,17 @@ _Follow these steps to resolve:_
    pnpm install
    ```
 3. Run development mode:
+
    ```bash
    pnpm tauri dev
-   # or with debug logs
+
+   # enable debug logs on Unix-like systems
    RUST_LOG=debug pnpm tauri dev
+
+   # enable debug logs on Windows PowerShell
+   $env:RUST_LOG="debug"; pnpm tauri dev
    ```
+
 4. Build installer:
    ```bash
    pnpm tauri build
