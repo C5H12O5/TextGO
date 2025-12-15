@@ -3,6 +3,7 @@ use crate::error::AppError;
 use crate::platform;
 use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
 use enigo::Mouse;
+use log::debug;
 use rdev::{Button, Event, EventType};
 use std::cell::Cell;
 use std::sync::atomic::Ordering;
@@ -89,6 +90,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
 
     // check for drag end
     if IS_DRAGGING.get() {
+        debug!("checking for drag end (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit drag end event
             emit_event("MouseClick+MouseMove")?;
@@ -104,6 +106,10 @@ fn handle_mouse_release() -> Result<(), AppError> {
         let valid_cursor = is_valid_cursor || last_valid_cursor;
         let valid_interval = now.duration_since(last_time) < MAX_DBCLICK_INTERVAL;
         let valid_distance = distance(pos, last_pos) < MAX_DBCLICK_DISTANCE;
+        debug!(
+            "checking for double click (cursor: {}, interval: {}, distance: {})",
+            valid_cursor, valid_interval, valid_distance
+        );
         if valid_cursor && valid_interval && valid_distance {
             // emit double click event
             emit_event("MouseClick+MouseClick")?;
