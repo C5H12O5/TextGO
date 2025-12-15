@@ -2,7 +2,10 @@ use crate::error::AppError;
 use core_foundation::array::CFArray;
 use core_foundation::base::{CFRange, CFType, CFTypeRef, TCFType};
 use core_foundation::string::{CFString, CFStringRef};
+use std::collections::HashMap;
 use std::os::raw::c_void;
+use std::sync::Mutex;
+use std::time::Instant;
 
 // bounds validation constants
 const MIN_VALID_WIDTH: f64 = 1.0;
@@ -16,6 +19,11 @@ const EDITABLE_AX_ROLES: &[&str] = &["AXTextField", "AXTextArea", "AXComboBox"];
 // https://developer.apple.com/documentation/applicationservices/axvaluetype
 const AX_VALUE_TYPE_CG_RECT: i32 = 3;
 const AX_VALUE_TYPE_CF_RANGE: i32 = 4;
+
+// track PIDs with their last processed time to avoid redundant AXAPI setup
+// each PID entry is valid for 5 seconds, after which it's considered a new process
+const PID_CACHE_EXPIRE_SECS: u64 = 5;
+static PROCESSED_PIDS: Mutex<Option<HashMap<i32, Instant>>> = Mutex::new(None);
 
 // NSPoint structure for macOS AppKit
 #[repr(C)]
@@ -51,6 +59,8 @@ unsafe extern "C" {
 
     unsafe fn AXUIElementCreateSystemWide() -> CFTypeRef;
 
+    unsafe fn AXUIElementCreateApplication(pid: i32) -> CFTypeRef;
+
     unsafe fn AXUIElementCopyAttributeValue(
         element: CFTypeRef,
         attribute: CFStringRef,
@@ -85,9 +95,10 @@ unsafe extern "C" {
     unsafe fn objc_msgSend() -> *const c_void;
 }
 
-// Type aliases for Objective-C message sending
+// type aliases for Objective-C message sending
 type ObjCFnPtr = unsafe extern "C" fn(*const c_void, *const c_void) -> *const c_void;
 type ObjCFnPoint = unsafe extern "C" fn(*const c_void, *const c_void) -> NSPoint;
+type ObjCFnI32 = unsafe extern "C" fn(*const c_void, *const c_void) -> i32;
 
 /// Invokes an Objective-C method that returns a pointer.
 unsafe fn objc_call_ptr(obj: *const c_void, sel: *const c_void) -> *const c_void {
@@ -98,6 +109,12 @@ unsafe fn objc_call_ptr(obj: *const c_void, sel: *const c_void) -> *const c_void
 /// Invokes an Objective-C method that returns an NSPoint.
 unsafe fn objc_call_point(obj: *const c_void, sel: *const c_void) -> NSPoint {
     let func: ObjCFnPoint = std::mem::transmute(objc_msgSend as *const c_void);
+    func(obj, sel)
+}
+
+/// Invokes an Objective-C method that returns an i32.
+unsafe fn objc_call_i32(obj: *const c_void, sel: *const c_void) -> i32 {
+    let func: ObjCFnI32 = std::mem::transmute(objc_msgSend as *const c_void);
     func(obj, sel)
 }
 
@@ -168,6 +185,117 @@ fn get_focused_element() -> Result<CFType, AppError> {
     }
 }
 
+/// Get application element by PID.
+fn get_application_element(pid: i32) -> Result<CFType, AppError> {
+    unsafe {
+        let app_element_ptr = AXUIElementCreateApplication(pid);
+        if app_element_ptr.is_null() {
+            return Err("Failed to create AXUIElement for application".into());
+        }
+        Ok(CFType::wrap_under_create_rule(app_element_ptr))
+    }
+}
+
+/// Get the PID of the frontmost application using NSWorkspace.
+/// This works even when AXAPI is not enabled for the application.
+fn get_frontmost_app_pid() -> Option<i32> {
+    unsafe {
+        // get NSWorkspace class
+        let ns_workspace_class = objc_getClass(c"NSWorkspace".as_ptr());
+        if ns_workspace_class.is_null() {
+            return None;
+        }
+
+        // get sharedWorkspace selector
+        let shared_workspace_sel = sel_registerName(c"sharedWorkspace".as_ptr());
+        if shared_workspace_sel.is_null() {
+            return None;
+        }
+
+        // call [NSWorkspace sharedWorkspace]
+        let shared_workspace = objc_call_ptr(ns_workspace_class, shared_workspace_sel);
+        if shared_workspace.is_null() {
+            return None;
+        }
+
+        // get frontmostApplication selector
+        let frontmost_app_sel = sel_registerName(c"frontmostApplication".as_ptr());
+        if frontmost_app_sel.is_null() {
+            return None;
+        }
+
+        // call [sharedWorkspace frontmostApplication]
+        let frontmost_app = objc_call_ptr(shared_workspace, frontmost_app_sel);
+        if frontmost_app.is_null() {
+            return None;
+        }
+
+        // get processIdentifier selector
+        let pid_sel = sel_registerName(c"processIdentifier".as_ptr());
+        if pid_sel.is_null() {
+            return None;
+        }
+
+        // call [frontmostApplication processIdentifier]
+        let pid = objc_call_i32(frontmost_app, pid_sel);
+        if pid <= 0 {
+            return None;
+        }
+
+        Some(pid)
+    }
+}
+
+/// Enable AXAPI for special applications (Chrome/Chromium and Electron apps).
+/// Uses NSWorkspace to get frontmost app PID, bypassing AXAPI limitations.
+/// Each PID is cached for a short duration to avoid redundant processing.
+fn enable_axapi_for_special_apps() -> Result<(), AppError> {
+    // get frontmost app PID via NSWorkspace
+    let pid = get_frontmost_app_pid().ok_or("Failed to get frontmost app PID")?;
+    let now = Instant::now();
+
+    // check if this PID was recently processed
+    {
+        let mut processed = PROCESSED_PIDS.lock()?;
+        if processed.is_none() {
+            *processed = Some(HashMap::new());
+        }
+
+        if let Some(ref map) = *processed {
+            if let Some(&last_time) = map.get(&pid) {
+                // check if the cache is still valid
+                if now.duration_since(last_time).as_secs() < PID_CACHE_EXPIRE_SECS {
+                    // recently processed, skip
+                    return Ok(());
+                }
+                // cache expired, continue to reprocess
+            }
+        }
+    }
+
+    // create AXUIElement for the application
+    let app_element = get_application_element(pid)?;
+
+    // Chrome/Chromium: set "AXEnhancedUserInterface" to true to enable AXAPI
+    let _ = set_element_attribute(&app_element, "AXEnhancedUserInterface", unsafe {
+        core_foundation::boolean::kCFBooleanTrue as CFTypeRef
+    });
+    // Electron Apps: set "AXManualAccessibility" to true to enable AXAPI
+    let _ = set_element_attribute(&app_element, "AXManualAccessibility", unsafe {
+        core_foundation::boolean::kCFBooleanTrue as CFTypeRef
+    });
+
+    // update the timestamp for this PID
+    {
+        let mut processed = PROCESSED_PIDS.lock()?;
+        if let Some(ref mut map) = *processed {
+            map.insert(pid, now);
+        }
+    }
+
+    Ok(())
+}
+
 /// Get selected text attribute from given element.
 fn get_selected_text(element: &CFType) -> Option<String> {
     // try to get selected text
@@ -205,8 +333,17 @@ fn get_selected_range(element: &CFType) -> Result<CFRange, AppError> {
 
 /// Get selected text in currently focused element.
 pub fn get_selection() -> Result<String, AppError> {
-    // get focused element
-    let focused_element = get_focused_element()?;
+    // get focused element, if failed, try to enable AXAPI for special apps and retry
+    let focused_element = match get_focused_element() {
+        Ok(element) => element,
+        Err(_) => {
+            // try to enable AXAPI for special applications
+            // inspired by https://github.com/0xfullex/selection-hook
+            let _ = enable_axapi_for_special_apps();
+            // retry getting focused element
+            get_focused_element()?
+        }
+    };
 
     // 1. try to get selected text directly from focused element
     if let Some(text) = get_selected_text(&focused_element) {
