@@ -157,8 +157,9 @@ fn wait_and_emit(flag: &'static AtomicBool, window: WebviewWindow, payload: Stri
 
 /// Position a window near the mouse or selection with safe area constraints.
 fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<(), AppError> {
-    // get cursor position
-    let (x, y) = if mouse {
+    // get cursor position (may be physical or logical depending on platform)
+    #[allow(unused_mut)]
+    let (mut x, mut y) = if mouse {
         // directly use mouse position from enigo
         ENIGO.lock()?.as_ref()?.location()?
     } else {
@@ -181,16 +182,28 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
         .find(|m| {
             let pos = m.position();
             let size = m.size();
-            let scale = m.scale_factor();
-            let logical_x = (pos.x as f64 / scale) as i32;
-            let logical_y = (pos.y as f64 / scale) as i32;
-            let logical_width = (size.width as f64 / scale) as i32;
-            let logical_height = (size.height as f64 / scale) as i32;
 
-            x >= logical_x
-                && x < logical_x + logical_width
-                && y >= logical_y
-                && y < logical_y + logical_height
+            // check against physical coordinates on Windows, logical on macOS
+            #[cfg(target_os = "windows")]
+            {
+                x >= pos.x
+                    && x < pos.x + size.width as i32
+                    && y >= pos.y
+                    && y < pos.y + size.height as i32
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                let scale = m.scale_factor();
+                let logical_x = (pos.x as f64 / scale) as i32;
+                let logical_y = (pos.y as f64 / scale) as i32;
+                let logical_width = (size.width as f64 / scale) as i32;
+                let logical_height = (size.height as f64 / scale) as i32;
+
+                x >= logical_x
+                    && x < logical_x + logical_width
+                    && y >= logical_y
+                    && y < logical_y + logical_height
+            }
         })
         .or_else(|| window.current_monitor().ok().flatten())
         .ok_or_else(|| AppError::from("No monitor found"))?;
@@ -200,6 +213,12 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let scale_factor = monitor.scale_factor();
 
     // convert physical pixels to logical pixels
+    #[cfg(target_os = "windows")]
+    {
+        x = (x as f64 / scale_factor) as i32;
+        y = (y as f64 / scale_factor) as i32;
+    }
+
     let window_width = (window_width as f64 / scale_factor) as i32;
     let window_height = (window_height as f64 / scale_factor) as i32;
     let screen_width = (monitor_size.width as f64 / scale_factor) as i32;
