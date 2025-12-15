@@ -1,6 +1,6 @@
 # Third-Party License Notices
 
-> This document was automatically generated on December 14, 2025 at 11:28 PM GMT+8
+> This document was automatically generated on December 15, 2025 at 10:02 AM GMT+8
 
 ## Frontend Dependencies
 
@@ -41,7 +41,7 @@
 | [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped)                          | 25.0.2  | MIT               | TypeScript definitions for node                                                                                                                   |
 | [@vscode/vscode-languagedetection](https://github.com/microsoft/vscode-languagedetection)  | 1.0.22  | MIT               | An npm package that uses guesslang's ML model to detect source code languages                                                                     |
 | [codemirror](https://github.com/codemirror/basic-setup)                                    | 6.0.2   | MIT               | Basic configuration for the CodeMirror code editor                                                                                                |
-| [daisyui](https://github.com/saadeghi/daisyui)                                             | 5.5.13  | MIT               | daisyUI 5 - The Tailwind CSS Component Library                                                                                                    |
+| [daisyui](https://github.com/saadeghi/daisyui)                                             | 5.5.14  | MIT               | daisyUI 5 - The Tailwind CSS Component Library                                                                                                    |
 | [es-toolkit](https://github.com/toss/es-toolkit)                                           | 1.43.0  | MIT               | A state-of-the-art, high-performance JavaScript utility library with a small bundle size and strong type annotations.                             |
 | [eslint-config-prettier](https://github.com/prettier/eslint-config-prettier)               | 10.1.8  | MIT               | Turns off all rules that are unnecessary or might conflict with Prettier.                                                                         |
 | [eslint-plugin-svelte](https://github.com/sveltejs/eslint-plugin-svelte)                   | 3.13.1  | MIT               | ESLint plugin for Svelte using AST                                                                                                                |
@@ -51,9 +51,9 @@
 | [marked](https://github.com/markedjs/marked)                                               | 17.0.1  | MIT               | A markdown parser built for speed                                                                                                                 |
 | [ollama](https://github.com/ollama/ollama-js)                                              | 0.6.3   | MIT               | Ollama Javascript library                                                                                                                         |
 | [phosphor-svelte](https://github.com/haruaki07/phosphor-svelte)                            | 3.0.1   | MIT               | A clean and friendly icon family for Svelte                                                                                                       |
-| [prettier-plugin-svelte](https://github.com/sveltejs/prettier-plugin-svelte)               | 3.4.0   | MIT               | Svelte plugin for prettier                                                                                                                        |
+| [prettier-plugin-svelte](https://github.com/sveltejs/prettier-plugin-svelte)               | 3.4.1   | MIT               | Svelte plugin for prettier                                                                                                                        |
 | [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) | 0.7.2   | MIT               | A Prettier plugin for sorting Tailwind CSS classes.                                                                                               |
-| [prettier](https://github.com/prettier/prettier)                                           | 3.6.2   | MIT               | Prettier is an opinionated code formatter                                                                                                         |
+| [prettier](https://github.com/prettier/prettier)                                           | 3.7.4   | MIT               | Prettier is an opinionated code formatter                                                                                                         |
 | [svelte-check](https://github.com/sveltejs/language-tools)                                 | 4.3.4   | MIT               | Svelte Code Checker Terminal Interface                                                                                                            |
 | [svelte](https://github.com/sveltejs/svelte)                                               | 5.46.0  | MIT               | Cybernetically enhanced web apps                                                                                                                  |
 | [tailwindcss](https://github.com/tailwindlabs/tailwindcss)                                 | 4.1.18  | MIT               | A utility-first CSS framework for rapidly building custom user interfaces.                                                                        |
