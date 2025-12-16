@@ -48,6 +48,8 @@ where
     // restore original clipboard contents
     if !contents.is_empty() {
         run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))?;
+    } else {
+        clear_clipboard()?;
     }
 
     Ok(result)
