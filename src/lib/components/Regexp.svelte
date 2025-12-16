@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import { IconSelector, Label, Modal, alert } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
+  import { tooltip } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
   import type { Regexp } from '$lib/types';
@@ -17,6 +18,10 @@
   let regexpIcon: string = $state('Scroll');
   let regexpName: string = $state('');
   let regexpPattern: string = $state('');
+  let flagI: boolean = $state(false);
+  let flagU: boolean = $state(false);
+  let flagM: boolean = $state(false);
+  let flagS: boolean = $state(false);
 
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -27,6 +32,11 @@
         regexpIcon = regexp.icon || 'Scroll';
         regexpName = regexp.id;
         regexpPattern = regexp.pattern;
+        const flags = regexp.flags || '';
+        flagI = flags.includes('i');
+        flagU = flags.includes('u');
+        flagM = flags.includes('m');
+        flagS = flags.includes('s');
       }
     }
     modal.show();
@@ -47,10 +57,12 @@
       return;
     }
     loading.start();
+    const flags = [flagI && 'i', flagU && 'u', flagM && 'm', flagS && 's'].filter(Boolean).join('');
     if (regexp) {
       // update regular expression
       regexp.icon = regexpIcon;
       regexp.pattern = regexpPattern;
+      regexp.flags = flags;
       alert(m.regexp_updated_success());
       loading.end();
     } else {
@@ -58,12 +70,14 @@
       regexps.push({
         id: regexpName,
         icon: regexpIcon,
-        pattern: regexpPattern
+        pattern: regexpPattern,
+        flags: flags
       });
       // reset form
       regexpIcon = 'Scroll';
       regexpName = '';
       regexpPattern = '';
+      flagI = flagU = flagM = flagS = false;
       alert(m.regexp_added_success());
     }
     modal.close();
@@ -91,6 +105,25 @@
         <input class="grow" placeholder={m.regexp_placeholder()} {...schema.pattern} bind:value={regexpPattern} />
         <span class="text-xl text-emphasis">/</span>
       </label>
+      <!-- regular expression flags -->
+      <div class="mt-2 grid grid-cols-4 gap-1">
+        <label class="label justify-center" use:tooltip={{ content: m.regexp_flag_i_tip(), followCursor: true }}>
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={flagI} />
+          <span class="text-sm {flagI ? 'text-base-content' : ''}">{m.regexp_flag_i()}</span>
+        </label>
+        <label class="label justify-center" use:tooltip={{ content: m.regexp_flag_u_tip(), followCursor: true }}>
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={flagU} />
+          <span class="text-sm {flagU ? 'text-base-content' : ''}">{m.regexp_flag_u()}</span>
+        </label>
+        <label class="label justify-center" use:tooltip={{ content: m.regexp_flag_m_tip(), followCursor: true }}>
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={flagM} />
+          <span class="text-sm {flagM ? 'text-base-content' : ''}">{m.regexp_flag_m()}</span>
+        </label>
+        <label class="label justify-center" use:tooltip={{ content: m.regexp_flag_s_tip(), followCursor: true }}>
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={flagS} />
+          <span class="text-sm {flagS ? 'text-base-content' : ''}">{m.regexp_flag_s()}</span>
+        </label>
+      </div>
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>

@@ -95,8 +95,7 @@
   }}
   use:tooltip={{
     content: square ? text : '',
-    followCursor: true,
-    theme: 'follow-cursor'
+    followCursor: true
   }}
 >
   {#if children}

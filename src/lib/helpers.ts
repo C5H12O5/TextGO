@@ -132,6 +132,9 @@ export function tooltip(target: HTMLElement, props: Partial<Props>): ActionRetur
       props.appendTo = dialog;
     }
     // create tooltip instance
+    if (props.followCursor && !props.theme) {
+      props.theme = 'follow-cursor';
+    }
     instance = tippy(target, props);
   }
   return {
