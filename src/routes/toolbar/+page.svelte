@@ -13,7 +13,7 @@
   import { type } from '@tauri-apps/plugin-os';
   import { memoize } from 'es-toolkit/function';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { Code, DotsThreeVertical, Equals, MagnifyingGlass, Robot } from 'phosphor-svelte';
+  import { Code, DotsThreeVertical, LineVertical, MagnifyingGlass, Robot } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -335,11 +335,11 @@
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
       <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
-          class="flex cursor-move items-center px-0.5 opacity-30 transition-opacity"
+          class="flex cursor-move items-center px-0.5 opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
           data-tauri-drag-region
         >
-          <Equals weight="thin" class="pointer-events-none size-4 rotate-90" />
+          <LineVertical class="pointer-events-none size-4" />
         </span>
         {#each visibleActions as action (action.id)}
           <button

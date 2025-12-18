@@ -8,7 +8,7 @@
   import { type } from '@tauri-apps/plugin-os';
   import { marked } from 'marked';
   import { Ollama } from 'ollama/browser';
-  import { ArrowCounterClockwise, CopySimple, StopCircle, TextIndent } from 'phosphor-svelte';
+  import { ArrowClockwise, ArrowCounterClockwise, CopySimple, StopCircle, TextIndent } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
   // operating system type
@@ -211,6 +211,7 @@
   </div>
   <div class="flex items-center gap-1">
     {#if promptMode}
+      <Button icon={ArrowClockwise} weight="bold" disabled={streaming || !entry?.response} onclick={() => chat()} />
       <Button icon={StopCircle} weight="bold" disabled={!(streaming && entry?.response)} onclick={() => abort()} />
     {:else}
       <Button icon={ArrowCounterClockwise} onclick={() => codeMirror?.reset()} />
