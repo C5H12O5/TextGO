@@ -332,8 +332,8 @@
 
 <main class="bg-transparent p-1 select-none">
   {#if initialized && actions.length > 0}
-    <div class="overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
-      <div class="flex size-fit h-8 bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+    <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
+      <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
           class="flex cursor-move items-center px-0.5 opacity-30 transition-opacity"
           class:hover:opacity-90={mouseEntered}
