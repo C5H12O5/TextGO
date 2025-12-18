@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Label, Select, Setting } from '$lib/components';
+  import { setupTray } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
   import { accessibility, autoStart, historySize, inputMonitoring, minimizeToTray, theme } from '$lib/stores.svelte';
@@ -14,23 +15,6 @@
 
   // current language
   let locale: Locale = $state(getLocale());
-
-  /**
-   * Update tray menu language.
-   */
-  async function updateTrayMenu() {
-    try {
-      await invoke('setup_tray', {
-        shortcutsText: m.tray_shortcuts(),
-        historiesText: m.tray_histories(),
-        settingsText: m.tray_settings(),
-        aboutText: m.tray_about(),
-        quitText: m.tray_quit()
-      });
-    } catch (error) {
-      console.error(`Failed to update tray menu language: ${error}`);
-    }
-  }
 
   /**
    * Toggle auto start status.
@@ -79,7 +63,7 @@
           const target = event.currentTarget;
           locale = target.value as Locale;
           setLocale(locale);
-          await updateTrayMenu();
+          await setupTray();
         }}
       />
     </fieldset>

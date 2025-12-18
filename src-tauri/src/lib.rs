@@ -173,6 +173,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     // setup system tray
     setup_tray(
         app_handle.clone(),
+        "Show / Hide".to_string(),
         "Manage Shortcuts".to_string(),
         "View History".to_string(),
         "Settings...".to_string(),

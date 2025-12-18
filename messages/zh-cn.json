@@ -217,6 +217,7 @@
   "cm_replaced_matches": "已替换 $ 个匹配项",
   "cm_go_to_line": "跳转到行",
   "cm_go": "跳转",
+  "tray_main_window": "显示/隐藏窗口",
   "tray_shortcuts": "管理快捷键",
   "tray_histories": "查看历史",
   "tray_settings": "设置...",
