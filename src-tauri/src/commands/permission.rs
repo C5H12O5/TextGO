@@ -1,10 +1,10 @@
 use crate::error::AppError;
 
 #[cfg(target_os = "macos")]
-const K_IOHID_REQUEST_TYPE_LISTEN_EVENT: i32 = 1;
-
-#[cfg(target_os = "macos")]
-const K_IOHID_ACCESS_TYPE_GRANTED: i32 = 0;
+#[link(name = "ApplicationServices", kind = "framework")]
+unsafe extern "C" {
+    unsafe fn AXIsProcessTrusted() -> bool;
+}
 
 #[cfg(target_os = "macos")]
 #[link(name = "IOKit", kind = "framework")]
@@ -12,13 +12,7 @@ unsafe extern "C" {
     unsafe fn IOHIDCheckAccess(request_type: i32) -> i32;
 }
 
-#[cfg(target_os = "macos")]
-#[link(name = "ApplicationServices", kind = "framework")]
-unsafe extern "C" {
-    unsafe fn AXIsProcessTrusted() -> bool;
-}
-
-/// Check if the application has accessibility permissions on macOS.
+/// Check if the application has accessibility permissions.
 #[tauri::command]
 pub fn check_accessibility() -> Result<bool, AppError> {
     #[cfg(target_os = "macos")]
@@ -33,7 +27,7 @@ pub fn check_accessibility() -> Result<bool, AppError> {
     }
 }
 
-/// Open macOS accessibility settings page.
+/// Open accessibility settings page.
 #[tauri::command]
 pub fn open_accessibility() -> Result<(), AppError> {
     #[cfg(target_os = "macos")]
@@ -51,11 +45,16 @@ pub fn open_accessibility() -> Result<(), AppError> {
     }
 }
 
-/// Check if the application has input monitoring permissions on macOS.
+/// Check if the application has input monitoring permissions.
 #[tauri::command]
 pub fn check_input_monitoring() -> Result<bool, AppError> {
     #[cfg(target_os = "macos")]
     {
+        // IOKit enumerations
+        // https://developer.apple.com/documentation/iokit/iokit_enumerations
+        const K_IOHID_REQUEST_TYPE_LISTEN_EVENT: i32 = 1;
+        const K_IOHID_ACCESS_TYPE_GRANTED: i32 = 0;
+
         unsafe {
             Ok(IOHIDCheckAccess(K_IOHID_REQUEST_TYPE_LISTEN_EVENT) == K_IOHID_ACCESS_TYPE_GRANTED)
         }
@@ -68,7 +67,7 @@ pub fn check_input_monitoring() -> Result<bool, AppError> {
     }
 }
 
-/// Open macOS input monitoring settings page.
+/// Open input monitoring settings page.
 #[tauri::command]
 pub fn open_input_monitoring() -> Result<(), AppError> {
     #[cfg(target_os = "macos")]

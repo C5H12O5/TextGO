@@ -15,7 +15,7 @@ const MAX_VALID_COORDINATE: f64 = 10000.0;
 // editable accessibility roles
 const EDITABLE_AX_ROLES: &[&str] = &["AXTextField", "AXTextArea", "AXComboBox"];
 
-// AXValueType constant
+// AXValueType enumerations
 // https://developer.apple.com/documentation/applicationservices/axvaluetype
 const AX_VALUE_TYPE_CG_RECT: i32 = 3;
 const AX_VALUE_TYPE_CF_RANGE: i32 = 4;
@@ -95,27 +95,28 @@ unsafe extern "C" {
     unsafe fn objc_msgSend() -> *const c_void;
 }
 
-// type aliases for Objective-C message sending
-type ObjCFnPtr = unsafe extern "C" fn(*const c_void, *const c_void) -> *const c_void;
-type ObjCFnPoint = unsafe extern "C" fn(*const c_void, *const c_void) -> NSPoint;
-type ObjCFnI32 = unsafe extern "C" fn(*const c_void, *const c_void) -> i32;
+/// Macro to simplify Objective-C method invocation with different return types.
+macro_rules! objc_call {
+    ($obj:expr, $sel:expr, $ret_type:ty) => {{
+        type ObjCFn = unsafe extern "C" fn(*const c_void, *const c_void) -> $ret_type;
+        let func: ObjCFn = std::mem::transmute(objc_msgSend as *const c_void);
+        func($obj, $sel)
+    }};
+}
 
 /// Invokes an Objective-C method that returns a pointer.
 unsafe fn objc_call_ptr(obj: *const c_void, sel: *const c_void) -> *const c_void {
-    let func: ObjCFnPtr = std::mem::transmute(objc_msgSend as *const c_void);
-    func(obj, sel)
+    objc_call!(obj, sel, *const c_void)
 }
 
 /// Invokes an Objective-C method that returns an NSPoint.
 unsafe fn objc_call_point(obj: *const c_void, sel: *const c_void) -> NSPoint {
-    let func: ObjCFnPoint = std::mem::transmute(objc_msgSend as *const c_void);
-    func(obj, sel)
+    objc_call!(obj, sel, NSPoint)
 }
 
 /// Invokes an Objective-C method that returns an i32.
 unsafe fn objc_call_i32(obj: *const c_void, sel: *const c_void) -> i32 {
-    let func: ObjCFnI32 = std::mem::transmute(objc_msgSend as *const c_void);
-    func(obj, sel)
+    objc_call!(obj, sel, i32)
 }
 
 /// Check if two NSPoint values are equal with floating point tolerance.

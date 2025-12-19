@@ -13,6 +13,15 @@ use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorInfo, LoadCursorW, CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
 };
 
+// bounds validation constants
+const MIN_VALID_WIDTH: f64 = 1.0;
+const MAX_VALID_HEIGHT: f64 = 100.0;
+const MAX_VALID_COORDINATE: f64 = 10000.0;
+
+// editable legacy control roles
+const ROLE_SYSTEM_TEXT: u32 = 42;
+const ROLE_SYSTEM_COMBOBOX: u32 = 46;
+
 // import SafeArray functions from oleaut32.dll
 #[link(name = "oleaut32")]
 unsafe extern "system" {
@@ -35,15 +44,6 @@ unsafe extern "system" {
         pl_ubound: *mut i32,
     ) -> i32;
 }
-
-// bounds validation constants
-const MIN_VALID_WIDTH: f64 = 1.0;
-const MAX_VALID_HEIGHT: f64 = 100.0;
-const MAX_VALID_COORDINATE: f64 = 10000.0;
-
-// editable legacy control roles
-const ROLE_SYSTEM_TEXT: u32 = 42;
-const ROLE_SYSTEM_COMBOBOX: u32 = 46;
 
 /// COM resource guard.
 struct ComGuard {
