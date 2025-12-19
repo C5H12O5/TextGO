@@ -200,7 +200,10 @@
       <div class="flex items-center gap-4 pt-8 pb-2">
         <Shortcut {shortcut} class="text-shortcut" />
         <button
-          class="group badge cursor-pointer bg-base-200 text-emphasis/80 transition-colors hover:text-emphasis"
+          class="group badge cursor-pointer bg-base-200 opacity-80 transition-all hover:opacity-100"
+          class:border={mode === 'toolbar'}
+          class:shadow-sm={mode === 'toolbar'}
+          class:text-inactive={mode !== 'toolbar'}
           onclick={() => swapMode(shortcut)}
         >
           <label class="swap swap-rotate group-hover:swap-active">

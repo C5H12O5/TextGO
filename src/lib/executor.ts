@@ -8,7 +8,6 @@ import { openPath, openUrl } from '@tauri-apps/plugin-opener';
 import { memoize } from 'es-toolkit/function';
 import {
   camelCase,
-  capitalize,
   constantCase,
   deburr,
   escape,
@@ -142,6 +141,24 @@ export const CONVERT_ACTIONS: Processor[] = [
     process: pascalCase
   },
   {
+    value: 'lower_case',
+    label: m.lower_case(),
+    icon: ArrowsClockwise,
+    process: lowerCase
+  },
+  {
+    value: 'start_case',
+    label: m.start_case(),
+    icon: ArrowsClockwise,
+    process: startCase
+  },
+  {
+    value: 'upper_case',
+    label: m.upper_case(),
+    icon: ArrowsClockwise,
+    process: upperCase
+  },
+  {
     value: 'snake_case',
     label: m.snake_case(),
     icon: ArrowsClockwise,
@@ -152,24 +169,6 @@ export const CONVERT_ACTIONS: Processor[] = [
     label: m.kebab_case(),
     icon: ArrowsClockwise,
     process: kebabCase
-  },
-  {
-    value: 'start_case',
-    label: m.start_case(),
-    icon: ArrowsClockwise,
-    process: startCase
-  },
-  {
-    value: 'lower_case',
-    label: m.lower_case(),
-    icon: ArrowsClockwise,
-    process: lowerCase
-  },
-  {
-    value: 'upper_case',
-    label: m.upper_case(),
-    icon: ArrowsClockwise,
-    process: upperCase
   },
   {
     value: 'constant_case',
@@ -184,22 +183,16 @@ export const CONVERT_ACTIONS: Processor[] = [
  */
 export const PROCESS_ACTIONS: Processor[] = [
   {
-    value: 'lowercase',
-    label: m.lowercase(),
+    value: 'words',
+    label: m.words(),
     icon: Function,
-    process: (text: string) => text.toLowerCase()
+    process: (text: string) => words(text).join(' ')
   },
   {
-    value: 'uppercase',
-    label: m.uppercase(),
+    value: 'reverse',
+    label: m.reverse(),
     icon: Function,
-    process: (text: string) => text.toUpperCase()
-  },
-  {
-    value: 'capitalize',
-    label: m.capitalize(),
-    icon: Function,
-    process: capitalize
+    process: reverseString
   },
   {
     value: 'trim',
@@ -236,18 +229,6 @@ export const PROCESS_ACTIONS: Processor[] = [
     label: m.unescape(),
     icon: Function,
     process: unescape
-  },
-  {
-    value: 'reverse',
-    label: m.reverse(),
-    icon: Function,
-    process: reverseString
-  },
-  {
-    value: 'words',
-    label: m.words(),
-    icon: Function,
-    process: (text: string) => words(text).join(' ')
   }
 ];
 

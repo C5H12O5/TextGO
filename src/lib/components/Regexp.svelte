@@ -101,9 +101,9 @@
       </div>
       <Label required>{m.regexp()}</Label>
       <label class="input input-sm w-full">
-        <span class="text-xl text-emphasis">/</span>
+        <span class="text-xl text-emphasis/50">/</span>
         <input class="grow" placeholder={m.regexp_placeholder()} {...schema.pattern} bind:value={regexpPattern} />
-        <span class="text-xl text-emphasis">/</span>
+        <span class="text-xl text-emphasis/50">/</span>
       </label>
       <!-- regular expression flags -->
       <div class="mt-2 grid grid-cols-4 gap-1">

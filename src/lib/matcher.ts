@@ -46,6 +46,31 @@ type Matcher = (context: MatcherContext) => Promise<Rule | null>;
  */
 export const GENERAL_CASES: Option[] = [
   {
+    value: 'url',
+    label: m.url(),
+    icon: Link,
+    pattern: /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*$/
+  },
+  {
+    value: 'email',
+    label: m.email(),
+    icon: Envelope,
+    pattern:
+      /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
+  },
+  {
+    value: 'file_path',
+    label: m.file_path(),
+    icon: Folder,
+    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
+  },
+  {
+    value: 'numbers',
+    label: m.numbers(),
+    icon: NumberCircleNine,
+    pattern: /^[0-9]+$/
+  },
+  {
     value: 'small_letters',
     label: m.small_letters(),
     icon: TextT,
@@ -68,31 +93,6 @@ export const GENERAL_CASES: Option[] = [
     label: m.guid(),
     icon: Key,
     pattern: /^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?$/i
-  },
-  {
-    value: 'numbers',
-    label: m.numbers(),
-    icon: NumberCircleNine,
-    pattern: /^[0-9]+$/
-  },
-  {
-    value: 'url',
-    label: m.url(),
-    icon: Link,
-    pattern: /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*$/
-  },
-  {
-    value: 'email',
-    label: m.email(),
-    icon: Envelope,
-    pattern:
-      /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
-  },
-  {
-    value: 'path',
-    label: m.path(),
-    icon: Folder,
-    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
   },
   {
     value: 'ipv4',
@@ -147,6 +147,24 @@ export const TEXT_CASES: Option[] = [
     pattern: /^[A-Z]+[a-z0-9]+(?:[A-Z][a-z0-9]*)+$|^[A-Z]{2,}[a-z0-9]+$/
   },
   {
+    value: 'lower_case',
+    label: m.lower_case(),
+    icon: TextAa,
+    pattern: /^(?=.*[a-z])[a-z0-9]+(?: [a-z0-9]+)*$/
+  },
+  {
+    value: 'start_case',
+    label: m.start_case(),
+    icon: TextAa,
+    pattern: /^[A-Z][a-z0-9]*(?: [A-Z][a-z0-9]+)+$/
+  },
+  {
+    value: 'upper_case',
+    label: m.upper_case(),
+    icon: TextAa,
+    pattern: /^(?=.*[A-Z])[A-Z0-9]+(?: [A-Z0-9]+)*$/
+  },
+  {
     value: 'snake_case',
     label: m.snake_case(),
     icon: TextAa,
@@ -157,24 +175,6 @@ export const TEXT_CASES: Option[] = [
     label: m.kebab_case(),
     icon: TextAa,
     pattern: /^[a-z0-9]+(?:-[a-z0-9]+)+$/
-  },
-  {
-    value: 'start_case',
-    label: m.start_case(),
-    icon: TextAa,
-    pattern: /^[A-Z][a-z0-9]*(?: [A-Z][a-z0-9]+)+$/
-  },
-  {
-    value: 'lower_case',
-    label: m.lower_case(),
-    icon: TextAa,
-    pattern: /^(?=.*[a-z])[a-z0-9]+(?: [a-z0-9]+)*$/
-  },
-  {
-    value: 'upper_case',
-    label: m.upper_case(),
-    icon: TextAa,
-    pattern: /^(?=.*[A-Z])[A-Z0-9]+(?: [A-Z0-9]+)*$/
   },
   {
     value: 'constant_case',

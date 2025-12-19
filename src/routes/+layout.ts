@@ -1,6 +1,5 @@
-import { m } from '$lib/paraglide/messages';
+import { setupTray } from '$lib/helpers';
 import * as stores from '$lib/stores.svelte';
-import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { debug, error, info, trace, warn } from '@tauri-apps/plugin-log';
 import tippy, { followCursor } from 'tippy.js';
@@ -35,17 +34,7 @@ export const load: LayoutLoad = async () => {
 
   // initialize tray menu language
   if (getCurrentWindow().label === 'main') {
-    try {
-      await invoke('setup_tray', {
-        shortcutsText: m.tray_shortcuts(),
-        historiesText: m.tray_histories(),
-        settingsText: m.tray_settings(),
-        aboutText: m.tray_about(),
-        quitText: m.tray_quit()
-      });
-    } catch (error) {
-      console.error(`Failed to initialize tray menu language: ${error}`);
-    }
+    await setupTray();
   }
 
   // initialize all stores immediately on import
