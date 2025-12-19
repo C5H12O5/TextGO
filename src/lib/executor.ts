@@ -142,6 +142,24 @@ export const CONVERT_ACTIONS: Processor[] = [
     process: pascalCase
   },
   {
+    value: 'lower_case',
+    label: m.lower_case(),
+    icon: ArrowsClockwise,
+    process: lowerCase
+  },
+  {
+    value: 'start_case',
+    label: m.start_case(),
+    icon: ArrowsClockwise,
+    process: startCase
+  },
+  {
+    value: 'upper_case',
+    label: m.upper_case(),
+    icon: ArrowsClockwise,
+    process: upperCase
+  },
+  {
     value: 'snake_case',
     label: m.snake_case(),
     icon: ArrowsClockwise,
@@ -152,24 +170,6 @@ export const CONVERT_ACTIONS: Processor[] = [
     label: m.kebab_case(),
     icon: ArrowsClockwise,
     process: kebabCase
-  },
-  {
-    value: 'start_case',
-    label: m.start_case(),
-    icon: ArrowsClockwise,
-    process: startCase
-  },
-  {
-    value: 'lower_case',
-    label: m.lower_case(),
-    icon: ArrowsClockwise,
-    process: lowerCase
-  },
-  {
-    value: 'upper_case',
-    label: m.upper_case(),
-    icon: ArrowsClockwise,
-    process: upperCase
   },
   {
     value: 'constant_case',
