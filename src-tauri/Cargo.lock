@@ -4514,6 +4514,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "tauri-plugin-single-instance"
+version = "2.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd707f8c86b4e3004e2c141fa24351f1909ba40ce1b8437e30d5ed5277dd3710"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tauri",
+ "thiserror 2.0.17",
+ "tracing",
+ "windows-sys 0.60.2",
+ "zbus",
+]
+
+[[package]]
 name = "tauri-plugin-store"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4655,7 +4670,7 @@ dependencies = [
 
 [[package]]
 name = "text-go"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "clipboard-rs",
  "core-foundation",
@@ -4674,6 +4689,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tauri-plugin-os",
+ "tauri-plugin-single-instance",
  "tauri-plugin-store",
  "tokio",
  "windows 0.59.0",

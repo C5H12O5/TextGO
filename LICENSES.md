@@ -1,6 +1,6 @@
 # Third-Party License Notices
 
-> This document was automatically generated on December 15, 2025 at 10:02 AM GMT+8
+> This document was automatically generated on December 20, 2025 at 12:47 PM GMT+8
 
 ## Frontend Dependencies
 
@@ -9,7 +9,7 @@
 | Package                                                                                    | Version | License           | Description                                                                                                                                       |
 | ------------------------------------------------------------------------------------------ | ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [@codemirror/autocomplete](https://github.com/codemirror/autocomplete)                     | 6.20.0  | MIT               | Autocompletion for the CodeMirror code editor                                                                                                     |
-| [@codemirror/commands](https://github.com/codemirror/commands)                             | 6.10.0  | MIT               | Collection of editing commands for the CodeMirror code editor                                                                                     |
+| [@codemirror/commands](https://github.com/codemirror/commands)                             | 6.10.1  | MIT               | Collection of editing commands for the CodeMirror code editor                                                                                     |
 | [@codemirror/lang-javascript](https://github.com/codemirror/lang-javascript)               | 6.2.4   | MIT               | JavaScript language support for the CodeMirror code editor                                                                                        |
 | [@codemirror/lang-markdown](https://github.com/codemirror/lang-markdown)                   | 6.5.0   | MIT               | Markdown language support for the CodeMirror code editor                                                                                          |
 | [@codemirror/lang-python](https://github.com/codemirror/lang-python)                       | 6.2.1   | MIT               | Python language support for the CodeMirror code editor                                                                                            |
@@ -38,7 +38,7 @@
 | [@tauri-apps/plugin-os](https://github.com/tauri-apps/plugins-workspace)                   | 2.3.2   | MIT OR Apache-2.0 | ![plugin-os](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/os/banner.png)                                                        |
 | [@tauri-apps/plugin-store](https://github.com/tauri-apps/plugins-workspace)                | 2.4.1   | MIT OR Apache-2.0 | Simple, persistent key-value store.                                                                                                               |
 | [@tensorflow/tfjs](https://github.com/tensorflow/tfjs)                                     | 4.22.0  | Apache-2.0        | An open-source machine learning framework.                                                                                                        |
-| [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped)                          | 25.0.2  | MIT               | TypeScript definitions for node                                                                                                                   |
+| [@types/node](https://github.com/DefinitelyTyped/DefinitelyTyped)                          | 25.0.3  | MIT               | TypeScript definitions for node                                                                                                                   |
 | [@vscode/vscode-languagedetection](https://github.com/microsoft/vscode-languagedetection)  | 1.0.22  | MIT               | An npm package that uses guesslang's ML model to detect source code languages                                                                     |
 | [codemirror](https://github.com/codemirror/basic-setup)                                    | 6.0.2   | MIT               | Basic configuration for the CodeMirror code editor                                                                                                |
 | [daisyui](https://github.com/saadeghi/daisyui)                                             | 5.5.14  | MIT               | daisyUI 5 - The Tailwind CSS Component Library                                                                                                    |
@@ -58,13 +58,13 @@
 | [svelte](https://github.com/sveltejs/svelte)                                               | 5.46.0  | MIT               | Cybernetically enhanced web apps                                                                                                                  |
 | [tailwindcss](https://github.com/tailwindlabs/tailwindcss)                                 | 4.1.18  | MIT               | A utility-first CSS framework for rapidly building custom user interfaces.                                                                        |
 | [tippy.js](https://github.com/atomiks/tippyjs)                                             | 6.3.7   | MIT               | The complete tooltip, popover, dropdown, and menu solution for the web                                                                            |
-| [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint)                | 8.49.0  | MIT               | Tooling which enables you to use TypeScript with ESLint                                                                                           |
+| [typescript-eslint](https://github.com/typescript-eslint/typescript-eslint)                | 8.50.0  | MIT               | Tooling which enables you to use TypeScript with ESLint                                                                                           |
 | [typescript](https://github.com/microsoft/TypeScript)                                      | 5.9.3   | Apache-2.0        | TypeScript is a language for application scale JavaScript development                                                                             |
-| [vite](https://github.com/vitejs/vite)                                                     | 7.2.7   | MIT               | Native-ESM powered web dev build tool                                                                                                             |
+| [vite](https://github.com/vitejs/vite)                                                     | 7.3.0   | MIT               | Native-ESM powered web dev build tool                                                                                                             |
 
 ## Backend Dependencies
 
-> **20** packages included
+> **21** packages included
 
 | Package                                                                         | Version | License           | Description                                                                                                                                                                        |
 | ------------------------------------------------------------------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -85,6 +85,7 @@
 | [tauri-plugin-log](https://github.com/tauri-apps/plugins-workspace)             | 2.7.1   | Apache-2.0 OR MIT | Configurable logging for your Tauri app.                                                                                                                                           |
 | [tauri-plugin-opener](https://github.com/tauri-apps/plugins-workspace)          | 2.5.2   | Apache-2.0 OR MIT | Open files and URLs using their default application.                                                                                                                               |
 | [tauri-plugin-os](https://github.com/tauri-apps/plugins-workspace)              | 2.3.2   | Apache-2.0 OR MIT | Read information about the operating system.                                                                                                                                       |
+| [tauri-plugin-single-instance](https://github.com/tauri-apps/plugins-workspace) | 2.3.6   | Apache-2.0 OR MIT | Ensure a single instance of your tauri app is running.                                                                                                                             |
 | [tauri-plugin-store](https://github.com/tauri-apps/plugins-workspace)           | 2.4.1   | Apache-2.0 OR MIT | Simple, persistent key-value store.                                                                                                                                                |
 | [tokio](https://github.com/tokio-rs/tokio)                                      | 1.48.0  | MIT               | An event-driven, non-blocking I/O platform for writing asynchronous I/O backed applications.                                                                                       |
 | [windows](https://github.com/microsoft/windows-rs)                              | 0.61.3  | Apache-2.0 OR MIT | Rust for Windows                                                                                                                                                                   |
