@@ -154,6 +154,11 @@
   @apply rounded-box border border-border bg-base-100 p-4 shadow-xs;
 }
 
+/* platform-specific: remove rounded corners on Windows */
+html[data-tauri-platform='windows'] .rounded-container {
+  @apply rounded-none;
+}
+
 .tippy-box[data-theme~='default'] {
   @apply gradient bg-neutral/90 text-xs text-neutral-content;
 }

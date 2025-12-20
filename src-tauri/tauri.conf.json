@@ -28,18 +28,16 @@
       },
       {
         "label": "popup",
-        "title": "TextGO",
         "url": "/popup",
         "width": 400,
         "height": 300,
-        "minWidth": 400,
-        "minHeight": 300,
         "visible": false,
+        "shadow": false,
+        "decorations": false,
+        "transparent": true,
         "skipTaskbar": true,
-        "hiddenTitle": true,
         "alwaysOnTop": true,
-        "titleBarStyle": "Overlay",
-        "trafficLightPosition": { "x": 10, "y": 14 }
+        "resizable": false
       },
       {
         "label": "toolbar",
@@ -47,14 +45,14 @@
         "width": 1000,
         "height": 42,
         "visible": false,
+        "shadow": false,
         "decorations": false,
         "transparent": true,
         "skipTaskbar": true,
         "alwaysOnTop": true,
         "resizable": false,
-        "shadow": false,
-        "focus": false,
         "focusable": false,
+        "focus": false,
         "acceptFirstMouse": true
       }
     ],
