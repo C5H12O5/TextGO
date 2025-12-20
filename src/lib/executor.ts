@@ -320,7 +320,8 @@ const searcherExecutor: Executor = async (context) => {
   const searcher = searchers.current.find((s) => s.id === searcherId);
   if (searcher) {
     console.debug(`Opening URL for searcher: ${searcherId}`);
-    const result = searcher.url.replace(/\{\{selection\}\}/g, selection);
+    // replace {{selection}} in URL template with trimmed selection
+    const result = searcher.url.replace(/\{\{selection\}\}/g, selection.trim());
     // save history record
     entry.actionType = 'searcher';
     entry.actionLabel = searcherId;

@@ -97,6 +97,12 @@
       (nameInput as HTMLInputElement | null)?.focus();
       return;
     }
+    url = url.trim();
+    if (!url) {
+      const urlInput = form.querySelector('textarea[name="url"]');
+      (urlInput as HTMLTextAreaElement | null)?.focus();
+      return;
+    }
     loading.start();
     if (searcher) {
       // update searcher
