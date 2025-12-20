@@ -133,7 +133,7 @@ export const shortcuts = persisted<Record<string, Shortcut>>(
 export const autoStart = persisted<boolean>('autoStart', false);
 
 // minimize to tray setting
-export const minimizeToTray = persisted<boolean>('minimizeToTray', true);
+export const minimizeToTray = persisted<boolean>('minimizeToTray', false);
 
 // accessibility permission granted
 export const accessibility = persisted<boolean>('accessibility', false);

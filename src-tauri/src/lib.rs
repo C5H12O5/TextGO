@@ -80,11 +80,19 @@ tauri_panel! {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // register single instance plugin
+    let mut builder =
+        tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        }));
+
     // register nspanel plugin on macOS
     #[cfg(target_os = "macos")]
-    let builder = tauri::Builder::default().plugin(tauri_nspanel::init());
-    #[cfg(not(target_os = "macos"))]
-    let builder = tauri::Builder::default();
+    {
+        builder = builder.plugin(tauri_nspanel::init());
+    }
 
     builder
         .plugin(tauri_plugin_os::init())
