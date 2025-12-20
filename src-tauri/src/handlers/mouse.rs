@@ -131,6 +131,7 @@ fn distance(p1: (f64, f64), p2: (f64, f64)) -> f64 {
 }
 
 /// Get current mouse position using enigo.
+/// Returns physical coordinates on Windows, logical coordinates on macOS.
 fn mouse_pos() -> Result<(f64, f64), AppError> {
     Ok(ENIGO
         .lock()?
@@ -185,14 +186,19 @@ fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
     // get mouse click position
     let (click_x, click_y) = mouse_pos()?;
 
-    // get toolbar position and size
-    let toolbar_pos = toolbar.outer_position()?;
-    let toolbar_size = toolbar.outer_size()?;
+    // get scale factor for coordinate conversion
+    #[cfg(target_os = "windows")]
+    let scale_factor = 1.0;
+    #[cfg(not(target_os = "windows"))]
     let scale_factor = toolbar
         .current_monitor()?
         .map(|m| m.scale_factor())
         .unwrap_or(1.0);
 
+    // get toolbar position and size
+    // convert to logical coordinates on macOS
+    let toolbar_pos = toolbar.outer_position()?;
+    let toolbar_size = toolbar.outer_size()?;
     let toolbar_x = toolbar_pos.x as f64 / scale_factor;
     let toolbar_y = toolbar_pos.y as f64 / scale_factor;
     let toolbar_width = toolbar_size.width as f64 / scale_factor;

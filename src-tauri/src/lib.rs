@@ -81,6 +81,7 @@ tauri_panel! {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // register single instance plugin
+    #[allow(unused_mut)]
     let mut builder =
         tauri::Builder::default().plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             if let Some(window) = app.get_webview_window("main") {
