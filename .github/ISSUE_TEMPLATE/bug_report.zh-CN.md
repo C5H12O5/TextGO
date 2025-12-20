@@ -1,7 +1,7 @@
 ---
 name: Bug 报告
 about: 报告 Bug 以帮助我们改进
-title: '[Bug report]: '
+title: '[Bug Report]: '
 labels: ''
 assignees: ''
 ---
@@ -15,4 +15,4 @@ assignees: ''
 - 系统：[例如 macOS 26]
 - 版本：[例如 v1.0.0]
 
-**截图（可选）**
+**截屏（可选）**
