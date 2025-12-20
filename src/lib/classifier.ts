@@ -843,15 +843,16 @@ export class Classifier {
 
     if (typeof window !== 'undefined' && window.localStorage) {
       try {
-        // get vocabulary size
+        // vocabulary count
         const configKey = `${STORAGE.CONFIG}_${id}`;
         const configData = localStorage.getItem(configKey);
         if (configData) {
           const config = JSON.parse(configData);
-          // vocabulary size is same as tokenizer size
+          // use saved tokenizer size
           vocabulary = config.tokenizerSize || 0;
         }
-        // calculate TensorFlow.js model file size
+
+        // storage size
         let totalSize = 0;
         const modelPrefix = `tensorflowjs_models/${STORAGE.CLASSIFIER}_${id}`;
         for (let i = 0; i < localStorage.length; i++) {
@@ -859,7 +860,7 @@ export class Classifier {
           if (key && key.startsWith(modelPrefix)) {
             const value = localStorage.getItem(key);
             if (value) {
-              // calculate UTF-16 encoded byte size (JavaScript strings are UTF-16)
+              // estimate UTF-16 encoded byte size (JavaScript strings are UTF-16)
               totalSize += key.length * 2 + value.length * 2;
             }
           }
