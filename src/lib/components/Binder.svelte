@@ -71,7 +71,7 @@
     const options: Option[] = [...DEFAULT_ACTIONS];
     // prompt
     if (prompts.current && prompts.current.length > 0) {
-      options.push({ value: '--prompt--', label: `-- ${m.conversation()} --`, disabled: true });
+      options.push({ value: '--prompt--', label: `-- ${m.ai()} --`, disabled: true });
       for (const prompt of prompts.current) {
         options.push({ value: PROMPT_MARK + prompt.id, label: prompt.id, icon: prompt.icon });
       }
@@ -85,7 +85,7 @@
     }
     // searcher
     if (searchers.current && searchers.current.length > 0) {
-      options.push({ value: '--searcher--', label: `-- ${m.web_search()} --`, disabled: true });
+      options.push({ value: '--searcher--', label: `-- ${m.search()} --`, disabled: true });
       for (const searcher of searchers.current) {
         options.push({ value: SEARCHER_MARK + searcher.id, label: searcher.id, icon: searcher.icon });
       }

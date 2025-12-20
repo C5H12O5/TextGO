@@ -3,14 +3,14 @@
   import { Button, Icon, List, Model, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { models } from '$lib/stores.svelte';
-  import { ArrowClockwise, Package, PencilSimpleLine, Sparkle, Sphere, TextT, Warning } from 'phosphor-svelte';
+  import { ArrowClockwise, Package, PencilSimpleLine, Sparkle, Sphere, Warning } from 'phosphor-svelte';
 
   // classification model components
   let modelCreator: Model;
   let modelUpdater: Model;
 </script>
 
-<Setting icon={Sphere} title={m.model()} class="min-h-(--app-h)">
+<Setting icon={Sphere} title={m.model()} tip={m.experimental()} class="min-h-(--app-h)">
   <List
     icon={Sparkle}
     title={m.model_count({ count: models.current.length })}
