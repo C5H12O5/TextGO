@@ -163,7 +163,7 @@ pub fn run() {
 }
 
 /// Application setup function.
-fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let app_handle = app.app_handle().clone();
 
     // store app handle globally
@@ -201,8 +201,8 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
             // hide main window if minimizeToTray is enabled
             if let Ok(store) = app.store(SETTINGS_STORE) {
                 let minimize_to_tray = store.get("minimizeToTray").and_then(|v| v.as_bool());
-                if minimize_to_tray.unwrap_or(false) {
-                    hide_window(app, "main");
+                if !minimize_to_tray.unwrap_or(false) {
+                    show_window(app, "main");
                 }
             }
         }),
@@ -258,6 +258,12 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     panel.set_event_handler(Some(handler.as_ref()));
                 }
             }
+
+            // prevent position deviation on first show
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize {
+                width: 1.0,
+                height: 1.0,
+            }));
         }),
     );
 
