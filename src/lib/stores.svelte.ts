@@ -111,7 +111,7 @@ export const theme = persisted<string>('theme', 'light', {
   }
 });
 
-// shortcut group
+// shortcut groups
 export const shortcuts = persisted<Record<string, Shortcut>>(
   'shortcuts',
   {},
@@ -140,6 +140,9 @@ export const accessibility = persisted<boolean>('accessibility', false);
 
 // input monitoring permission granted
 export const inputMonitoring = persisted<boolean>('inputMonitoring', false);
+
+// whether the popup window is pinned
+export const popupPinned = persisted<boolean>('popupPinned', false);
 
 // Node.js path
 export const nodePath = persisted<string>('nodePath', '');

@@ -17,6 +17,9 @@ use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEve
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
+// settings store filename
+const SETTINGS_STORE: &str = ".settings.dat";
+
 // global app handle storage
 pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
 
@@ -196,12 +199,10 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         "main",
         Some(|_window: &WebviewWindow, app: &AppHandle| {
             // hide main window if minimizeToTray is enabled
-            if let Ok(store) = app.store(".settings.dat") {
+            if let Ok(store) = app.store(SETTINGS_STORE) {
                 let minimize_to_tray = store.get("minimizeToTray").and_then(|v| v.as_bool());
-                if let Some(minimize_to_tray) = minimize_to_tray {
-                    if minimize_to_tray {
-                        hide_window(app, "main");
-                    }
+                if minimize_to_tray.unwrap_or(false) {
+                    hide_window(app, "main");
                 }
             }
         }),
@@ -260,7 +261,24 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     );
 
     // setup popup window
-    setup_window(app, "popup", None::<fn(&WebviewWindow, &AppHandle)>);
+    setup_window(
+        app,
+        "popup",
+        Some(|window: &WebviewWindow, app: &AppHandle| {
+            let app_handle = app.clone();
+            window.on_window_event(move |event| {
+                if let WindowEvent::Focused(false) = event {
+                    // hide popup window when it loses focus if not pinned
+                    if let Ok(store) = app_handle.store(SETTINGS_STORE) {
+                        let popup_pinned = store.get("popupPinned").and_then(|v| v.as_bool());
+                        if !popup_pinned.unwrap_or(false) {
+                            hide_window(&app_handle, "popup");
+                        }
+                    }
+                }
+            });
+        }),
+    );
 
     Ok(())
 }

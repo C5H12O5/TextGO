@@ -1,13 +1,21 @@
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
-  import { ollamaHost, prompts } from '$lib/stores.svelte';
+  import { ollamaHost, popupPinned, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { marked } from 'marked';
   import { Ollama } from 'ollama/browser';
-  import { ArrowClockwise, ArrowCounterClockwise, CopySimple, StopCircle, TextIndent, X } from 'phosphor-svelte';
+  import {
+    ArrowClockwise,
+    ArrowCounterClockwise,
+    CopySimple,
+    PushPin,
+    StopCircle,
+    TextIndent,
+    X
+  } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
   // current window
@@ -203,24 +211,32 @@
   <main class="bg-transparent p-1">
     <div class="overflow-hidden rounded-box border shadow-sm">
       <!-- title -->
-      <div class="flex h-8 items-center justify-between gap-2 bg-base-300 p-1" data-tauri-drag-region>
+      <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
+        <Button
+          icon={PushPin}
+          weight="fill"
+          iconClass={popupPinned.current ? '-rotate-90' : '-rotate-45 text-base-content/30'}
+          onclick={() => (popupPinned.current = !popupPinned.current)}
+        />
         <div class="pointer-events-none flex items-center truncate">
           {#if promptMode}
             <Icon icon={promptIcon} class="m-1.5 size-4.5 shrink-0" />
             <span class="truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
           {/if}
         </div>
-        <div class="flex items-center gap-1">
+        <div class="ml-auto flex items-center gap-1">
           {#if promptMode}
             <Button
               icon={StopCircle}
               weight="bold"
+              iconClass="opacity-80"
               disabled={!(streaming && entry?.response)}
               onclick={() => abort()}
             />
             <Button
               icon={ArrowClockwise}
               weight="bold"
+              iconClass="opacity-80"
               disabled={streaming || !entry?.response}
               onclick={() => chat()}
             />
