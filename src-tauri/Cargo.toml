@@ -1,6 +1,6 @@
 [package]
 name = "text-go"
-version = "0.3.6"
+version = "0.3.7"
 description = "Auto-detect text types and trigger custom actions with one hotkey."
 authors = ["Xylitol <jam.xylitol@gmail.com>"]
 license = "GPL-3.0-or-later"

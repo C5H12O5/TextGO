@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment';
   import { Alert, Confirm } from '$lib/components';
+  import { platform } from '@tauri-apps/plugin-os';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
   // import fonts
@@ -26,6 +27,12 @@
       };
     });
   }
+
+  // set platform data attribute
+  onMount(() => {
+    const platformName = platform();
+    document.documentElement.setAttribute('data-tauri-platform', platformName);
+  });
 </script>
 
 <svelte:window

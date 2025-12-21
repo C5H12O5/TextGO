@@ -1,18 +1,22 @@
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
-  import { ollamaHost, prompts } from '$lib/stores.svelte';
+  import { ollamaHost, popupPinned, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { type } from '@tauri-apps/plugin-os';
   import { marked } from 'marked';
   import { Ollama } from 'ollama/browser';
-  import { ArrowClockwise, ArrowCounterClockwise, CopySimple, StopCircle, TextIndent } from 'phosphor-svelte';
+  import {
+    ArrowClockwise,
+    ArrowCounterClockwise,
+    CopySimple,
+    PushPin,
+    StopCircle,
+    TextIndent,
+    X
+  } from 'phosphor-svelte';
   import { onMount } from 'svelte';
-
-  // operating system type
-  const osType = type();
 
   // current window
   const currentWindow = getCurrentWindow();
@@ -202,59 +206,82 @@
   });
 </script>
 
-{#snippet panel()}
-  <div class="pointer-events-none flex items-center gap-2 truncate">
-    {#if promptMode}
-      <Icon icon={promptIcon} class="size-4.5 shrink-0" />
-      <span class="truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
-    {/if}
-  </div>
-  <div class="flex items-center gap-1">
-    {#if promptMode}
-      <Button icon={ArrowClockwise} weight="bold" disabled={streaming || !entry?.response} onclick={() => chat()} />
-      <Button icon={StopCircle} weight="bold" disabled={!(streaming && entry?.response)} onclick={() => abort()} />
-    {:else}
-      <Button icon={ArrowCounterClockwise} onclick={() => codeMirror?.reset()} />
-      <Button icon={TextIndent} onclick={() => codeMirror?.format()} />
-      <Button icon={CopySimple} onclick={() => codeMirror?.copy()} />
-    {/if}
-  </div>
-{/snippet}
-
 {#key entry?.id}
-  <main class="h-screen w-screen overflow-hidden">
-    {#if osType === 'macos'}
-      <div class="flex h-8 items-center justify-between gap-2 bg-base-300 px-2 pl-20" data-tauri-drag-region>
-        {@render panel()}
-      </div>
-    {/if}
-    <div class="h-[calc(100vh-2rem)] w-full overflow-auto" bind:this={scrollElement} onscroll={handleScroll}>
-      {#if promptMode}
-        <div class="px-4 pt-2 pb-10">
-          {#if streaming && !entry?.response}
-            <div class="loading loading-sm loading-dots opacity-70"></div>
-          {:else if entry?.response}
-            <div class="prose prose-sm max-w-none text-base-content/90">
-              <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-              {@html marked(entry.response + (streaming ? ' |' : ''))}
-            </div>
+  {@const height = 'calc(100vh - 2.625rem)'}
+  <main class="bg-transparent p-1">
+    <div class="overflow-hidden rounded-box border shadow-sm">
+      <!-- title -->
+      <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
+        <Button
+          icon={PushPin}
+          iconWeight="fill"
+          iconClass={popupPinned.current ? '-rotate-90' : '-rotate-45 text-base-content/30'}
+          onclick={() => (popupPinned.current = !popupPinned.current)}
+        />
+        <div class="pointer-events-none flex items-center truncate">
+          {#if promptMode}
+            <Icon icon={promptIcon} class="m-1.5 size-4.5 shrink-0" />
+            <span class="truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
           {/if}
         </div>
-      {:else}
-        <CodeMirror
-          minHeight="calc(100vh - 2rem)"
-          maxHeight="calc(100vh - 2rem)"
-          class="rounded-none border-none"
-          panelClass="hidden"
-          document={entry?.result}
-          bind:this={codeMirror}
-        />
-      {/if}
-    </div>
-    {#if osType !== 'macos'}
-      <div class="flex h-8 items-center justify-between gap-2 bg-base-300 px-2">
-        {@render panel()}
+        <div class="ml-auto flex items-center gap-1">
+          {#if promptMode}
+            <Button
+              icon={StopCircle}
+              iconWeight="bold"
+              iconClass="opacity-80"
+              disabled={!(streaming && entry?.response)}
+              onclick={() => abort()}
+            />
+            <Button
+              icon={ArrowClockwise}
+              iconWeight="bold"
+              iconClass="opacity-80"
+              disabled={streaming || !entry?.response}
+              onclick={() => chat()}
+            />
+          {:else}
+            <Button icon={ArrowCounterClockwise} onclick={() => codeMirror?.reset()} />
+            <Button icon={TextIndent} onclick={() => codeMirror?.format()} />
+            <Button icon={CopySimple} onclick={() => codeMirror?.copy()} />
+          {/if}
+          <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
+          <Button icon={X} onclick={() => currentWindow.hide()} />
+        </div>
       </div>
-    {/if}
+      <!-- body -->
+      <div style:height class="overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
+        {#if promptMode}
+          <div class="px-4 pt-2 pb-10">
+            {#if streaming && !entry?.response}
+              <div class="loading loading-sm loading-dots opacity-70"></div>
+            {:else if entry?.response}
+              <div class="prose prose-sm max-w-none text-base-content/90">
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                {@html marked(entry.response + (streaming ? ' |' : ''))}
+              </div>
+            {/if}
+          </div>
+        {:else}
+          <CodeMirror
+            bind:this={codeMirror}
+            document={entry?.result}
+            minHeight={height}
+            maxHeight={height}
+            panelClass="hidden"
+            class="rounded-none border-none"
+          />
+        {/if}
+      </div>
+    </div>
   </main>
 {/key}
+
+<style>
+  :global {
+    html,
+    body {
+      background: transparent;
+    }
+  }
+</style>

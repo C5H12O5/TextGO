@@ -62,45 +62,60 @@
       // update model information
       model.icon = modelIcon;
       model.threshold = modelThreshold;
-      alert(m.model_info_updated());
-      loading.end();
+      if (model.sample !== modelSample) {
+        // retrain model if samples changed
+        model.sample = modelSample;
+        train(modelName);
+      } else {
+        // only update other info
+        alert(m.model_info_updated());
+        loading.end();
+      }
     } else {
       // train classification model
-      const id = modelName;
       models.push({
-        id: id,
+        id: modelName,
         icon: modelIcon,
         sample: modelSample,
         threshold: modelThreshold
       });
       // train model
-      const classifier = new Classifier(modelName);
-      classifier
-        .trainModel(modelSample)
-        .then(() => {
-          const model = models.find((c) => c.id === id);
-          if (model) {
-            model.modelTrained = true;
-          }
-          loading.end();
-          alert(m.model_training_success());
-          // reset form
-          modelIcon = 'Sphere';
-          modelName = '';
-          modelSample = '';
-          modelThreshold = 0.5;
-        })
-        .catch((error) => {
-          console.error(`Failed to train model: ${error}`);
-          const model = models.find((c) => c.id === id);
-          if (model) {
-            model.modelTrained = false;
-          }
-          loading.end();
-          alert({ level: 'error', message: m.model_training_failed() });
-        });
+      train(modelName, true);
     }
     modal.close();
+  }
+
+  /**
+   * Train classification model.
+   *
+   * @param id - model ID
+   * @param reset - whether to reset the form
+   */
+  export async function train(id: string, reset: boolean = false) {
+    const model = models.find((c) => c.id === id);
+    if (!model) {
+      return;
+    }
+    // mark model as training
+    model.modelTrained = undefined;
+    try {
+      await new Classifier(id).trainModel(model.sample);
+      model.modelTrained = true;
+      alert(m.model_training_success());
+      loading.end();
+      // reset form after training
+      if (reset) {
+        modelIcon = 'Sphere';
+        modelName = '';
+        modelSample = '';
+        modelThreshold = 0.5;
+      }
+    } catch (error) {
+      console.error(`Failed to train model: ${error}`);
+      model.modelTrained = false;
+      alert({ level: 'error', message: m.model_training_failed() });
+      loading.end();
+    }
   }
 </script>
 
@@ -121,7 +136,6 @@
       <Label required>{m.positive_samples()}</Label>
       <CodeMirror
         title={m.positive_samples()}
-        readOnly={!!modelId}
         placeholder={m.positive_samples_placeholder()}
         bind:document={modelSample}
       />

@@ -17,6 +17,9 @@ use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEve
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
+// settings store filename
+const SETTINGS_STORE: &str = ".settings.dat";
+
 // global app handle storage
 pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
 
@@ -160,7 +163,7 @@ pub fn run() {
 }
 
 /// Application setup function.
-fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     let app_handle = app.app_handle().clone();
 
     // store app handle globally
@@ -196,12 +199,10 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         "main",
         Some(|_window: &WebviewWindow, app: &AppHandle| {
             // hide main window if minimizeToTray is enabled
-            if let Ok(store) = app.store(".settings.dat") {
+            if let Ok(store) = app.store(SETTINGS_STORE) {
                 let minimize_to_tray = store.get("minimizeToTray").and_then(|v| v.as_bool());
-                if let Some(minimize_to_tray) = minimize_to_tray {
-                    if minimize_to_tray {
-                        hide_window(app, "main");
-                    }
+                if !minimize_to_tray.unwrap_or(false) {
+                    show_window(app, "main");
                 }
             }
         }),
@@ -238,8 +239,9 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                         }
                     });
 
-                    // set the window to float level
-                    panel.set_level(PanelLevel::Floating.value());
+                    // set the window to custom level 5
+                    // above normal floating windows (level 4)
+                    panel.set_level(PanelLevel::Custom(5).value());
 
                     // prevent app activation when clicked
                     panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
@@ -256,11 +258,48 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                     panel.set_event_handler(Some(handler.as_ref()));
                 }
             }
+
+            // prevent position deviation on first show
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize {
+                width: 1.0,
+                height: 1.0,
+            }));
         }),
     );
 
     // setup popup window
-    setup_window(app, "popup", None::<fn(&WebviewWindow, &AppHandle)>);
+    setup_window(
+        app,
+        "popup",
+        Some(|window: &WebviewWindow, app: &AppHandle| {
+            let app_handle = app.clone();
+
+            #[cfg(target_os = "windows")]
+            let popup_window = window.clone();
+
+            // hide popup window when it loses focus if not pinned
+            window.on_window_event(move |event| {
+                if let WindowEvent::Focused(false) = event {
+                    if let Ok(store) = app_handle.store(SETTINGS_STORE) {
+                        let popup_pinned = store.get("popupPinned").and_then(|v| v.as_bool());
+                        if !popup_pinned.unwrap_or(false) {
+                            // check focus state again after 100ms delay on Windows
+                            // https://github.com/tauri-apps/tauri/issues/10767
+                            #[cfg(target_os = "windows")]
+                            {
+                                std::thread::sleep(std::time::Duration::from_millis(100));
+                                if popup_window.is_focused().unwrap_or(false) {
+                                    return;
+                                }
+                            }
+
+                            hide_window(&app_handle, "popup");
+                        }
+                    }
+                }
+            });
+        }),
+    );
 
     Ok(())
 }

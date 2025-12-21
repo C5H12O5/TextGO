@@ -9,7 +9,7 @@
     /** Button icon. */
     icon: Component<IconComponentProps>;
     /** Button icon weight. */
-    weight: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
+    iconWeight: 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone';
     /** Button text. */
     text: string;
     /** Button size. */
@@ -60,7 +60,7 @@
   let {
     children,
     icon,
-    weight = 'regular',
+    iconWeight = 'regular',
     text,
     size = 'xs',
     subtle = true,
@@ -105,7 +105,7 @@
       <span class="loading loading-spinner" style:width={preset.iconSize}></span>
     {:else}
       {@const Icon = icon}
-      <Icon size={preset.iconSize} {weight} class={iconClass} />
+      <Icon size={preset.iconSize} weight={iconWeight} class={iconClass} />
     {/if}
     <span class="truncate {square ? 'sr-only' : preset.textClass} {textClass}" title={text}>{text}</span>
   {/if}
