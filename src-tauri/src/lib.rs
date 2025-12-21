@@ -273,12 +273,26 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
         "popup",
         Some(|window: &WebviewWindow, app: &AppHandle| {
             let app_handle = app.clone();
+
+            #[cfg(target_os = "windows")]
+            let popup_window = window.clone();
+
+            // hide popup window when it loses focus if not pinned
             window.on_window_event(move |event| {
                 if let WindowEvent::Focused(false) = event {
-                    // hide popup window when it loses focus if not pinned
                     if let Ok(store) = app_handle.store(SETTINGS_STORE) {
                         let popup_pinned = store.get("popupPinned").and_then(|v| v.as_bool());
                         if !popup_pinned.unwrap_or(false) {
+                            // check focus state again after 100ms delay on Windows
+                            // https://github.com/tauri-apps/tauri/issues/10767
+                            #[cfg(target_os = "windows")]
+                            {
+                                std::thread::sleep(std::time::Duration::from_millis(100));
+                                if popup_window.is_focused().unwrap_or(false) {
+                                    return;
+                                }
+                            }
+
                             hide_window(&app_handle, "popup");
                         }
                     }
