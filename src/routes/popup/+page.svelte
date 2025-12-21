@@ -214,7 +214,7 @@
       <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
         <Button
           icon={PushPin}
-          weight="fill"
+          iconWeight="fill"
           iconClass={popupPinned.current ? '-rotate-90' : '-rotate-45 text-base-content/30'}
           onclick={() => (popupPinned.current = !popupPinned.current)}
         />
@@ -228,14 +228,14 @@
           {#if promptMode}
             <Button
               icon={StopCircle}
-              weight="bold"
+              iconWeight="bold"
               iconClass="opacity-80"
               disabled={!(streaming && entry?.response)}
               onclick={() => abort()}
             />
             <Button
               icon={ArrowClockwise}
-              weight="bold"
+              iconWeight="bold"
               iconClass="opacity-80"
               disabled={streaming || !entry?.response}
               onclick={() => chat()}

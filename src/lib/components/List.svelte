@@ -111,14 +111,14 @@
     <span class="flex items-center gap-1">
       <Button
         icon={PlusCircle}
-        weight="bold"
+        iconWeight="bold"
         text="{m.add()}{name}"
         class="text-green-800"
         onclick={() => oncreate?.()}
       />
       <Button
         icon={XCircle}
-        weight="bold"
+        iconWeight="bold"
         text="{m.delete()}{name}"
         class={selectedId ? 'text-red-800' : 'btn-disabled'}
         onclick={() => {
@@ -145,7 +145,7 @@
       />
       <Button
         icon={ArrowCircleUp}
-        weight="bold"
+        iconWeight="bold"
         text={m.move_up()}
         class={selectedId ? 'text-surface' : 'btn-disabled'}
         onclick={() => {
@@ -163,7 +163,7 @@
       />
       <Button
         icon={ArrowCircleDown}
-        weight="bold"
+        iconWeight="bold"
         text={m.move_down()}
         class={selectedId ? 'text-surface' : 'btn-disabled'}
         onclick={() => {
@@ -180,7 +180,7 @@
         }}
       />
       {#if moreOptions}
-        <Button icon={DotsThree} weight="bold" text={m.more_options()} onclick={() => moreOptions?.()} />
+        <Button icon={DotsThree} iconWeight="bold" text={m.more_options()} onclick={() => moreOptions?.()} />
       {/if}
     </span>
   </div>

@@ -60,8 +60,8 @@
   </div>
   <Button
     size="sm"
-    weight="duotone"
     icon={Broom}
+    iconWeight="duotone"
     onclick={() => {
       if (entries.current.length === 0) {
         return;
