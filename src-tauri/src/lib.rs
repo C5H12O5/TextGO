@@ -239,8 +239,9 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
                         }
                     });
 
-                    // set the window to float level
-                    panel.set_level(PanelLevel::Floating.value());
+                    // set the window to custom level 5
+                    // above normal floating windows (level 4)
+                    panel.set_level(PanelLevel::Custom(5).value());
 
                     // prevent app activation when clicked
                     panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
