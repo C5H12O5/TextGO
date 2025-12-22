@@ -2,7 +2,7 @@
   import { Button, Icon, List, Searcher, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { searchers } from '$lib/stores.svelte';
-  import { MagnifyingGlass, PencilSimpleLine, Sparkle } from 'phosphor-svelte';
+  import { Globe, MagnifyingGlass, PencilSimpleLine, Sparkle } from 'phosphor-svelte';
 
   // searcher components
   let searcherCreator: Searcher;
@@ -22,6 +22,12 @@
       <Icon icon={item.icon || 'MagnifyingGlass'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
+        {#if item.browser}
+          <span class="badge badge-ghost badge-sm">
+            <Globe class="size-4 shrink-0 opacity-80" />
+            <span class="opacity-80">{item.browser}</span>
+          </span>
+        {/if}
       </div>
       <Button
         icon={PencilSimpleLine}

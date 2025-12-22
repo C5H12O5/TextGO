@@ -27,9 +27,9 @@
         <!-- model storage size -->
         {#if item.modelTrained === true}
           {@const { sizeKB } = Classifier.getModelInfo(item.id)}
-          <span class="badge badge-ghost badge-sm opacity-80">
-            <Package class="size-4 shrink-0" />
-            {sizeKB} KB
+          <span class="badge badge-ghost badge-sm">
+            <Package class="size-4 shrink-0 opacity-80" />
+            <span class="opacity-80">{sizeKB} KB</span>
           </span>
         {/if}
       </div>

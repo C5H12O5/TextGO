@@ -1,14 +1,17 @@
+<script lang="ts" module>
+  import type { Option, Rule } from '$lib/types';
+  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
+  import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
+</script>
+
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { alert, Icon, Label, Modal, Select } from '$lib/components';
-  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
-  import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { manager } from '$lib/manager';
-  import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
   import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
-  import type { Option, Rule } from '$lib/types';
   import { ArrowArcRight, ArrowFatLineRight, Code, Sparkle, Translate } from 'phosphor-svelte';
   import { untrack } from 'svelte';
 

@@ -22,6 +22,11 @@
       <Icon icon={item.icon || 'Scroll'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
+        <!-- {#if item.flags}
+          <span class="badge badge-ghost badge-sm">
+            <span class="opacity-80">/{item.flags}</span>
+          </span>
+        {/if} -->
       </div>
       <Button
         icon={PencilSimpleLine}
