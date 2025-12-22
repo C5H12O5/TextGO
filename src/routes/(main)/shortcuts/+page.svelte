@@ -202,6 +202,7 @@
         <button
           class="group badge cursor-pointer bg-base-200 opacity-80 transition-all hover:opacity-100"
           class:border={mode === 'toolbar'}
+          class:gradient={mode === 'toolbar'}
           class:shadow-sm={mode === 'toolbar'}
           class:text-inactive={mode !== 'toolbar'}
           onclick={() => swapMode(shortcut)}

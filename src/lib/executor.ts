@@ -107,8 +107,8 @@ export const GENERAL_ACTIONS: Processor[] = [
     }
   },
   {
-    value: 'open_files',
-    label: m.open_files(),
+    value: 'open_paths',
+    label: m.open_paths(),
     icon: FolderOpen,
     process: (text: string) => {
       // extract all file paths in text

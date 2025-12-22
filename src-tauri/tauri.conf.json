@@ -37,7 +37,8 @@
         "transparent": true,
         "skipTaskbar": true,
         "alwaysOnTop": true,
-        "resizable": false
+        "resizable": false,
+        "acceptFirstMouse": true
       },
       {
         "label": "toolbar",

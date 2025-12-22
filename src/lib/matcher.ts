@@ -52,17 +52,17 @@ export const GENERAL_CASES: Option[] = [
     pattern: /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*$/
   },
   {
+    value: 'path',
+    label: m.path(),
+    icon: Folder,
+    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
+  },
+  {
     value: 'email',
     label: m.email(),
     icon: Envelope,
     pattern:
       /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
-  },
-  {
-    value: 'file_path',
-    label: m.file_path(),
-    icon: Folder,
-    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
   },
   {
     value: 'numbers',
@@ -188,8 +188,8 @@ export const TEXT_CASES: Option[] = [
  * Natural language recognition options.
  */
 export const NATURAL_CASES: Option[] = [
-  { value: 'cmn', label: m.lang_cmn() },
   { value: 'eng', label: m.lang_eng() },
+  { value: 'cmn', label: m.lang_cmn() },
   { value: 'jpn', label: m.lang_jpn() },
   { value: 'kor', label: m.lang_kor() },
   { value: 'rus', label: m.lang_rus() },
