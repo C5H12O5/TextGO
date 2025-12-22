@@ -1,8 +1,8 @@
 <script lang="ts" module>
-  import type { Option, Rule } from '$lib/types';
   import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
+  import type { Option, Rule } from '$lib/types';
 </script>
 
 <script lang="ts">
@@ -114,7 +114,8 @@
 
     // helper function to get unused actions
     const getUnusedActions = (value: string) => {
-      return actions.filter((a) => !getUsedActions(value).has(a.value as string));
+      const usedActions = getUsedActions(value);
+      return actions.filter((a) => !usedActions.has(a.value as string));
     };
 
     // calculate total available actions
@@ -139,7 +140,17 @@
     // check if current action is still available
     if (!unusedActions.some((a) => a.value === actionId)) {
       untrack(() => {
-        const availableAction = unusedActions.find((a) => !a.disabled && a.value !== actionId);
+        // find the next available action starting from the current action
+        let availableAction: Option | undefined;
+        const currentIndex = actions.findIndex((a) => a.value === actionId);
+        for (let i = 1; i < actions.length; i++) {
+          const nextIndex = (currentIndex + i) % actions.length;
+          const nextAction = actions[nextIndex];
+          if (unusedActions.includes(nextAction) && !nextAction.disabled) {
+            availableAction = nextAction;
+            break;
+          }
+        }
         actionId = availableAction ? (availableAction.value as string) : 'copy';
       });
     }
@@ -168,11 +179,13 @@
   }
 
   /**
-   * Register new rule.
+   * Bind rule to the shortcut.
    *
-   * @param form - form element
+   * @param shortcut - shortcut string
+   * @param caseId - case identifier
+   * @param actionId - action identifier
    */
-  export async function register(form: HTMLFormElement) {
+  export async function bind(shortcut: string, caseId: string, actionId: string) {
     const s = shortcuts.current[shortcut];
     if (s.rules.find((r) => r.shortcut === shortcut && r.case === caseId && r.action === actionId)) {
       alert({ level: 'error', message: m.rule_already_used() });
@@ -180,35 +193,34 @@
     }
     loading.start();
     try {
-      // close modal first
+      // close modal
       modal.close();
-      // register new rule
+      // register rule
       await manager.register({
         id: crypto.randomUUID(),
         shortcut: shortcut,
         case: caseId,
         action: actionId
       });
-      // reset form fields
-      form.reset();
       alert(m.rule_added_success());
     } catch (error) {
-      console.error(`Failed to register rule: ${error}`);
+      console.error(`Failed to bind rule: ${error}`);
     } finally {
       loading.end();
     }
   }
 
   /**
-   * Unregister rule.
+   * Unbind rule from the shortcut.
    *
-   * @param rule - rule object
+   * @param rule - rule instance
    */
-  export async function unregister(rule: Rule) {
+  export async function unbind(rule: Rule) {
     try {
+      // unregister rule
       await manager.unregister(rule);
     } catch (error) {
-      console.error(`Failed to unregister rule: ${error}`);
+      console.error(`Failed to unbind rule: ${error}`);
     }
   }
 </script>
@@ -216,9 +228,9 @@
 <Modal maxWidth="36rem" icon={Sparkle} title="{m.add()}{m.rule()}" bind:this={modal}>
   <form
     method="post"
-    use:enhance={({ formElement, cancel }) => {
+    use:enhance={({ cancel }) => {
       cancel();
-      register(formElement);
+      bind(shortcut, caseId, actionId);
     }}
   >
     <fieldset class="fieldset">

@@ -227,7 +227,7 @@
           onclick={() => {
             const clear = () => {
               for (const item of rules) {
-                binder?.unregister(item);
+                binder?.unbind(item);
               }
               delete shortcuts.current[shortcut];
             };
@@ -251,7 +251,7 @@
         bind:collapsed={shortcuts.current[shortcut].collapsed}
         collapsible
         oncreate={() => binder?.showModal(shortcut)}
-        ondelete={(item) => binder?.unregister(item)}
+        ondelete={(item) => binder?.unbind(item)}
       >
         {#snippet title()}
           <Sparkle class="mx-1 size-4 opacity-60" />
