@@ -3,6 +3,11 @@
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import type { Option, Rule } from '$lib/types';
+  import { SvelteMap } from 'svelte/reactivity';
+
+  // remember last choices for each shortcut
+  type Binder = { caseId: string; actionId: string };
+  const histories = new SvelteMap<string, Binder>();
 </script>
 
 <script lang="ts">
@@ -25,6 +30,14 @@
   let modal: Modal;
   export const showModal = (value: string) => {
     shortcut = value;
+    const history = histories.get(shortcut);
+    if (history) {
+      caseId = history.caseId;
+      actionId = history.actionId;
+    } else {
+      caseId = '';
+      actionId = 'copy';
+    }
     modal.show();
   };
 
@@ -203,6 +216,8 @@
         action: actionId
       });
       alert(m.rule_added_success());
+      // save history
+      histories.set(shortcut, { caseId, actionId });
     } catch (error) {
       console.error(`Failed to bind rule: ${error}`);
     } finally {
@@ -222,6 +237,19 @@
     } catch (error) {
       console.error(`Failed to unbind rule: ${error}`);
     }
+  }
+
+  /**
+   * Clear all rules bound to the shortcut.
+   *
+   * @param shortcut - shortcut string
+   */
+  export async function clear(shortcut: string) {
+    for (const rule of shortcuts.current[shortcut]?.rules || []) {
+      await unbind(rule);
+    }
+    delete shortcuts.current[shortcut];
+    histories.delete(shortcut);
   }
 </script>
 

@@ -225,12 +225,7 @@
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
-            const clear = () => {
-              for (const item of rules) {
-                binder?.unbind(item);
-              }
-              delete shortcuts.current[shortcut];
-            };
+            const clear = () => binder?.clear(shortcut);
             // delete directly if rule is empty, otherwise need confirmation
             if (rules.length > 0) {
               confirm({
