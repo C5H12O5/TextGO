@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Label, Select, Setting } from '$lib/components';
+  import { Button, Label, Select, Setting, Toggle } from '$lib/components';
   import { setupTray } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
@@ -137,21 +137,12 @@
     {/if}
     <fieldset class="flex items-center justify-between">
       <Label>{m.auto_start()}</Label>
-      <input
-        type="checkbox"
-        checked={autoStart.current}
-        onchange={(event) => toggleAutoStart(event.currentTarget.checked)}
-        class="toggle checked:border-emphasis checked:bg-emphasis checked:text-white"
-      />
+      <Toggle value={autoStart.current} onchange={(event) => toggleAutoStart(event.currentTarget.checked)} />
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between">
       <Label>{m.minimize_to_tray()}</Label>
-      <input
-        type="checkbox"
-        bind:checked={minimizeToTray.current}
-        class="toggle checked:border-emphasis checked:bg-emphasis checked:text-white"
-      />
+      <Toggle bind:value={minimizeToTray.current} />
     </fieldset>
   </Setting>
 </div>

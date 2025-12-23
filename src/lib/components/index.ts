@@ -17,6 +17,7 @@ export { default as Select } from './Select.svelte';
 export { default as Setting } from './Setting.svelte';
 export { default as Shortcut } from './Shortcut.svelte';
 export { default as Title } from './Title.svelte';
+export { default as Toggle } from './Toggle.svelte';
 
 export { alert, default as Alert } from './Alert.svelte';
 export { confirm, default as Confirm } from './Confirm.svelte';
