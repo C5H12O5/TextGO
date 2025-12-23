@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
   import type { Searcher } from '$lib/types';
   import { type } from '@tauri-apps/plugin-os';
@@ -23,41 +24,46 @@
           { name: 'Opera', value: 'opera' }
         ];
 
-  /**
-   * URL placeholder with variable explanation.
-   */
+  // url placeholder
   const URL_PLACEHOLDER = `https://www.google.com/search?q={{selection}}`;
-</script>
 
-<script lang="ts">
-  import { enhance } from '$app/forms';
-  import { IconSelector, Label, Modal, alert } from '$lib/components';
-  import { buildFormSchema } from '$lib/constraint';
-  import { Loading } from '$lib/states.svelte';
-  import { Globe } from 'phosphor-svelte';
-
-  const { searchers }: { searchers: Searcher[] } = $props();
-  const loading = new Loading();
+  // form schema
   const schema = buildFormSchema(({ text }) => ({
     name: text().maxlength(64),
     browser: text().maxlength(128).required(false),
     url: text().maxlength(512)
   }));
 
+  // default values
+  const DEFAULT_ICON = 'MagnifyingGlass';
+</script>
+
+<script lang="ts">
+  import { enhance } from '$app/forms';
+  import { IconSelector, Label, Modal, alert } from '$lib/components';
+  import { SEARCHER_MARK } from '$lib/constants';
+  import { updateActionId } from '$lib/shortcut';
+  import { Loading } from '$lib/states.svelte';
+  import { Globe } from 'phosphor-svelte';
+
+  const { searchers }: { searchers: Searcher[] } = $props();
+  const loading = new Loading();
+
   let searcherId: string = $state('');
-  let searcherIcon: string = $state('MagnifyingGlass');
   let searcherName: string = $state('');
+  let searcherIcon: string = $state(DEFAULT_ICON);
   let browser: string = $state('');
   let url: string = $state('');
 
+  // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
     if (id) {
       const searcher = searchers.find((s) => s.id === id);
       if (searcher) {
         searcherId = id;
-        searcherIcon = searcher.icon || 'MagnifyingGlass';
         searcherName = searcher.id;
+        searcherIcon = searcher.icon || DEFAULT_ICON;
         browser = searcher.browser || '';
         url = searcher.url;
       }
@@ -89,8 +95,9 @@
    * @param form - form element
    */
   function save(form: HTMLFormElement) {
+    // validate inputs
     searcherName = searcherName.trim();
-    const searcher = searchers.find((s) => s.id === searcherName);
+    let searcher = searchers.find((s) => s.id === searcherName);
     if (searcher && searcher.id !== searcherId) {
       alert({ level: 'error', message: m.name_already_used() });
       const nameInput = form.querySelector('input[name="name"]');
@@ -103,9 +110,16 @@
       (urlInput as HTMLTextAreaElement | null)?.focus();
       return;
     }
+
+    // start saving
     loading.start();
+    searcher = searchers.find((s) => s.id === searcherId);
     if (searcher) {
       // update searcher
+      if (searcher.id !== searcherName) {
+        searcher.id = searcherName;
+        updateActionId(SEARCHER_MARK, searcherId, searcherName);
+      }
       searcher.icon = searcherIcon;
       searcher.browser = browser || undefined;
       searcher.url = url;
@@ -119,8 +133,8 @@
         url: url
       });
       // reset form
-      searcherIcon = 'MagnifyingGlass';
       searcherName = '';
+      searcherIcon = DEFAULT_ICON;
       browser = '';
       url = '';
       alert(m.searcher_added_success());
@@ -142,12 +156,7 @@
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={searcherIcon} />
-        <input
-          class="autofocus input input-sm grow"
-          {...schema.name}
-          bind:value={searcherName}
-          disabled={!!searcherId}
-        />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={searcherName} />
       </div>
       <Label>{m.browser()}</Label>
       <div class="relative">

@@ -68,6 +68,16 @@ export function getKbdLabel(code: string): string {
 }
 
 /**
+ * Check if the shortcut is a mouse shortcut.
+ *
+ * @param shortcut - shortcut string
+ * @returns true if mouse shortcut, false otherwise
+ */
+export function isMouseShortcut(shortcut: string): boolean {
+  return shortcut === DBCLICK_SHORTCUT || shortcut === DRAG_SHORTCUT;
+}
+
+/**
  * Format shortcut string.
  *
  * @param shortcut - shortcut string (e.g., "Meta+Shift+KeyA")
@@ -100,16 +110,6 @@ export function formatISO8601(str: string | null | undefined): string {
     dateStyle: 'medium',
     timeStyle: 'medium'
   });
-}
-
-/**
- * Check if the shortcut is a mouse shortcut.
- *
- * @param shortcut - shortcut string
- * @returns true if mouse shortcut, false otherwise
- */
-export function isMouseShortcut(shortcut: string): boolean {
-  return shortcut === DBCLICK_SHORTCUT || shortcut === DRAG_SHORTCUT;
 }
 
 /**

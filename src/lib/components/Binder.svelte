@@ -13,8 +13,8 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { alert, Icon, Label, Modal, Select } from '$lib/components';
-  import { manager } from '$lib/manager';
   import { m } from '$lib/paraglide/messages';
+  import { manager } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
   import { ArrowArcRight, ArrowFatLineRight, Code, Sparkle, Translate } from 'phosphor-svelte';

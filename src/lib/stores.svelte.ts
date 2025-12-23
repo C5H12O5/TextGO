@@ -1,4 +1,4 @@
-import { manager } from '$lib/manager';
+import { manager } from '$lib/shortcut';
 import type { Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$lib/types';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';

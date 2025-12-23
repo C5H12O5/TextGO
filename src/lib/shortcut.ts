@@ -8,6 +8,46 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { isMouseShortcut } from './helpers';
 
 /**
+ * Update case ID in rules with given prefix.
+ *
+ * @param prefix - case ID prefix
+ * @param caseId - current case ID
+ * @param newCaseId - new case ID
+ */
+export function updateCaseId(prefix: string, caseId: string, newCaseId: string) {
+  for (const shortcut in shortcuts.current) {
+    const s = shortcuts.current[shortcut];
+    if (s && s.rules) {
+      for (const rule of s.rules) {
+        if (rule.case === `${prefix}${caseId}`) {
+          rule.case = `${prefix}${newCaseId}`;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Update action ID in rules with given prefix.
+ *
+ * @param prefix - action ID prefix
+ * @param actionId - current action ID
+ * @param newActionId - new action ID
+ */
+export function updateActionId(prefix: string, actionId: string, newActionId: string) {
+  for (const shortcut in shortcuts.current) {
+    const s = shortcuts.current[shortcut];
+    if (s && s.rules) {
+      for (const rule of s.rules) {
+        if (rule.action === `${prefix}${actionId}`) {
+          rule.action = `${prefix}${newActionId}`;
+        }
+      }
+    }
+  }
+}
+
+/**
  * Shortcut manager class.
  */
 export class Manager {
