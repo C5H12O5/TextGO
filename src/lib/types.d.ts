@@ -35,6 +35,26 @@ export type Option = {
 };
 
 /**
+ * Type of action option.
+ */
+type ActOption = Option & {
+  /** Whether built-in action. */
+  builtIn?: boolean;
+  /** Whether no result action. */
+  noResult?: boolean;
+  /** Whether AI conversation action. */
+  promptMode?: boolean;
+};
+
+/**
+ * Type of text processor.
+ */
+type Processor = ActOption & {
+  /** Text processing function. */
+  process: (selection: string) => string;
+};
+
+/**
  * Execution mode for shortcut.
  */
 export type ExecutionMode = 'quiet' | 'toolbar';

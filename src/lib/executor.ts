@@ -2,7 +2,7 @@ import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
 import { entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
-import type { Entry, Option, Prompt, Rule, Script } from '$lib/types';
+import type { Entry, Processor, Prompt, Rule, Script } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
 import { memoize } from 'es-toolkit/function';
@@ -56,13 +56,6 @@ type Result = {
   error?: boolean;
 };
 
-/**
- * Built-in action type.
- */
-type Processor = Option & {
-  process: (selection: string) => string;
-};
-
 // regular expressions to match URLs and file paths
 const URL_REGEX =
   /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*/gm;
@@ -82,7 +75,9 @@ export const DEFAULT_ACTIONS: Processor[] = [
         invoke('set_clipboard_text', { text });
       }
       return '';
-    }
+    },
+    builtIn: true,
+    noResult: true
   }
 ];
 
@@ -104,7 +99,9 @@ export const GENERAL_ACTIONS: Processor[] = [
         });
       });
       return '';
-    }
+    },
+    builtIn: true,
+    noResult: true
   },
   {
     value: 'open_paths',
@@ -120,7 +117,9 @@ export const GENERAL_ACTIONS: Processor[] = [
         });
       });
       return '';
-    }
+    },
+    builtIn: true,
+    noResult: true
   }
 ];
 
@@ -131,52 +130,44 @@ export const CONVERT_ACTIONS: Processor[] = [
   {
     value: 'camel_case',
     label: m.camel_case(),
-    icon: ArrowsClockwise,
     process: camelCase
   },
   {
     value: 'pascal_case',
     label: m.pascal_case(),
-    icon: ArrowsClockwise,
     process: pascalCase
   },
   {
     value: 'lower_case',
     label: m.lower_case(),
-    icon: ArrowsClockwise,
     process: lowerCase
   },
   {
     value: 'start_case',
     label: m.start_case(),
-    icon: ArrowsClockwise,
     process: startCase
   },
   {
     value: 'upper_case',
     label: m.upper_case(),
-    icon: ArrowsClockwise,
     process: upperCase
   },
   {
     value: 'snake_case',
     label: m.snake_case(),
-    icon: ArrowsClockwise,
     process: snakeCase
   },
   {
     value: 'kebab_case',
     label: m.kebab_case(),
-    icon: ArrowsClockwise,
     process: kebabCase
   },
   {
     value: 'constant_case',
     label: m.constant_case(),
-    icon: ArrowsClockwise,
     process: constantCase
   }
-];
+].map((a) => ({ ...a, icon: ArrowsClockwise, builtIn: true }));
 
 /**
  * Text processing actions.
@@ -185,52 +176,44 @@ export const PROCESS_ACTIONS: Processor[] = [
   {
     value: 'words',
     label: m.words(),
-    icon: Function,
     process: (text: string) => words(text).join(' ')
   },
   {
     value: 'reverse',
     label: m.reverse(),
-    icon: Function,
     process: reverseString
   },
   {
     value: 'trim',
     label: m.trim(),
-    icon: Function,
     process: trim
   },
   {
     value: 'ltrim',
     label: m.ltrim(),
-    icon: Function,
     process: trimStart
   },
   {
     value: 'rtrim',
     label: m.rtrim(),
-    icon: Function,
     process: trimEnd
   },
   {
     value: 'deburr',
     label: m.deburr(),
-    icon: Function,
     process: deburr
   },
   {
     value: 'escape',
     label: m.escape(),
-    icon: Function,
     process: escape
   },
   {
     value: 'unescape',
     label: m.unescape(),
-    icon: Function,
     process: unescape
   }
-];
+].map((a) => ({ ...a, icon: Function, builtIn: true }));
 
 // memoized lookup function
 const findBuiltinAction = memoize((action: string) =>

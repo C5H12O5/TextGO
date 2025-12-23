@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { Prompt, ModelProvider } from '$lib/types';
+  import type { ModelProvider, Prompt } from '$lib/types';
 
   /**
    * Prompt template variable explanation.
@@ -49,15 +49,16 @@ ${m.prompt_variables_tip()}
   export const showModal = (id?: string) => {
     if (id) {
       const prompt = prompts.find((p) => p.id === id);
-      if (prompt) {
-        promptId = id;
-        promptName = prompt.id;
-        promptIcon = prompt.icon || DEFAULT_ICON;
-        promptText = prompt.prompt;
-        systemPromptText = prompt.systemPrompt || '';
-        modelProvider = prompt.provider;
-        modelName = prompt.model;
+      if (!prompt) {
+        return;
       }
+      promptId = id;
+      promptName = prompt.id;
+      promptIcon = prompt.icon || DEFAULT_ICON;
+      promptText = prompt.prompt;
+      systemPromptText = prompt.systemPrompt || '';
+      modelProvider = prompt.provider;
+      modelName = prompt.model;
     }
     modal.show();
   };

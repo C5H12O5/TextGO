@@ -56,13 +56,14 @@ def process(data):
   export const showModal = (id?: string) => {
     if (id) {
       const script = scripts.find((s) => s.id === id);
-      if (script) {
-        scriptId = id;
-        scriptName = script.id;
-        scriptIcon = script.icon || DEFAULT_ICON;
-        scriptLang = script.lang;
-        scriptText = script.script;
+      if (!script) {
+        return;
       }
+      scriptId = id;
+      scriptName = script.id;
+      scriptIcon = script.icon || DEFAULT_ICON;
+      scriptLang = script.lang;
+      scriptText = script.script;
     }
     modal.show();
   };

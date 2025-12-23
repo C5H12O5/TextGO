@@ -40,13 +40,14 @@
     }
     if (id) {
       const model = models.find((p) => p.id === id);
-      if (model) {
-        modelId = id;
-        modelName = model.id;
-        modelIcon = model.icon || DEFAULT_ICON;
-        modelSample = model.sample;
-        modelThreshold = model.threshold;
+      if (!model) {
+        return;
       }
+      modelId = id;
+      modelName = model.id;
+      modelIcon = model.icon || DEFAULT_ICON;
+      modelSample = model.sample;
+      modelThreshold = model.threshold;
     }
     modal.show();
   };

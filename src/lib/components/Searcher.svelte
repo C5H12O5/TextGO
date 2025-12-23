@@ -60,13 +60,14 @@
   export const showModal = (id?: string) => {
     if (id) {
       const searcher = searchers.find((s) => s.id === id);
-      if (searcher) {
-        searcherId = id;
-        searcherName = searcher.id;
-        searcherIcon = searcher.icon || DEFAULT_ICON;
-        browser = searcher.browser || '';
-        url = searcher.url;
+      if (!searcher) {
+        return;
       }
+      searcherId = id;
+      searcherName = searcher.id;
+      searcherIcon = searcher.icon || DEFAULT_ICON;
+      browser = searcher.browser || '';
+      url = searcher.url;
     }
     modal.show();
   };

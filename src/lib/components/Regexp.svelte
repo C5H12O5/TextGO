@@ -38,17 +38,18 @@
   export const showModal = (id?: string) => {
     if (id) {
       const regexp = regexps.find((p) => p.id === id);
-      if (regexp) {
-        regexpId = id;
-        regexpName = regexp.id;
-        regexpIcon = regexp.icon || DEFAULT_ICON;
-        regexpPattern = regexp.pattern;
-        const flags = regexp.flags || '';
-        flagI = flags.includes('i');
-        flagU = flags.includes('u');
-        flagM = flags.includes('m');
-        flagS = flags.includes('s');
+      if (!regexp) {
+        return;
       }
+      regexpId = id;
+      regexpName = regexp.id;
+      regexpIcon = regexp.icon || DEFAULT_ICON;
+      regexpPattern = regexp.pattern;
+      const flags = regexp.flags || '';
+      flagI = flags.includes('i');
+      flagU = flags.includes('u');
+      flagM = flags.includes('m');
+      flagS = flags.includes('s');
     }
     modal.show();
   };

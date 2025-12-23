@@ -11,6 +11,7 @@
     ArrowFatLineRight,
     ArrowsClockwise,
     Browser,
+    GearSix,
     Keyboard,
     MouseLeftClick,
     Sparkle,
@@ -30,6 +31,9 @@
 
   // rule binder
   let binder: Binder | null = $state(null);
+
+  // rule updater
+  let updater: Binder | null = $state(null);
 
   // dropdown element
   let dropdown: HTMLDetailsElement;
@@ -261,8 +265,8 @@
         {#snippet row(item)}
           {@const { label: caseLabel, icon: caseIcon } = binder?.getCaseOption(item.case) ?? {}}
           {@const { label: actionLabel, icon: actionIcon } = binder?.getActionOption(item.action) ?? {}}
-          <div class="list-col-grow grid grid-cols-11 items-center gap-4 pl-4">
-            <div class="col-span-4 flex items-center gap-1.5" title={caseLabel}>
+          <div class="list-col-grow grid grid-cols-12 items-center gap-4 pl-4">
+            <div class="col-span-5 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->
                 <ArrowArcRight class="size-5 shrink-0 opacity-30" />
@@ -300,6 +304,14 @@
               {/if}
             </div>
           </div>
+          <Button
+            icon={GearSix}
+            iconWeight="fill"
+            onclick={(event) => {
+              event.stopPropagation();
+              updater?.showModal(shortcut, item.id);
+            }}
+          />
         {/snippet}
       </List>
     </div>
@@ -309,3 +321,5 @@
 <Recorder bind:this={recorder} onrecord={register} />
 
 <Binder bind:this={binder} />
+
+<Binder bind:this={updater} />
