@@ -1,10 +1,7 @@
 <script lang="ts" module>
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { Prompt } from '$lib/types';
-
-  // model provider type
-  type ModelProvider = 'ollama' | 'lmstudio';
+  import type { Prompt, ModelProvider } from '$lib/types';
 
   /**
    * Prompt template variable explanation.

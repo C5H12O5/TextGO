@@ -1,10 +1,7 @@
 <script lang="ts" module>
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { Script } from '$lib/types';
-
-  // script language type
-  type ScriptLang = 'javascript' | 'python';
+  import type { Script, ScriptLang } from '$lib/types';
 
   /**
    * JavaScript code template.
