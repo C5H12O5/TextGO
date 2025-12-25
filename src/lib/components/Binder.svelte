@@ -20,7 +20,7 @@
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { alert, Icon, Label, Modal, Radio, Select, Toggle, confirm } from '$lib/components';
+  import { alert, confirm, Icon, Label, Modal, Radio, Select, Toggle } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { manager } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
@@ -44,7 +44,10 @@
   // shortcut to bind
   let shortcut: string = $state('');
 
-  // rule identifier
+  // existing rules for the shortcut
+  let rules: Rule[] = $derived(shortcuts.current[shortcut]?.rules || []);
+
+  // rule identifier for update
   let ruleId: string = $state('');
 
   // show modal dialog
@@ -53,7 +56,7 @@
     shortcut = _shortcut;
     if (id) {
       // load existing rule if id is provided
-      const rule = shortcuts.current[shortcut]?.rules.find((r) => r.id === id);
+      const rule = rules.find((r) => r.id === id);
       if (!rule) {
         return;
       }
@@ -186,8 +189,6 @@
       return { unusedCases: cases, unusedActions: actions };
     }
 
-    const rules = shortcuts.current[shortcut]?.rules || [];
-
     // helper function to get used actions
     const getUsedActions = (value: string) => {
       return new Set(rules.filter((r) => r.case === value).map((r) => r.action));
@@ -263,7 +264,6 @@
    * Update rule options.
    */
   function update() {
-    const rules = shortcuts.current[shortcut]?.rules || [];
     loading.start();
     try {
       // update options
@@ -291,7 +291,6 @@
    * Bind rule to the shortcut.
    */
   async function bind() {
-    const rules = shortcuts.current[shortcut]?.rules || [];
     if (rules.find((r) => r.shortcut === shortcut && r.case === caseId && r.action === actionId)) {
       alert({ level: 'error', message: m.rule_already_used() });
       return;
@@ -343,10 +342,16 @@
    * @param shortcut - shortcut string
    */
   export async function clear(shortcut: string) {
-    for (const rule of shortcuts.current[shortcut]?.rules || []) {
-      await unbind(rule);
+    // unbind all rules
+    const s = shortcuts.current[shortcut];
+    if (s && s.rules) {
+      for (const rule of s.rules) {
+        await unbind(rule);
+      }
     }
+    // delete shortcut
     delete shortcuts.current[shortcut];
+    // delete history
     histories.delete(shortcut);
   }
 </script>
@@ -497,13 +502,12 @@
           onclick={() => {
             // confirm delete operation
             confirm({
+              title: `${m.delete()}${m.rule()}`,
               message: m.delete_confirm_message(),
               onconfirm: () => {
-                const rules = shortcuts.current[shortcut]?.rules || [];
-                const ruleIdx = rules.findIndex((r) => r.id === ruleId);
-                if (ruleIdx !== -1) {
-                  unbind(rules[ruleIdx]);
-                  rules.splice(ruleIdx, 1);
+                const rule = rules.find((r) => r.id === ruleId);
+                if (rule) {
+                  unbind(rule);
                   modal.close();
                 }
               }

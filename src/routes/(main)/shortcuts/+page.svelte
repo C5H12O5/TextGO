@@ -70,16 +70,6 @@
   }
 
   /**
-   * Swap shortcut execution mode.
-   *
-   * @param shortcut - registered shortcut string
-   */
-  function swapMode(shortcut: string) {
-    const s = shortcuts.current[shortcut];
-    s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
-  }
-
-  /**
    * Compare two shortcut strings for sorting.
    *
    * @param a - first shortcut string
@@ -209,7 +199,11 @@
           class:gradient={mode === 'toolbar'}
           class:shadow-sm={mode === 'toolbar'}
           class:text-inactive={mode !== 'toolbar'}
-          onclick={() => swapMode(shortcut)}
+          onclick={() => {
+            // swap shortcut execution mode
+            const s = shortcuts.current[shortcut];
+            s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
+          }}
         >
           <label class="swap swap-rotate group-hover:swap-active">
             <ArrowsClockwise weight="bold" class="swap-on size-4" />
