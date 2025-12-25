@@ -1,6 +1,7 @@
 <script lang="ts" module>
+  import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { Script } from '$lib/types';
+  import type { Script, ScriptLang } from '$lib/types';
 
   /**
    * JavaScript code template.
@@ -22,37 +23,47 @@ def process(data):
     # data["selection"] - ${m.selected_text()}
     return ""
 `.trimStart();
+
+  // form schema
+  const schema = buildFormSchema(({ text }) => ({ name: text().maxlength(64) }));
+
+  // default values
+  const DEFAULT_ICON = 'Code';
+  const DEFAULT_LANG = 'javascript';
+  const DEFAULT_TMPL = JAVASCRIPT_TEMPLATE;
 </script>
 
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { CodeMirror, IconSelector, Label, Modal, Select, alert, confirm } from '$lib/components';
-  import { buildFormSchema } from '$lib/constraint';
+  import { SCRIPT_MARK } from '$lib/constants';
+  import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import { javascript } from '@codemirror/lang-javascript';
   import { python } from '@codemirror/lang-python';
 
   const { scripts }: { scripts: Script[] } = $props();
   const loading = new Loading();
-  const schema = buildFormSchema(({ text }) => ({ name: text().maxlength(64) }));
 
   let scriptId: string = $state('');
-  let scriptIcon: string = $state('Code');
   let scriptName: string = $state('');
-  let scriptLang: 'javascript' | 'python' = $state('javascript');
-  let scriptText: string = $state(JAVASCRIPT_TEMPLATE);
+  let scriptIcon: string = $state(DEFAULT_ICON);
+  let scriptLang: ScriptLang = $state(DEFAULT_LANG);
+  let scriptText: string = $state(DEFAULT_TMPL);
 
+  // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
     if (id) {
       const script = scripts.find((s) => s.id === id);
-      if (script) {
-        scriptId = id;
-        scriptIcon = script.icon || 'Code';
-        scriptName = script.id;
-        scriptLang = script.lang;
-        scriptText = script.script;
+      if (!script) {
+        return;
       }
+      scriptId = id;
+      scriptName = script.id;
+      scriptIcon = script.icon || DEFAULT_ICON;
+      scriptLang = script.lang;
+      scriptText = script.script;
     }
     modal.show();
   };
@@ -63,8 +74,9 @@ def process(data):
    * @param form - form element
    */
   function save(form: HTMLFormElement) {
+    // validate inputs
     scriptName = scriptName.trim();
-    const script = scripts.find((s) => s.id === scriptName);
+    let script = scripts.find((s) => s.id === scriptName);
     if (script && script.id !== scriptId) {
       alert({ level: 'error', message: m.name_already_used() });
       const nameInput = form.querySelector('input[name="name"]');
@@ -75,9 +87,16 @@ def process(data):
       alert({ level: 'error', message: m.script_content_empty() });
       return;
     }
+
+    // start saving
     loading.start();
+    script = scripts.find((s) => s.id === scriptId);
     if (script) {
       // update script
+      if (script.id !== scriptName) {
+        script.id = scriptName;
+        updateActionId(SCRIPT_MARK, scriptId, scriptName);
+      }
       script.icon = scriptIcon;
       script.lang = scriptLang;
       script.script = scriptText;
@@ -91,10 +110,10 @@ def process(data):
         script: scriptText
       });
       // reset form
-      scriptIcon = 'Code';
       scriptName = '';
-      scriptLang = 'javascript';
-      scriptText = JAVASCRIPT_TEMPLATE;
+      scriptIcon = DEFAULT_ICON;
+      scriptLang = DEFAULT_LANG;
+      scriptText = DEFAULT_TMPL;
       alert(m.script_added_success());
     }
     modal.close();
@@ -114,7 +133,7 @@ def process(data):
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={scriptIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={scriptName} disabled={!!scriptId} />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={scriptName} />
       </div>
       <Label required>{m.script_type()}</Label>
       <Select
@@ -128,7 +147,7 @@ def process(data):
         onchange={(event) => {
           const target = event.currentTarget;
           const onconfirm = () => {
-            scriptLang = target.value as 'javascript' | 'python';
+            scriptLang = target.value as ScriptLang;
             scriptText = scriptLang === 'python' ? PYTHON_TEMPLATE : JAVASCRIPT_TEMPLATE;
           };
           // determine if current code is template code

@@ -9,6 +9,7 @@ import { francAll, type TrigramTuple } from 'franc-min';
 import {
   CalendarDots,
   Clock,
+  Code,
   Envelope,
   Folder,
   Globe,
@@ -18,7 +19,8 @@ import {
   Magnet,
   NumberCircleNine,
   TextAa,
-  TextT
+  TextT,
+  Translate
 } from 'phosphor-svelte';
 
 /**
@@ -52,17 +54,17 @@ export const GENERAL_CASES: Option[] = [
     pattern: /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*$/
   },
   {
+    value: 'path',
+    label: m.path(),
+    icon: Folder,
+    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
+  },
+  {
     value: 'email',
     label: m.email(),
     icon: Envelope,
     pattern:
       /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
-  },
-  {
-    value: 'file_path',
-    label: m.file_path(),
-    icon: Folder,
-    pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
   },
   {
     value: 'numbers',
@@ -137,59 +139,51 @@ export const TEXT_CASES: Option[] = [
   {
     value: 'camel_case',
     label: m.camel_case(),
-    icon: TextAa,
     pattern: /^[a-z][a-z0-9]*(?:[A-Z][a-z0-9]*)+$/
   },
   {
     value: 'pascal_case',
     label: m.pascal_case(),
-    icon: TextAa,
     pattern: /^[A-Z]+[a-z0-9]+(?:[A-Z][a-z0-9]*)+$|^[A-Z]{2,}[a-z0-9]+$/
   },
   {
     value: 'lower_case',
     label: m.lower_case(),
-    icon: TextAa,
     pattern: /^(?=.*[a-z])[a-z0-9]+(?: [a-z0-9]+)*$/
   },
   {
     value: 'start_case',
     label: m.start_case(),
-    icon: TextAa,
     pattern: /^[A-Z][a-z0-9]*(?: [A-Z][a-z0-9]+)+$/
   },
   {
     value: 'upper_case',
     label: m.upper_case(),
-    icon: TextAa,
     pattern: /^(?=.*[A-Z])[A-Z0-9]+(?: [A-Z0-9]+)*$/
   },
   {
     value: 'snake_case',
     label: m.snake_case(),
-    icon: TextAa,
     pattern: /^[a-z0-9]+(?:_[a-z0-9]+)+$/
   },
   {
     value: 'kebab_case',
     label: m.kebab_case(),
-    icon: TextAa,
     pattern: /^[a-z0-9]+(?:-[a-z0-9]+)+$/
   },
   {
     value: 'constant_case',
     label: m.constant_case(),
-    icon: TextAa,
     pattern: /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/
   }
-];
+].map((c) => ({ ...c, icon: TextAa }));
 
 /**
  * Natural language recognition options.
  */
 export const NATURAL_CASES: Option[] = [
-  { value: 'cmn', label: m.lang_cmn() },
   { value: 'eng', label: m.lang_eng() },
+  { value: 'cmn', label: m.lang_cmn() },
   { value: 'jpn', label: m.lang_jpn() },
   { value: 'kor', label: m.lang_kor() },
   { value: 'rus', label: m.lang_rus() },
@@ -198,7 +192,7 @@ export const NATURAL_CASES: Option[] = [
   { value: 'spa', label: m.lang_spa() },
   { value: 'por', label: m.lang_por() },
   { value: 'arb', label: m.lang_arb() }
-];
+].map((c) => ({ ...c, icon: Translate }));
 
 /**
  * Programming language recognition options.
@@ -258,7 +252,7 @@ export const PROGRAMMING_CASES: Option[] = [
   { value: 'vba', label: 'Visual Basic' },
   { value: 'xml', label: 'XML' },
   { value: 'yaml', label: 'YAML' }
-];
+].map((c) => ({ ...c, icon: Code }));
 
 // natural language detection options for franc
 const FRANC_OPTIONS = { minLength: 2, only: NATURAL_CASES.map((c) => c.value as string) };

@@ -10,7 +10,11 @@ use tokio::time::sleep;
 
 /// Enter text and try to select it.
 #[tauri::command]
-pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
+pub async fn enter_text(
+    app: AppHandle,
+    text: String,
+    clipboard: Option<bool>,
+) -> Result<(), AppError> {
     if text.is_empty() {
         return Ok(());
     }
@@ -21,8 +25,8 @@ pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
     // calculate number of characters before moving text
     let chars = text.chars().count();
 
-    // use clipboard to enter text
-    with_clipboard_backup(|| async move {
+    // core logic for entering text
+    let do_enter_text = || async move {
         // set clipboard text
         set_clipboard_text(text)?;
 
@@ -56,8 +60,14 @@ pub async fn enter_text(app: AppHandle, text: String) -> Result<(), AppError> {
         }
 
         Ok(())
-    })
-    .await
+    };
+
+    // if clipboard is true, keep text in clipboard; otherwise backup and restore
+    if clipboard.unwrap_or(false) {
+        do_enter_text().await
+    } else {
+        with_clipboard_backup(do_enter_text).await
+    }
 }
 
 /// Send paste shortcut key.

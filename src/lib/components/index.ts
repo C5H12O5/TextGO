@@ -9,6 +9,7 @@ export { default as List } from './List.svelte';
 export { default as Modal } from './Modal.svelte';
 export { default as Model } from './Model.svelte';
 export { default as Prompt } from './Prompt.svelte';
+export { default as Radio } from './Radio.svelte';
 export { default as Recorder } from './Recorder.svelte';
 export { default as Regexp } from './Regexp.svelte';
 export { default as Script } from './Script.svelte';
@@ -17,6 +18,7 @@ export { default as Select } from './Select.svelte';
 export { default as Setting } from './Setting.svelte';
 export { default as Shortcut } from './Shortcut.svelte';
 export { default as Title } from './Title.svelte';
+export { default as Toggle } from './Toggle.svelte';
 
 export { alert, default as Alert } from './Alert.svelte';
 export { confirm, default as Confirm } from './Confirm.svelte';

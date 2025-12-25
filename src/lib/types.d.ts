@@ -35,6 +35,56 @@ export type Option = {
 };
 
 /**
+ * Type of action option.
+ */
+type ActOption = Option & {
+  /** Whether built-in action. */
+  builtIn?: boolean;
+  /** Whether no result action. */
+  noResult?: boolean;
+  /** Whether AI conversation action. */
+  promptMode?: boolean;
+};
+
+/**
+ * Type of text processor.
+ */
+type Processor = ActOption & {
+  /** Text processing function. */
+  process: (selection: string) => string;
+};
+
+/**
+ * Execution mode for shortcut.
+ */
+export type ExecutionMode = 'quiet' | 'toolbar';
+
+/**
+ * Output mode for execution result.
+ */
+export type OutputMode = 'replace' | 'popup';
+
+/**
+ * Display mode for action in toolbar.
+ */
+export type DisplayMode = 'icon' | 'label' | 'both';
+
+/**
+ * Action type.
+ */
+export type ActionType = 'builtin' | 'script' | 'prompt' | 'searcher';
+
+/**
+ * Script language.
+ */
+export type ScriptLang = 'javascript' | 'python';
+
+/**
+ * AI model provider.
+ */
+export type ModelProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google';
+
+/**
  * Type of shortcut-triggered record.
  */
 export type Entry = {
@@ -51,15 +101,17 @@ export type Entry = {
   /** Text type label. */
   caseLabel?: string;
   /** Action type. */
-  actionType?: 'script' | 'prompt' | 'searcher';
+  actionType?: ActionType;
   /** Action label. */
   actionLabel?: string;
   /** Execution result (script return value / prompt content). */
   result?: string;
+  /** Whether to copy result to clipboard on popup. */
+  copyOnPopup?: boolean;
   /** Script language. */
-  scriptLang?: 'javascript' | 'python';
+  scriptLang?: ScriptLang;
   /** Model provider. */
-  provider?: 'ollama' | 'lmstudio';
+  provider?: ModelProvider;
   /** Model name. */
   model?: string;
   /** System prompt. */
@@ -84,6 +136,16 @@ export type Rule = {
   action: string;
   /** Action label. */
   actionLabel?: string;
+  /** How to display the action in toolbar. */
+  displayMode?: DisplayMode;
+  /** How to output execution result. */
+  outputMode?: OutputMode;
+  /** Whether to preview execution result in toolbar. */
+  preview?: boolean;
+  /** Whether to save execution result to history. */
+  history?: boolean;
+  /** Whether to copy execution result to clipboard. */
+  clipboard?: boolean;
 };
 
 /**
@@ -91,7 +153,7 @@ export type Rule = {
  */
 export type Shortcut = {
   /** Execution mode. */
-  mode: 'quiet' | 'toolbar';
+  mode: ExecutionMode;
   /** List of rules. */
   rules: Rule[];
   /** Whether the shortcut is disabled. */
@@ -141,7 +203,7 @@ export type Script = {
   /** Action icon. */
   icon?: string;
   /** Script language. */
-  lang: 'javascript' | 'python';
+  lang: ScriptLang;
   /** Script content. */
   script: string;
 };
@@ -155,7 +217,7 @@ export type Prompt = {
   /** Action icon. */
   icon?: string;
   /** Model provider. */
-  provider: 'ollama' | 'lmstudio';
+  provider: ModelProvider;
   /** Model name. */
   model: string;
   /** Prompt content. */

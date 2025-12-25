@@ -1,6 +1,7 @@
 <script lang="ts" module>
+  import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { Prompt } from '$lib/types';
+  import type { ModelProvider, Prompt } from '$lib/types';
 
   /**
    * Prompt template variable explanation.
@@ -10,46 +11,54 @@ ${m.prompt_variables_tip()}
 {{clipboard}} - ${m.clipboard_text()}
 {{selection}} - ${m.selected_text()}
 `.trimStart();
+
+  // form schema
+  const schema = buildFormSchema(({ text }) => ({
+    name: text().maxlength(64),
+    modelName: text().maxlength(32)
+  }));
+
+  // default values
+  const DEFAULT_ICON = 'Robot';
+  const DEFAULT_MODEL = 'gemma3:4b';
+  const DEFAULT_PROVIDER = 'ollama';
 </script>
 
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { CodeMirror, IconSelector, Label, Modal, Select, alert } from '$lib/components';
-  import { buildFormSchema } from '$lib/constraint';
+  import { PROMPT_MARK } from '$lib/constants';
+  import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import { markdown } from '@codemirror/lang-markdown';
   import { Cube, HeadCircuit } from 'phosphor-svelte';
 
   const { prompts }: { prompts: Prompt[] } = $props();
   const loading = new Loading();
-  const schema = buildFormSchema(({ text }) => ({
-    name: text().maxlength(64),
-    modelName: text().maxlength(32)
-  }));
 
   let promptId: string = $state('');
-  let promptIcon: string = $state('Robot');
   let promptName: string = $state('');
+  let promptIcon: string = $state(DEFAULT_ICON);
   let promptText: string = $state('');
   let systemPromptText: string = $state('');
-  let modelProvider: 'ollama' | 'lmstudio' = $state('ollama');
-  let modelName: string = $state('gemma3:4b');
+  let modelProvider: ModelProvider = $state(DEFAULT_PROVIDER);
+  let modelName: string = $state(DEFAULT_MODEL);
 
+  // show modal dialog
   let modal: Modal;
-  let nameInputElement: HTMLInputElement;
-  let collapseCheckbox: HTMLInputElement;
   export const showModal = (id?: string) => {
     if (id) {
       const prompt = prompts.find((p) => p.id === id);
-      if (prompt) {
-        promptId = id;
-        promptName = prompt.id;
-        promptIcon = prompt.icon || 'Robot';
-        promptText = prompt.prompt;
-        systemPromptText = prompt.systemPrompt || '';
-        modelProvider = prompt.provider;
-        modelName = prompt.model;
+      if (!prompt) {
+        return;
       }
+      promptId = id;
+      promptName = prompt.id;
+      promptIcon = prompt.icon || DEFAULT_ICON;
+      promptText = prompt.prompt;
+      systemPromptText = prompt.systemPrompt || '';
+      modelProvider = prompt.provider;
+      modelName = prompt.model;
     }
     modal.show();
   };
@@ -60,8 +69,9 @@ ${m.prompt_variables_tip()}
    * @param form - form element
    */
   function save(form: HTMLFormElement) {
+    // validate inputs
     promptName = promptName.trim();
-    const prompt = prompts.find((p) => p.id === promptName);
+    let prompt = prompts.find((p) => p.id === promptName);
     if (prompt && prompt.id !== promptId) {
       alert({ level: 'error', message: m.name_already_used() });
       const nameInput = form.querySelector('input[name="name"]');
@@ -72,9 +82,16 @@ ${m.prompt_variables_tip()}
       alert({ level: 'error', message: m.prompt_content_empty() });
       return;
     }
+
+    // start saving
     loading.start();
+    prompt = prompts.find((p) => p.id === promptId);
     if (prompt) {
       // update prompt
+      if (prompt.id !== promptName) {
+        prompt.id = promptName;
+        updateActionId(PROMPT_MARK, promptId, promptName);
+      }
       prompt.icon = promptIcon;
       prompt.prompt = promptText;
       prompt.systemPrompt = systemPromptText;
@@ -92,12 +109,12 @@ ${m.prompt_variables_tip()}
         model: modelName
       });
       // reset form
-      promptIcon = 'Robot';
       promptName = '';
+      promptIcon = DEFAULT_ICON;
       promptText = '';
       systemPromptText = '';
-      modelProvider = 'ollama';
-      modelName = 'gemma3:4b';
+      modelProvider = DEFAULT_PROVIDER;
+      modelName = DEFAULT_MODEL;
       alert(m.prompt_added_success());
     }
     modal.close();
@@ -117,13 +134,7 @@ ${m.prompt_variables_tip()}
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={promptIcon} />
-        <input
-          class="autofocus input input-sm grow"
-          {...schema.name}
-          bind:value={promptName}
-          bind:this={nameInputElement}
-          disabled={!!promptId}
-        />
+        <input class="autofocus input input-sm grow" {...schema.name} bind:value={promptName} />
       </div>
       <div class="grid grid-cols-2 gap-2">
         <span>
@@ -154,7 +165,7 @@ ${m.prompt_variables_tip()}
         bind:document={promptText}
       />
       <div class="collapse-arrow collapse mt-2 border">
-        <input type="checkbox" class="peer" bind:this={collapseCheckbox} />
+        <input type="checkbox" class="peer" />
         <div class="collapse-title border-b-transparent transition-all duration-200 peer-checked:border-b">
           <HeadCircuit class="size-5" />
           {m.system_prompt_explain()}

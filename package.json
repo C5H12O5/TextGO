@@ -39,6 +39,7 @@
     "@tauri-apps/plugin-opener": "^2.5.2",
     "@tauri-apps/plugin-os": "^2.3.2",
     "@tauri-apps/plugin-store": "^2.4.1",
+    "@tauri-apps/plugin-updater": "^2.9.0",
     "@tensorflow/tfjs": "^4.22.0",
     "@vscode/vscode-languagedetection": "^1.0.22",
     "codemirror": "^6.0.2",

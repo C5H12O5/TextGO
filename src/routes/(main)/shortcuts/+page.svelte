@@ -11,6 +11,7 @@
     ArrowFatLineRight,
     ArrowsClockwise,
     Browser,
+    GearSix,
     Keyboard,
     MouseLeftClick,
     Sparkle,
@@ -30,6 +31,9 @@
 
   // rule binder
   let binder: Binder | null = $state(null);
+
+  // rule updater
+  let updater: Binder | null = $state(null);
 
   // dropdown element
   let dropdown: HTMLDetailsElement;
@@ -63,16 +67,6 @@
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }
-
-  /**
-   * Swap shortcut execution mode.
-   *
-   * @param shortcut - registered shortcut string
-   */
-  function swapMode(shortcut: string) {
-    const s = shortcuts.current[shortcut];
-    s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
   }
 
   /**
@@ -202,9 +196,14 @@
         <button
           class="group badge cursor-pointer bg-base-200 opacity-80 transition-all hover:opacity-100"
           class:border={mode === 'toolbar'}
+          class:gradient={mode === 'toolbar'}
           class:shadow-sm={mode === 'toolbar'}
           class:text-inactive={mode !== 'toolbar'}
-          onclick={() => swapMode(shortcut)}
+          onclick={() => {
+            // swap shortcut execution mode
+            const s = shortcuts.current[shortcut];
+            s.mode = s.mode === 'toolbar' ? 'quiet' : 'toolbar';
+          }}
         >
           <label class="swap swap-rotate group-hover:swap-active">
             <ArrowsClockwise weight="bold" class="swap-on size-4" />
@@ -224,12 +223,7 @@
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
-            const clear = () => {
-              for (const item of rules) {
-                binder?.unregister(item);
-              }
-              delete shortcuts.current[shortcut];
-            };
+            const clear = () => binder?.clear(shortcut);
             // delete directly if rule is empty, otherwise need confirmation
             if (rules.length > 0) {
               confirm({
@@ -250,7 +244,7 @@
         bind:collapsed={shortcuts.current[shortcut].collapsed}
         collapsible
         oncreate={() => binder?.showModal(shortcut)}
-        ondelete={(item) => binder?.unregister(item)}
+        ondelete={(item) => binder?.unbind(item)}
       >
         {#snippet title()}
           <Sparkle class="mx-1 size-4 opacity-60" />
@@ -265,8 +259,8 @@
         {#snippet row(item)}
           {@const { label: caseLabel, icon: caseIcon } = binder?.getCaseOption(item.case) ?? {}}
           {@const { label: actionLabel, icon: actionIcon } = binder?.getActionOption(item.action) ?? {}}
-          <div class="list-col-grow grid grid-cols-11 items-center gap-4 pl-4">
-            <div class="col-span-4 flex items-center gap-1.5" title={caseLabel}>
+          <div class="list-col-grow grid grid-cols-12 items-center gap-4 pl-4">
+            <div class="col-span-5 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->
                 <ArrowArcRight class="size-5 shrink-0 opacity-30" />
@@ -304,6 +298,14 @@
               {/if}
             </div>
           </div>
+          <Button
+            icon={GearSix}
+            iconWeight="fill"
+            onclick={(event) => {
+              event.stopPropagation();
+              updater?.showModal(shortcut, item.id);
+            }}
+          />
         {/snippet}
       </List>
     </div>
@@ -313,3 +315,5 @@
 <Recorder bind:this={recorder} onrecord={register} />
 
 <Binder bind:this={binder} />
+
+<Binder bind:this={updater} />

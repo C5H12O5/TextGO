@@ -31,13 +31,13 @@
       <Icon icon={item.icon || 'Code'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
-        <span class="badge badge-ghost badge-sm opacity-80">
+        <span class="badge badge-ghost badge-sm">
           {#if item.lang === 'javascript'}
             <JavaScript class="h-4 shrink-0" />
-            JavaScript
+            <span class="opacity-80">JavaScript</span>
           {:else if item.lang === 'python'}
             <Python class="h-4 shrink-0" />
-            Python
+            <span class="opacity-80">Python</span>
           {/if}
         </span>
       </div>
