@@ -69,7 +69,7 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1
       '@tauri-apps/plugin-updater':
-        specifier: ~2.9.0
+        specifier: ^2.9.0
         version: 2.9.0
       '@tensorflow/tfjs':
         specifier: ^4.22.0
