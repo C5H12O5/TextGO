@@ -72,7 +72,7 @@ export type DisplayMode = 'icon' | 'label' | 'both';
 /**
  * Action type.
  */
-export type ActionType = 'script' | 'prompt' | 'searcher';
+export type ActionType = 'builtin' | 'script' | 'prompt' | 'searcher';
 
 /**
  * Script language.
@@ -106,6 +106,8 @@ export type Entry = {
   actionLabel?: string;
   /** Execution result (script return value / prompt content). */
   result?: string;
+  /** Whether to copy result to clipboard on popup. */
+  copyOnPopup?: boolean;
   /** Script language. */
   scriptLang?: ScriptLang;
   /** Model provider. */

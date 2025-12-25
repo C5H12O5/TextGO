@@ -16,7 +16,7 @@
     TextIndent,
     X
   } from 'phosphor-svelte';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
 
   // current window
   const currentWindow = getCurrentWindow();
@@ -191,6 +191,12 @@
         if (!visible) {
           currentWindow.show();
           currentWindow.setFocus();
+        }
+      });
+      // copy to clipboard if needed
+      tick().then(() => {
+        if (!promptMode && entry?.copyOnPopup) {
+          codeMirror?.copy();
         }
       });
     });

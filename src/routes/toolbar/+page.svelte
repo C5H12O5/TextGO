@@ -119,7 +119,7 @@
    *
    * @param data - toolbar setup data
    */
-  function setup(data: { rules: Rule[]; selection: string }) {
+  async function setup(data: { rules: Rule[]; selection: string }) {
     if (!data || !data.rules || !Array.isArray(data.rules)) {
       return;
     }
@@ -129,23 +129,31 @@
 
     // map rules to actions
     actions = data.rules.map(mapToAction).filter((a) => !!a);
+    for (const action of actions) {
+      if (action.rule.preview) {
+        // replace label with preview result
+        const result = await execute(action.rule, selection);
+        if (result) {
+          action.label = result;
+        }
+      }
+    }
 
     // mark as initialized
     initialized = true;
 
     // resize window to fit content after actions are updated
-    tick().then(() => {
-      if (container) {
-        try {
-          // get container size
-          const rect = container.getBoundingClientRect();
-          // set window size with some padding
-          currentWindow.setSize(new LogicalSize(rect.width + 10, rect.height + 10));
-        } catch (error) {
-          console.error(`Failed to resize window: ${error}`);
-        }
+    await tick();
+    if (container) {
+      try {
+        // get container size
+        const rect = container.getBoundingClientRect();
+        // set window size with some padding
+        currentWindow.setSize(new LogicalSize(rect.width + 10, rect.height + 10));
+      } catch (error) {
+        console.error(`Failed to resize window: ${error}`);
       }
-    });
+    }
   }
 
   /**
@@ -286,7 +294,28 @@
   async function executeAction(action: Action) {
     try {
       await currentWindow.hide();
-      await execute(action.rule, selection);
+      if (action.rule.preview) {
+        if (action.rule.outputMode === 'replace') {
+          // replace selection with preview text
+          await invoke('enter_text', {
+            text: action.label,
+            clipboard: action.rule.clipboard
+          });
+        } else if (action.rule.outputMode === 'popup') {
+          // show popup with preview text
+          await invoke('show_popup', {
+            payload: JSON.stringify({
+              id: crypto.randomUUID(),
+              result: action.label,
+              copyOnPopup: action.rule.clipboard
+            }),
+            mouse: true
+          });
+        }
+      } else {
+        // execute the action normally
+        await execute(action.rule, selection);
+      }
     } catch (error) {
       console.error(`Failed to execute action: ${error}`);
     }
@@ -301,12 +330,13 @@
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
       initialized = false;
-      setup(JSON.parse(event.payload));
-      // show window without focusing
-      currentWindow.isVisible().then((visible) => {
-        if (!visible) {
-          invoke('show_toolbar_regardless');
-        }
+      setup(JSON.parse(event.payload)).then(() => {
+        // show window without focusing
+        currentWindow.isVisible().then((visible) => {
+          if (!visible) {
+            invoke('show_toolbar_regardless');
+          }
+        });
       });
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
@@ -342,6 +372,8 @@
           <LineVertical class="pointer-events-none size-4" />
         </span>
         {#each visibleActions as action (action.id)}
+          {@const showIcon = action.rule.displayMode !== 'label'}
+          {@const showLabel = action.rule.displayMode !== 'icon'}
           <button
             class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
             class:hover:bg-btn-hover={mouseEntered}
@@ -349,10 +381,12 @@
             onclick={() => executeAction(action)}
             title={action.label}
           >
-            {#if action.icon}
+            {#if showIcon && action.icon}
               <Icon icon={action.icon} class="size-4 shrink-0" />
             {/if}
-            <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
+            {#if showLabel}
+              <span class="max-w-30 truncate text-xs font-medium opacity-90">{action.label}</span>
+            {/if}
           </button>
         {/each}
         {#if overflowActions.length > 0}
