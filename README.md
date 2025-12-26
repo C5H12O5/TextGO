@@ -33,6 +33,15 @@
 
 Download the installer for your platform from [**GitHub Releases**](https://github.com/C5H12O5/TextGO/releases) and follow the installation instructions.
 
+### Permission Setup
+
+On macOS, the following permissions are required for proper functionality:
+
+1. **Accessibility**: Required for simulating keyboard input
+2. **Input Monitoring**: Required for listening to mouse events
+
+The system will automatically prompt you to grant these permissions while using the app. You can also manually configure them in "System Settings" > "Privacy & Security".
+
 ### FAQ
 
 <details>
