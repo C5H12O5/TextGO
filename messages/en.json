@@ -148,7 +148,7 @@
   "accessibility": "Accessibility Permission",
   "accessibility_explain": "Enable accessibility to allow the app to simulate keyboard input",
   "input_monitoring": "Input Monitoring Permission",
-  "input_monitoring_explain": "Enable input monitoring to allow the app to monitor keyboard input",
+  "input_monitoring_explain": "Enable input monitoring to allow the app to listen to mouse events",
   "request_permission": "Request Permission",
   "permission_granted": "Granted",
   "auto_start": "Launch on System Startup",
