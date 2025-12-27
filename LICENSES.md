@@ -1,10 +1,10 @@
 # Third-Party License Notices
 
-> This document was automatically generated on December 26, 2025 at 10:51 AM GMT+8
+> This document was automatically generated on December 27, 2025 at 07:41 PM GMT+8
 
 ## Frontend Dependencies
 
-> **54** packages included
+> **55** packages included
 
 | Package                                                                                    | Version | License           | Description                                                                                                                                       |
 | ------------------------------------------------------------------------------------------ | ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,6 +36,7 @@
 | [@tauri-apps/plugin-log](https://github.com/tauri-apps/plugins-workspace)                  | 2.7.1   | MIT OR Apache-2.0 | Configurable logging for your Tauri app.                                                                                                          |
 | [@tauri-apps/plugin-opener](https://github.com/tauri-apps/plugins-workspace)               | 2.5.2   | MIT OR Apache-2.0 | Open files and URLs using their default application.                                                                                              |
 | [@tauri-apps/plugin-os](https://github.com/tauri-apps/plugins-workspace)                   | 2.3.2   | MIT OR Apache-2.0 | ![plugin-os](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/os/banner.png)                                                        |
+| [@tauri-apps/plugin-process](https://github.com/tauri-apps/plugins-workspace)              | 2.3.1   | MIT OR Apache-2.0 | ![plugin-process](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/process/banner.png)                                              |
 | [@tauri-apps/plugin-store](https://github.com/tauri-apps/plugins-workspace)                | 2.4.1   | MIT OR Apache-2.0 | Simple, persistent key-value store.                                                                                                               |
 | [@tauri-apps/plugin-updater](https://github.com/tauri-apps/plugins-workspace)              | 2.9.0   | MIT OR Apache-2.0 | ![plugin-updater](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/updater/banner.png)                                              |
 | [@tensorflow/tfjs](https://github.com/tensorflow/tfjs)                                     | 4.22.0  | Apache-2.0        | An open-source machine learning framework.                                                                                                        |
@@ -65,7 +66,7 @@
 
 ## Backend Dependencies
 
-> **22** packages included
+> **23** packages included
 
 | Package                                                                         | Version | License           | Description                                                                                                                                                                        |
 | ------------------------------------------------------------------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -86,6 +87,7 @@
 | [tauri-plugin-log](https://github.com/tauri-apps/plugins-workspace)             | 2.7.1   | Apache-2.0 OR MIT | Configurable logging for your Tauri app.                                                                                                                                           |
 | [tauri-plugin-opener](https://github.com/tauri-apps/plugins-workspace)          | 2.5.2   | Apache-2.0 OR MIT | Open files and URLs using their default application.                                                                                                                               |
 | [tauri-plugin-os](https://github.com/tauri-apps/plugins-workspace)              | 2.3.2   | Apache-2.0 OR MIT | Read information about the operating system.                                                                                                                                       |
+| [tauri-plugin-process](https://github.com/tauri-apps/plugins-workspace)         | 2.3.1   | Apache-2.0 OR MIT | Access the current process of your Tauri application.                                                                                                                              |
 | [tauri-plugin-single-instance](https://github.com/tauri-apps/plugins-workspace) | 2.3.6   | Apache-2.0 OR MIT | Ensure a single instance of your tauri app is running.                                                                                                                             |
 | [tauri-plugin-store](https://github.com/tauri-apps/plugins-workspace)           | 2.4.1   | Apache-2.0 OR MIT | Simple, persistent key-value store.                                                                                                                                                |
 | [tauri-plugin-updater](https://github.com/tauri-apps/plugins-workspace)         | 2.9.0   | Apache-2.0 OR MIT | In-app updates for Tauri applications.                                                                                                                                             |
