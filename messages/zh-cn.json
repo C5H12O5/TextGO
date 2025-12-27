@@ -232,5 +232,17 @@
   "tray_histories": "查看历史",
   "tray_settings": "设置...",
   "tray_about": "关于 TextGO",
-  "tray_quit": "退出"
+  "tray_quit": "退出",
+  "check_for_updates": "检查更新",
+  "checking_for_updates": "正在检查更新...",
+  "new_version_available": "发现新版本 v{version}",
+  "download_and_install": "是否下载并安装更新？",
+  "download_starting": "正在开始下载...",
+  "download_started": "下载开始 ({size} MB)",
+  "downloading": "下载中 {progress}%",
+  "download_completed": "下载完成，正在安装...",
+  "relaunch_to_update": "更新完成，正在重启...",
+  "already_latest": "已是最新版本",
+  "update_failed": "更新失败, 请稍后再试",
+  "check_update_failed": "检查更新失败"
 }

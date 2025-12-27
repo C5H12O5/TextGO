@@ -3566,7 +3566,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 [[package]]
 name = "rdev"
 version = "0.6.0"
-source = "git+https://github.com/Narsil/rdev#c14f2dc5c8100a96c5d7e3013de59d6aa0b9eae2"
+source = "git+https://github.com/Narsil/rdev?rev=c14f2dc#c14f2dc5c8100a96c5d7e3013de59d6aa0b9eae2"
 dependencies = [
  "core-foundation",
  "core-foundation-sys",
@@ -4030,15 +4030,15 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.145"
+version = "1.0.147"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "402a6f66d8c709116cf22f558eab210f5a50187f702eb4d7e5ef38d9a7f1c79c"
+checksum = "6af14725505314343e673e9ecb7cd7e8a36aa9791eb936235a3567cc31447ae4"
 dependencies = [
  "itoa",
  "memchr",
- "ryu",
  "serde",
  "serde_core",
+ "zmij",
 ]
 
 [[package]]
@@ -4581,7 +4581,7 @@ dependencies = [
 [[package]]
 name = "tauri-nspanel"
 version = "2.1.0"
-source = "git+https://github.com/ahkohd/tauri-nspanel?branch=v2.1#da9c9a8d4eb7f0524a2508988df1a7d9585b4904"
+source = "git+https://github.com/ahkohd/tauri-nspanel?rev=da9c9a8#da9c9a8d4eb7f0524a2508988df1a7d9585b4904"
 dependencies = [
  "objc2 0.6.3",
  "objc2-app-kit",
@@ -4736,6 +4736,16 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "thiserror 2.0.17",
+]
+
+[[package]]
+name = "tauri-plugin-process"
+version = "2.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d55511a7bf6cd70c8767b02c97bf8134fa434daf3926cfc1be0a0f94132d165a"
+dependencies = [
+ "tauri",
+ "tauri-plugin",
 ]
 
 [[package]]
@@ -4927,7 +4937,7 @@ dependencies = [
 
 [[package]]
 name = "text-go"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "clipboard-rs",
  "core-foundation",
@@ -4946,6 +4956,7 @@ dependencies = [
  "tauri-plugin-log",
  "tauri-plugin-opener",
  "tauri-plugin-os",
+ "tauri-plugin-process",
  "tauri-plugin-single-instance",
  "tauri-plugin-store",
  "tauri-plugin-updater",
@@ -6595,6 +6606,12 @@ dependencies = [
  "indexmap 2.12.0",
  "memchr",
 ]
+
+[[package]]
+name = "zmij"
+version = "0.1.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0095ecd462946aa3927d9297b63ef82fb9a5316d7a37d134eeb36e58228615a"
 
 [[package]]
 name = "zune-core"

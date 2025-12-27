@@ -158,6 +158,8 @@ fn wait_and_emit(flag: &'static AtomicBool, window: WebviewWindow, payload: Stri
 /// Position a window near the mouse or selection with safe area constraints.
 fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<(), AppError> {
     // get cursor position (may be physical or logical depending on platform)
+    let mut mouse_position = true;
+
     #[allow(unused_mut)]
     let (mut x, mut y) = if mouse {
         // directly use mouse position from enigo
@@ -165,7 +167,10 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     } else {
         // try to get selection location first, fall back to mouse position if failed
         match platform::get_cursor_location() {
-            Ok(location) => location,
+            Ok(location) => {
+                mouse_position = false;
+                location
+            }
             Err(_) => ENIGO.lock()?.as_ref()?.location()?,
         }
     };
@@ -233,9 +238,14 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let max_y = (screen_y + screen_height - window_height - SAFE_AREA_BOTTOM).max(min_y);
 
     // set adjusted window position
+    let window_offset = if mouse_position {
+        WINDOW_OFFSET
+    } else {
+        -WINDOW_OFFSET
+    };
     window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
-        x: (x + WINDOW_OFFSET).clamp(min_x, max_x) as f64,
-        y: (y + WINDOW_OFFSET).clamp(min_y, max_y) as f64,
+        x: (x + window_offset).clamp(min_x, max_x) as f64,
+        y: (y + window_offset).clamp(min_y, max_y) as f64,
     }))?;
 
     Ok(())

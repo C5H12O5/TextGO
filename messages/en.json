@@ -232,5 +232,17 @@
   "tray_histories": "View History",
   "tray_settings": "Settings...",
   "tray_about": "About TextGO",
-  "tray_quit": "Quit"
+  "tray_quit": "Quit",
+  "check_for_updates": "Check for Updates",
+  "checking_for_updates": "Checking for updates...",
+  "new_version_available": "New version v{version} available",
+  "download_and_install": "Download and install the update?",
+  "download_starting": "Starting download...",
+  "download_started": "Download started ({size} MB)",
+  "downloading": "Downloading {progress}%",
+  "download_completed": "Installing...",
+  "relaunch_to_update": "Restarting...",
+  "already_latest": "Up to date",
+  "update_failed": "Update failed",
+  "check_update_failed": "Check for updates failed"
 }
