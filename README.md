@@ -14,18 +14,18 @@
 
 </div>
 
-> TextGO is a cross-platform text processing tool that automatically recognizes text types and executes custom actions. Trigger it with hotkeys, mouse double-click, or text selection, and choose between instant execution or interactive toolbar mode.
+> TextGO is a cross-platform text processing tool that automatically recognizes text types and executes custom actions.
 
 | <img align="center" src="screenshots/01.gif" /> | <img align="center" src="screenshots/02.gif" /> |
 | ----------------------------------------------- | ----------------------------------------------- |
 
 ## ✨ Core Features
 
-1. **Multiple Trigger Methods**: Global hotkeys, mouse double-click, or text selection - each with independent rule configurations.
-2. **Flexible Execution Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
-3. **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
-4. **Highly Extensible**: Extend with regex, ML models, scripts, or local AI for custom recognition and processing.
-5. **Customizable Icons**: Choose from built-in icon library or upload custom SVG icons to create a personalized toolbar.
+- **Multiple Triggers**: Hotkeys, double-click, or text selection, each with independent rule configurations.
+- **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
+- **Customizable Icons**: Upload custom SVG icons to create your personalized toolbar style.
+- **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
+- **Highly Extensible**: Extend with regex, ML models, scripts, or local AI for custom recognition and processing.
 
 ## ⬇️ Getting Started
 
