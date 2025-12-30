@@ -56,7 +56,7 @@
         value={locale}
         options={[
           { value: 'en', label: 'English' },
-          { value: 'zh-cn', label: '简体中文' }
+          { value: 'zh-CN', label: '简体中文' }
         ]}
         class="w-36 select-sm"
         onchange={async (event) => {
