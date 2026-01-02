@@ -100,7 +100,7 @@
         </div>
         <div class="divider my-0 opacity-60"></div>
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
-          <div class="space-y-2">
+          <div class="min-w-0 space-y-2">
             <div class="flex h-6 items-center gap-2">
               <Textbox class="size-4.5 opacity-80" />
               <span class="text-sm opacity-60">{m.selected_text()}</span>
