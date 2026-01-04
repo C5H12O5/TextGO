@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Prompt, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { LMStudio, Ollama } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { ollamaHost, prompts } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
@@ -15,6 +17,14 @@
   let promptCreator: Prompt;
   let promptUpdater: Prompt;
   let promptOptions: Modal;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      promptCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={Robot} title={m.ai_conversation()} moreOptions={() => promptOptions.show()} class="min-h-(--app-h)">

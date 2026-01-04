@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::atomic::AtomicBool;
 use std::sync::{LazyLock, Mutex};
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
+use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
@@ -303,6 +304,16 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
             });
         }),
     );
+
+    // listen for deep link URLs
+    app.deep_link().on_open_url(move |event| {
+        if let Some(url) = event.urls().first() {
+            // strip scheme from URL (textgo://settings/script -> /settings/script)
+            let url = url.as_str();
+            let url = url.strip_prefix("textgo:/").unwrap_or(url);
+            navigate_to(app_handle.clone(), url.to_string());
+        }
+    });
 
     Ok(())
 }

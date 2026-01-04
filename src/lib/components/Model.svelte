@@ -31,6 +31,14 @@
   let modelSample: string = $state('');
   let modelThreshold: number = $state(DEFAULT_THRESHOLD);
 
+  // fill form fields
+  const fillForm = (model: Model) => {
+    modelName = model.id;
+    modelIcon = model.icon || DEFAULT_ICON;
+    modelSample = model.sample;
+    modelThreshold = model.threshold;
+  };
+
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -44,11 +52,21 @@
         return;
       }
       modelId = id;
-      modelName = model.id;
-      modelIcon = model.icon || DEFAULT_ICON;
-      modelSample = model.sample;
-      modelThreshold = model.threshold;
+      fillForm(model);
     }
+    modal.show();
+  };
+
+  // install from external source
+  export const install = (model: Model) => {
+    if (modal.isOpen()) {
+      return;
+    }
+    if (loading.started) {
+      alert({ level: 'error', message: m.model_training_waiting() });
+      return;
+    }
+    fillForm(model);
     modal.show();
   };
 

@@ -1,12 +1,22 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, List, Searcher, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { searchers } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { Globe, MagnifyingGlass, PencilSimpleLine, Sparkle } from 'phosphor-svelte';
 
   // searcher components
   let searcherCreator: Searcher;
   let searcherUpdater: Searcher;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      searcherCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={MagnifyingGlass} title={m.web_search()} class="min-h-(--app-h)">

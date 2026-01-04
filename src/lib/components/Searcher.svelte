@@ -55,6 +55,14 @@
   let browser: string = $state('');
   let url: string = $state('');
 
+  // fill form fields
+  const fillForm = (searcher: Searcher) => {
+    searcherName = searcher.id;
+    searcherIcon = searcher.icon || DEFAULT_ICON;
+    browser = searcher.browser || '';
+    url = searcher.url;
+  };
+
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -64,11 +72,17 @@
         return;
       }
       searcherId = id;
-      searcherName = searcher.id;
-      searcherIcon = searcher.icon || DEFAULT_ICON;
-      browser = searcher.browser || '';
-      url = searcher.url;
+      fillForm(searcher);
     }
+    modal.show();
+  };
+
+  // install from external source
+  export const install = (searcher: Searcher) => {
+    if (modal.isOpen()) {
+      return;
+    }
+    fillForm(searcher);
     modal.show();
   };
 

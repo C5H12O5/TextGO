@@ -51,6 +51,14 @@ def process(data):
   let scriptLang: ScriptLang = $state(DEFAULT_LANG);
   let scriptText: string = $state(DEFAULT_TMPL);
 
+  // fill form fields
+  const fillForm = (script: Script) => {
+    scriptName = script.id;
+    scriptIcon = script.icon || DEFAULT_ICON;
+    scriptLang = script.lang;
+    scriptText = script.script;
+  };
+
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -60,11 +68,17 @@ def process(data):
         return;
       }
       scriptId = id;
-      scriptName = script.id;
-      scriptIcon = script.icon || DEFAULT_ICON;
-      scriptLang = script.lang;
-      scriptText = script.script;
+      fillForm(script);
     }
+    modal.show();
+  };
+
+  // install from external source
+  export const install = (script: Script) => {
+    if (modal.isOpen()) {
+      return;
+    }
+    fillForm(script);
     modal.show();
   };
 

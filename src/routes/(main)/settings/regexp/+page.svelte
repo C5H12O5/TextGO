@@ -1,12 +1,22 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, List, Regexp, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { regexps } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { PencilSimpleLine, Scroll, Sparkle } from 'phosphor-svelte';
 
   // regular expression components
   let regexpCreator: Regexp;
   let regexpUpdater: Regexp;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      regexpCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={Scroll} title={m.regexp()} class="min-h-(--app-h)">

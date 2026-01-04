@@ -93,7 +93,8 @@
   onMount(() => {
     // listen to navigation events from backend
     const unlisten = listen<string>('goto', async (event) => {
-      goto(resolve(event.payload as '/shortcuts' | '/histories' | '/settings'));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      goto(resolve(event.payload as any));
     });
     return () => {
       unlisten.then((fn) => fn());

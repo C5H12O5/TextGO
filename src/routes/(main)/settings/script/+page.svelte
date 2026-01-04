@@ -1,9 +1,11 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { JavaScript, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { nodePath, pythonPath, scripts } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
@@ -16,6 +18,14 @@
   let scriptCreator: ScriptModal;
   let scriptUpdater: ScriptModal;
   let scriptOptions: Modal;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      scriptCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={Code} title={m.script_execution()} moreOptions={() => scriptOptions.show()} class="min-h-(--app-h)">

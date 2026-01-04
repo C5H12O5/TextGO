@@ -1,13 +1,23 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Classifier } from '$lib/classifier';
   import { Button, Icon, List, Model, Setting } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import { models } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { ArrowClockwise, Package, PencilSimpleLine, Sparkle, Sphere, Warning } from 'phosphor-svelte';
 
   // classification model components
   let modelCreator: Model;
   let modelUpdater: Model;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      modelCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={Sphere} title={m.model()} tip={m.experimental()} class="min-h-(--app-h)">
