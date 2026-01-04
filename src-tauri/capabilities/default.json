@@ -16,9 +16,10 @@
     "os:default",
     "log:default",
     "store:default",
-    "autostart:default",
     "updater:default",
     "process:default",
+    "autostart:default",
+    "deep-link:default",
     "opener:default",
     {
       "identifier": "opener:allow-open-path",
