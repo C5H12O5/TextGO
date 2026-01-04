@@ -405,6 +405,27 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
       selection: entry.selection
     };
     if (script.lang === 'javascript') {
+      // if no custom node path, try to execute in frontend first
+      if (!nodePath.current) {
+        try {
+          console.debug('Executing JavaScript in WebView');
+          // wrap user code in a function to isolate scope
+          const wrappedCode = `
+            (function() {
+              const data = ${JSON.stringify(data)};
+              ${script.script}
+              const result = process(data);
+              return typeof result === 'string' ? result : JSON.stringify(result);
+            })()
+          `;
+          const result = eval(wrappedCode);
+          return { text: result };
+        } catch (error) {
+          console.error(`Failed to execute JavaScript in WebView: ${error}`);
+        }
+      }
+
+      // execute JavaScript code in backend
       const result = await invoke<string>('execute_javascript', {
         code: script.script,
         data: JSON.stringify(data),
@@ -412,6 +433,7 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
       });
       return { text: result };
     } else if (script.lang === 'python') {
+      // execute Python code in backend
       const result = await invoke<string>('execute_python', {
         code: script.script,
         data: JSON.stringify(data),
