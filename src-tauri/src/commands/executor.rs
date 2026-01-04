@@ -1,4 +1,5 @@
 use crate::error::AppError;
+use log::debug;
 use std::process::Stdio;
 use tokio::{io::AsyncWriteExt, process::Command};
 
@@ -26,57 +27,67 @@ console.log(typeof result === 'string' ? result : JSON.stringify(result));
     // if custom path is provided, use it directly
     if let Some(program) = node_path {
         if !program.is_empty() {
-            // on Windows, special handling is needed for .bat files
-            #[cfg(target_os = "windows")]
-            let use_stdin = program.to_lowercase().ends_with(".bat");
-            #[cfg(not(target_os = "windows"))]
-            let use_stdin = false;
-
-            let mut command = if use_stdin {
-                // for .bat files, pass code through stdin to avoid parameter escaping issues
-                let mut cmd = Command::new(&program);
-                cmd.stdin(Stdio::piped());
-                cmd
-            } else {
-                // for regular executables, use -e parameter
-                let mut cmd = Command::new(&program);
-                cmd.arg("-e").arg(&wrapped_code);
-                cmd
-            };
-
-            command.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-            #[cfg(target_os = "windows")]
-            command.creation_flags(CREATE_NO_WINDOW);
-
-            match command.spawn() {
-                Ok(mut child) => {
-                    // if using stdin, write code
-                    if use_stdin {
-                        if let Some(mut stdin) = child.stdin.take() {
-                            stdin.write_all(wrapped_code.as_bytes()).await?;
-                            drop(stdin); // close stdin
-                        }
-                    }
-
-                    let output = child.wait_with_output().await?;
-
-                    if output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        return Ok(stdout.trim().to_string());
-                    } else {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        return Err(format!("JavaScript execution failed:\n\n{}", stderr).into());
-                    }
-                }
-                Err(e) => {
-                    return Err(
-                        format!("Failed to execute the program at '{}': {}", program, e).into(),
-                    );
-                }
-            }
+            return execute_javascript_custom(&program, &wrapped_code).await;
         }
     }
+
+    // use system path to execute
+    execute_javascript_system(&wrapped_code).await
+}
+
+/// Execute JavaScript code with custom path.
+async fn execute_javascript_custom(program: &str, code: &str) -> Result<String, AppError> {
+    debug!("Executing JavaScript with custom program: {}", program);
+
+    // on Windows, special handling is needed for .bat files
+    #[cfg(target_os = "windows")]
+    let use_stdin = program.to_lowercase().ends_with(".bat");
+    #[cfg(not(target_os = "windows"))]
+    let use_stdin = false;
+
+    let mut command = if use_stdin {
+        // for .bat files, pass code through stdin to avoid parameter escaping issues
+        let mut cmd = Command::new(program);
+        cmd.stdin(Stdio::piped());
+        cmd
+    } else {
+        // for regular executables, use -e parameter
+        let mut cmd = Command::new(program);
+        cmd.arg("-e").arg(code);
+        cmd
+    };
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    // hide console window on Windows
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    match command.spawn() {
+        Ok(mut child) => {
+            // if using stdin, write code
+            if use_stdin {
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(code.as_bytes()).await?;
+                    drop(stdin); // close stdin
+                }
+            }
+
+            let output = child.wait_with_output().await?;
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                Ok(stdout.trim().to_string())
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!("JavaScript execution failed:\n\n{}", stderr).into())
+            }
+        }
+        Err(e) => Err(format!("Failed to execute the program at '{}': {}", program, e).into()),
+    }
+}
+
+/// Execute JavaScript code with system path.
+async fn execute_javascript_system(code: &str) -> Result<String, AppError> {
+    debug!("Executing JavaScript with system path");
 
     // get user home directory
     #[cfg(target_os = "windows")]
@@ -127,18 +138,18 @@ console.log(typeof result === 'string' ? result : JSON.stringify(result));
             command.arg(arg);
         }
         command
-            .arg(&wrapped_code)
+            .arg(code)
             .env("PATH", &path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
+        // hide console window on Windows
         #[cfg(target_os = "windows")]
         command.creation_flags(CREATE_NO_WINDOW);
 
         match command.spawn() {
             Ok(child) => {
                 let output = child.wait_with_output().await?;
-
                 if output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     return Ok(stdout.trim().to_string());
@@ -182,61 +193,71 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
     // if custom path is provided, use it directly
     if let Some(program) = python_path {
         if !program.is_empty() {
-            // on Windows, special handling is needed for .bat files
-            #[cfg(target_os = "windows")]
-            let use_stdin = program.to_lowercase().ends_with(".bat");
-            #[cfg(not(target_os = "windows"))]
-            let use_stdin = false;
-
-            let mut command = if use_stdin {
-                // for .bat files, pass code through stdin to avoid parameter escaping issues
-                let mut cmd = Command::new(&program);
-                cmd.stdin(Stdio::piped());
-                cmd
-            } else {
-                // for regular executables, use -c parameter
-                let mut cmd = Command::new(&program);
-                cmd.arg("-c").arg(&wrapped_code);
-                cmd
-            };
-
-            command.stdout(Stdio::piped()).stderr(Stdio::piped());
-
-            #[cfg(target_os = "windows")]
-            command.creation_flags(CREATE_NO_WINDOW);
-
-            // set UTF-8 encoding for Python on Windows
-            #[cfg(target_os = "windows")]
-            command.env("PYTHONIOENCODING", "utf-8");
-
-            match command.spawn() {
-                Ok(mut child) => {
-                    // if using stdin, write code
-                    if use_stdin {
-                        if let Some(mut stdin) = child.stdin.take() {
-                            stdin.write_all(wrapped_code.as_bytes()).await?;
-                            drop(stdin); // close stdin
-                        }
-                    }
-
-                    let output = child.wait_with_output().await?;
-
-                    if output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        return Ok(stdout.trim().to_string());
-                    } else {
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        return Err(format!("Python execution failed:\n\n{}", stderr).into());
-                    }
-                }
-                Err(e) => {
-                    return Err(
-                        format!("Failed to execute the program at '{}': {}", program, e).into(),
-                    );
-                }
-            }
+            return execute_python_custom(&program, &wrapped_code).await;
         }
     }
+
+    // use system path to execute
+    execute_python_system(&wrapped_code).await
+}
+
+/// Execute Python code with custom path.
+async fn execute_python_custom(program: &str, code: &str) -> Result<String, AppError> {
+    debug!("Executing Python with custom program: {}", program);
+
+    // on Windows, special handling is needed for .bat files
+    #[cfg(target_os = "windows")]
+    let use_stdin = program.to_lowercase().ends_with(".bat");
+    #[cfg(not(target_os = "windows"))]
+    let use_stdin = false;
+
+    let mut command = if use_stdin {
+        // for .bat files, pass code through stdin to avoid parameter escaping issues
+        let mut cmd = Command::new(program);
+        cmd.stdin(Stdio::piped());
+        cmd
+    } else {
+        // for regular executables, use -c parameter
+        let mut cmd = Command::new(program);
+        cmd.arg("-c").arg(code);
+        cmd
+    };
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    // hide console window on Windows
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    // set UTF-8 encoding for Python on Windows
+    #[cfg(target_os = "windows")]
+    command.env("PYTHONIOENCODING", "utf-8");
+
+    match command.spawn() {
+        Ok(mut child) => {
+            // if using stdin, write code
+            if use_stdin {
+                if let Some(mut stdin) = child.stdin.take() {
+                    stdin.write_all(code.as_bytes()).await?;
+                    drop(stdin); // close stdin
+                }
+            }
+
+            let output = child.wait_with_output().await?;
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                Ok(stdout.trim().to_string())
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!("Python execution failed:\n\n{}", stderr).into())
+            }
+        }
+        Err(e) => Err(format!("Failed to execute the program at '{}': {}", program, e).into()),
+    }
+}
+
+/// Execute Python code with system path.
+async fn execute_python_system(code: &str) -> Result<String, AppError> {
+    debug!("Executing Python with system path");
 
     // get user home directory
     #[cfg(target_os = "windows")]
@@ -250,6 +271,7 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
         // add all common Python versions and their Scripts directories
         let mut paths = vec![format!("{}\\AppData\\Local\\Microsoft\\WindowsApps", home)];
         let versions = [
+            "Python314",
             "Python313",
             "Python312",
             "Python311",
@@ -300,11 +322,12 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
         let mut command = Command::new(cmd);
         command
             .arg("-c")
-            .arg(&wrapped_code)
+            .arg(code)
             .env("PATH", &path)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
+        // hide console window on Windows
         #[cfg(target_os = "windows")]
         command.creation_flags(CREATE_NO_WINDOW);
 
@@ -315,7 +338,6 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
         match command.spawn() {
             Ok(child) => {
                 let output = child.wait_with_output().await?;
-
                 if output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     return Ok(stdout.trim().to_string());

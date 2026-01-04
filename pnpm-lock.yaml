@@ -57,7 +57,7 @@ importers:
         specifier: ^2.5.1
         version: 2.5.1
       '@tauri-apps/plugin-deep-link':
-        specifier: ~2.4.5
+        specifier: ^2.4.5
         version: 2.4.5
       '@tauri-apps/plugin-log':
         specifier: ^2.7.1
