@@ -1,3 +1,16 @@
+<script lang="ts" module>
+  import type { Update } from '@tauri-apps/plugin-updater';
+  import type { IconComponentProps } from 'phosphor-svelte';
+  import type { Component, Snippet } from 'svelte';
+
+  // update checking states
+  let versionHovering = $state(false);
+  let updateChecking = $state(false);
+  let updateStatus = $state('');
+  let latestFlag = $state(false);
+  let failedFlag = $state(false);
+</script>
+
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
@@ -9,7 +22,7 @@
   import { getVersion } from '@tauri-apps/api/app';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { relaunch } from '@tauri-apps/plugin-process';
-  import { check, type Update } from '@tauri-apps/plugin-updater';
+  import { check } from '@tauri-apps/plugin-updater';
   import {
     ArrowLeft,
     CheckCircle,
@@ -22,10 +35,8 @@
     Scroll,
     Sparkle,
     Sphere,
-    Warning,
-    type IconComponentProps
+    Warning
   } from 'phosphor-svelte';
-  import type { Component, Snippet } from 'svelte';
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
 
@@ -39,13 +50,6 @@
   onMount(async () => {
     version = await getVersion();
   });
-
-  // update checking states
-  let versionHovering = $state(false);
-  let updateChecking = $state(false);
-  let updateStatus = $state('');
-  let latestFlag = $state(false);
-  let failedFlag = $state(false);
 
   /**
    * Check for application updates.
