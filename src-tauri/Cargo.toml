@@ -28,7 +28,7 @@ tauri-plugin-process = "2.3.1"
 tauri-plugin-autostart = "2.5.1"
 tauri-plugin-deep-link = "2.4.5"
 tauri-plugin-global-shortcut = "2.3.1"
-tauri-plugin-single-instance = "2.3.6"
+tauri-plugin-single-instance = { version = "2.3.6", features = ["deep-link"] }
 tauri-plugin-log = { version = "2.7.1", features = ["colored"] }
 log = "0.4.29"
 fern = "0.7.1"
@@ -47,5 +47,5 @@ tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", rev = "da9c9a
 windows = { version = ">=0.59.0, <=0.62.2", features = [
   "Win32_System_Com",
   "Win32_UI_Accessibility",
-  "Win32_UI_WindowsAndMessaging"
+  "Win32_UI_WindowsAndMessaging",
 ] }
