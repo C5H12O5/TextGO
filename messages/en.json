@@ -3,6 +3,8 @@
   "add": "New ",
   "update": "Update ",
   "delete": "Delete ",
+  "import": "Import ",
+  "export": "Export ",
   "move_up": "Move Up",
   "move_down": "Move Down",
   "more_options": "More Options",

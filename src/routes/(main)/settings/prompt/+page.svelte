@@ -2,10 +2,14 @@
   import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Prompt, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
+  import { dumpExtension } from '$lib/helpers';
   import { LMStudio, Ollama } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { ollamaHost, prompts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { basename } from '@tauri-apps/api/path';
+  import { open, save } from '@tauri-apps/plugin-dialog';
+  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
@@ -35,6 +39,38 @@
     hint={m.ai_conversation_hint()}
     bind:data={prompts.current}
     oncreate={() => promptCreator.showModal()}
+    onimport={async () => {
+      try {
+        const path = await open({
+          multiple: false,
+          directory: false,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          const id = (await basename(path)).replace(/\.json$/i, '');
+          const contents = await readTextFile(path);
+          promptCreator.install({
+            id: id,
+            ...JSON.parse(contents)
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to import prompt: ${error}`);
+      }
+    }}
+    onexport={async (item) => {
+      try {
+        const path = await save({
+          defaultPath: `${item.id}.json`,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          await writeTextFile(path, dumpExtension(item));
+        }
+      } catch (error) {
+        console.error(`Failed to export prompt: ${error}`);
+      }
+    }}
   >
     {#snippet row(item)}
       <Icon icon={item.icon || 'Robot'} class="size-5" />

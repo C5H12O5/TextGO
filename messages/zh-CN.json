@@ -3,6 +3,8 @@
   "add": "新增",
   "update": "更新",
   "delete": "删除",
+  "import": "导入",
+  "export": "导出",
   "move_up": "上移",
   "move_down": "下移",
   "more_options": "更多选项",

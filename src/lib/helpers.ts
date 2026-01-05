@@ -1,6 +1,6 @@
 import { DBCLICK_SHORTCUT, DRAG_SHORTCUT } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
-import { getLocale } from '$lib/paraglide/runtime';
+import { getLocale, locales } from '$lib/paraglide/runtime';
 import { invoke } from '@tauri-apps/api/core';
 import { type } from '@tauri-apps/plugin-os';
 import type { ActionReturn } from 'svelte/action';
@@ -175,4 +175,35 @@ export async function setupTray() {
   } catch (error) {
     console.error(`Failed to setup tray menu language: ${error}`);
   }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Extension<T = Record<string, any>> = { id: string } & T;
+
+/**
+ * Serialize extension to JSON string.
+ *
+ * @param extension - extension object
+ * @returns JSON string
+ */
+export function dumpExtension(extension: Extension): string {
+  const { id, ...rest } = extension;
+  return JSON.stringify(
+    {
+      ...rest,
+      locales: Object.fromEntries(
+        locales.map((locale) => [
+          locale,
+          {
+            name: locale === getLocale() ? id : '',
+            description: '',
+            tags: []
+          }
+        ])
+      ),
+      sort: Date.now()
+    },
+    null,
+    2
+  );
 }

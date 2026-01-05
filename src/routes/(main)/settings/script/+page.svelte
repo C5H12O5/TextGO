@@ -2,10 +2,14 @@
   import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
+  import { dumpExtension } from '$lib/helpers';
   import { Deno, JavaScript, NodeJS, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { denoPath, nodePath, pythonPath, scripts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { basename } from '@tauri-apps/api/path';
+  import { open, save } from '@tauri-apps/plugin-dialog';
+  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
@@ -37,6 +41,38 @@
     hint={m.script_execution_hint()}
     bind:data={scripts.current}
     oncreate={() => scriptCreator.showModal()}
+    onimport={async () => {
+      try {
+        const path = await open({
+          multiple: false,
+          directory: false,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          const id = (await basename(path)).replace(/\.json$/i, '');
+          const contents = await readTextFile(path);
+          scriptCreator.install({
+            id: id,
+            ...JSON.parse(contents)
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to import script: ${error}`);
+      }
+    }}
+    onexport={async (item) => {
+      try {
+        const path = await save({
+          defaultPath: `${item.id}.json`,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          await writeTextFile(path, dumpExtension(item));
+        }
+      } catch (error) {
+        console.error(`Failed to export script: ${error}`);
+      }
+    }}
   >
     {#snippet row(item)}
       <Icon icon={item.icon || 'Code'} class="size-5" />
