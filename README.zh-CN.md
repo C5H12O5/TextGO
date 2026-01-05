@@ -42,6 +42,11 @@
 
 应用使用期间，系统会自动提示授予这些权限。你也可以手动在"系统设置" > "隐私与安全性"中进行配置。
 
+### 获取扩展
+
+访问官方网站的[**扩展**](https://textgo.xylitol.top/zh-CN/extensions.html)页面，可浏览并安装各种扩展来增强应用功能（需要 v0.5.0 及以上版本）：
+![Extensions](screenshots/03.zh-CN.png)
+
 ### 常见问题
 
 <details>
