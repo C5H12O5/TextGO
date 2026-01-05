@@ -4833,6 +4833,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tauri",
+ "tauri-plugin-deep-link",
  "thiserror 2.0.17",
  "tracing",
  "windows-sys 0.60.2",
@@ -5013,7 +5014,7 @@ dependencies = [
 
 [[package]]
 name = "text-go"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "clipboard-rs",
  "core-foundation",
