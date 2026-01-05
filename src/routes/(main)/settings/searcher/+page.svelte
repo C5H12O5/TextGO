@@ -1,12 +1,26 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, List, Searcher, Setting } from '$lib/components';
+  import { dumpExtension } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { searchers } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
+  import { basename } from '@tauri-apps/api/path';
+  import { open, save } from '@tauri-apps/plugin-dialog';
+  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import { Globe, MagnifyingGlass, PencilSimpleLine, Sparkle } from 'phosphor-svelte';
 
   // searcher components
   let searcherCreator: Searcher;
   let searcherUpdater: Searcher;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      searcherCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={MagnifyingGlass} title={m.web_search()} class="min-h-(--app-h)">
@@ -17,6 +31,38 @@
     hint={m.web_search_hint()}
     bind:data={searchers.current}
     oncreate={() => searcherCreator.showModal()}
+    onimport={async () => {
+      try {
+        const path = await open({
+          multiple: false,
+          directory: false,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          const id = (await basename(path)).replace(/\.json$/i, '');
+          const contents = await readTextFile(path);
+          searcherCreator.install({
+            id: id,
+            ...JSON.parse(contents)
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to import searcher: ${error}`);
+      }
+    }}
+    onexport={async (item) => {
+      try {
+        const path = await save({
+          defaultPath: `${item.id}.json`,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          await writeTextFile(path, dumpExtension(item));
+        }
+      } catch (error) {
+        console.error(`Failed to export searcher: ${error}`);
+      }
+    }}
   >
     {#snippet row(item)}
       <Icon icon={item.icon || 'MagnifyingGlass'} class="size-5" />

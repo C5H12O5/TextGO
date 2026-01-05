@@ -6,9 +6,10 @@
     ArrowCircleUp,
     CaretDown,
     CaretRight,
-    DotsThree,
+    Download,
     Lightbulb,
     PlusCircle,
+    Share,
     XCircle,
     type IconComponentProps
   } from 'phosphor-svelte';
@@ -39,8 +40,10 @@
     oncreate?: () => void;
     /** Callback function after data deletion. */
     ondelete?: (item: T) => void;
-    /** Callback function when clicking more operations. */
-    moreOptions?: () => void;
+    /** Callback function for importing data. */
+    onimport?: () => void;
+    /** Callback function for exporting data. */
+    onexport?: (item: T) => void;
   };
 
   let {
@@ -55,7 +58,8 @@
     class: _class,
     oncreate,
     ondelete,
-    moreOptions
+    onimport,
+    onexport
   }: ListProps = $props();
 
   // selected data ID
@@ -179,8 +183,27 @@
           scrollIntoView();
         }}
       />
-      {#if moreOptions}
-        <Button icon={DotsThree} iconWeight="bold" text={m.more_options()} onclick={() => moreOptions?.()} />
+      {#if onimport || onexport}
+        <div class="divider mx-0 my-auto divider-horizontal h-5 w-2 opacity-50"></div>
+        {#if onimport}
+          <Button icon={Download} text="{m.import()}{name}" class="text-emphasis" onclick={() => onimport()} />
+        {/if}
+        {#if onexport}
+          <Button
+            icon={Share}
+            text="{m.export()}{name}"
+            class={selectedId ? 'text-emphasis' : 'btn-disabled'}
+            onclick={() => {
+              if (!selectedId) {
+                return;
+              }
+              const item = data.find((i) => i.id === selectedId);
+              if (item) {
+                onexport(item);
+              }
+            }}
+          />
+        {/if}
       {/if}
     </span>
   </div>

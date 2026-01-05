@@ -1,14 +1,21 @@
 <script lang="ts">
+  import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
-  import { JavaScript, Python } from '$lib/icons';
+  import { dumpExtension } from '$lib/helpers';
+  import { Deno, JavaScript, NodeJS, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { nodePath, pythonPath, scripts } from '$lib/stores.svelte';
+  import { denoPath, nodePath, pythonPath, scripts } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
+  import { basename } from '@tauri-apps/api/path';
+  import { open, save } from '@tauri-apps/plugin-dialog';
+  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
     nodePath: text().maxlength(256),
+    denoPath: text().maxlength(256),
     pythonPath: text().maxlength(256)
   }));
 
@@ -16,6 +23,14 @@
   let scriptCreator: ScriptModal;
   let scriptUpdater: ScriptModal;
   let scriptOptions: Modal;
+
+  // handle installation from clipboard
+  afterNavigate(async () => {
+    if (new URLSearchParams(window.location.search).get('install')) {
+      const source = await invoke<string>('get_clipboard_text');
+      scriptCreator.install(JSON.parse(source));
+    }
+  });
 </script>
 
 <Setting icon={Code} title={m.script_execution()} moreOptions={() => scriptOptions.show()} class="min-h-(--app-h)">
@@ -26,6 +41,38 @@
     hint={m.script_execution_hint()}
     bind:data={scripts.current}
     oncreate={() => scriptCreator.showModal()}
+    onimport={async () => {
+      try {
+        const path = await open({
+          multiple: false,
+          directory: false,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          const id = (await basename(path)).replace(/\.json$/i, '');
+          const contents = await readTextFile(path);
+          scriptCreator.install({
+            id: id,
+            ...JSON.parse(contents)
+          });
+        }
+      } catch (error) {
+        console.error(`Failed to import script: ${error}`);
+      }
+    }}
+    onexport={async (item) => {
+      try {
+        const path = await save({
+          defaultPath: `${item.id}.json`,
+          filters: [{ name: 'JSON', extensions: ['json'] }]
+        });
+        if (path) {
+          await writeTextFile(path, dumpExtension(item));
+        }
+      } catch (error) {
+        console.error(`Failed to export script: ${error}`);
+      }
+    }}
   >
     {#snippet row(item)}
       <Icon icon={item.icon || 'Code'} class="size-5" />
@@ -58,14 +105,36 @@
 <Modal icon={SlidersHorizontal} title={m.script_options()} bind:this={scriptOptions}>
   <form>
     <fieldset class="fieldset">
-      <Label>{m.nodejs_path()}</Label>
+      <Label>
+        {#snippet icon()}
+          <NodeJS class="h-5" />
+        {/snippet}
+        {m.nodejs_path()}
+      </Label>
       <input
         class="input w-full"
         placeholder={m.nodejs_path_placeholder()}
         {...schema.nodePath}
         bind:value={nodePath.current}
       />
-      <Label>{m.python_path()}</Label>
+      <Label>
+        {#snippet icon()}
+          <Deno class="h-5" />
+        {/snippet}
+        {m.deno_path()}
+      </Label>
+      <input
+        class="input w-full"
+        placeholder={m.deno_path_placeholder()}
+        {...schema.denoPath}
+        bind:value={denoPath.current}
+      />
+      <Label>
+        {#snippet icon()}
+          <Python class="h-5" />
+        {/snippet}
+        {m.python_path()}
+      </Label>
       <input
         class="input w-full"
         placeholder={m.python_path_placeholder()}

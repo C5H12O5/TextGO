@@ -2,6 +2,7 @@
   const { class: _class }: { class?: string } = $props();
 </script>
 
+<!-- https://github.com/gilbarbara/logos -->
 <svg class={_class} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 274">
   <path
     fill="#E55B2D"

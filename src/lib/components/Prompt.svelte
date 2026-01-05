@@ -44,6 +44,16 @@ ${m.prompt_variables_tip()}
   let modelProvider: ModelProvider = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
 
+  // fill form fields
+  const fillForm = (prompt: Prompt) => {
+    promptName = prompt.id;
+    promptIcon = prompt.icon || DEFAULT_ICON;
+    promptText = prompt.prompt;
+    systemPromptText = prompt.systemPrompt || '';
+    modelProvider = prompt.provider;
+    modelName = prompt.model;
+  };
+
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -53,13 +63,17 @@ ${m.prompt_variables_tip()}
         return;
       }
       promptId = id;
-      promptName = prompt.id;
-      promptIcon = prompt.icon || DEFAULT_ICON;
-      promptText = prompt.prompt;
-      systemPromptText = prompt.systemPrompt || '';
-      modelProvider = prompt.provider;
-      modelName = prompt.model;
+      fillForm(prompt);
     }
+    modal.show();
+  };
+
+  // install from external source
+  export const install = (prompt: Prompt) => {
+    if (modal.isOpen()) {
+      return;
+    }
+    fillForm(prompt);
     modal.show();
   };
 

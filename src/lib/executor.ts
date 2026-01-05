@@ -1,7 +1,7 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
-import { entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
+import { entries, historySize, nodePath, denoPath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
 import type { Entry, Processor, Prompt, Rule, Script } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
@@ -405,13 +405,36 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
       selection: entry.selection
     };
     if (script.lang === 'javascript') {
+      // if no custom node path, try to execute in frontend first
+      if (!nodePath.current && !denoPath.current) {
+        try {
+          console.debug('Executing JavaScript in WebView');
+          // wrap user code in a function to isolate scope
+          const wrappedCode = `
+            (function() {
+              const data = ${JSON.stringify(data)};
+              ${script.script}
+              const result = process(data);
+              return typeof result === 'string' ? result : JSON.stringify(result);
+            })()
+          `;
+          const result = eval(wrappedCode);
+          return { text: result };
+        } catch (error) {
+          console.error(`Failed to execute JavaScript in WebView: ${error}`);
+        }
+      }
+
+      // execute JavaScript code in backend
       const result = await invoke<string>('execute_javascript', {
         code: script.script,
         data: JSON.stringify(data),
-        nodePath: nodePath.current
+        nodePath: nodePath.current,
+        denoPath: denoPath.current
       });
       return { text: result };
     } else if (script.lang === 'python') {
+      // execute Python code in backend
       const result = await invoke<string>('execute_python', {
         code: script.script,
         data: JSON.stringify(data),

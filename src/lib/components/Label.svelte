@@ -1,13 +1,12 @@
 <script lang="ts" module>
-  import type { IconComponentProps } from 'phosphor-svelte';
-  import type { Component, Snippet } from 'svelte';
+  import type { Snippet } from 'svelte';
   import type { Placement } from 'tippy.js';
 
   export type LabelProps = {
     /** Label text snippet. */
     children: Snippet;
-    /** Label icon. */
-    icon?: Component<IconComponentProps>;
+    /** Label icon snippet. */
+    icon?: Snippet;
     /** Tip text. */
     tip?: string;
     /** Tip position. */
@@ -32,8 +31,7 @@
       <span class="h-6 text-lg text-error">*</span>
     {/if}
     {#if icon}
-      {@const Icon = icon}
-      <Icon class="mr-1 size-5" />
+      <span class="mr-1">{@render icon()}</span>
     {/if}
     <span class="flex flex-col gap-1">
       <div class="text-base tracking-wide opacity-90">{@render children()}</div>

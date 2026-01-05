@@ -33,6 +33,18 @@
   let flagM: boolean = $state(false);
   let flagS: boolean = $state(false);
 
+  // fill form fields
+  const fillForm = (regexp: Regexp) => {
+    regexpName = regexp.id;
+    regexpIcon = regexp.icon || DEFAULT_ICON;
+    regexpPattern = regexp.pattern;
+    const flags = regexp.flags || '';
+    flagI = flags.includes('i');
+    flagU = flags.includes('u');
+    flagM = flags.includes('m');
+    flagS = flags.includes('s');
+  };
+
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
@@ -42,15 +54,17 @@
         return;
       }
       regexpId = id;
-      regexpName = regexp.id;
-      regexpIcon = regexp.icon || DEFAULT_ICON;
-      regexpPattern = regexp.pattern;
-      const flags = regexp.flags || '';
-      flagI = flags.includes('i');
-      flagU = flags.includes('u');
-      flagM = flags.includes('m');
-      flagS = flags.includes('s');
+      fillForm(regexp);
     }
+    modal.show();
+  };
+
+  // install from external source
+  export const install = (regexp: Regexp) => {
+    if (modal.isOpen()) {
+      return;
+    }
+    fillForm(regexp);
     modal.show();
   };
 
