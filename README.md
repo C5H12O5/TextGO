@@ -33,7 +33,7 @@
 
 Download the installer for your platform from [**GitHub Releases**](https://github.com/C5H12O5/TextGO/releases) and follow the installation instructions.
 
-### Permission Setup
+### Permissions
 
 On macOS, the following permissions are required for proper functionality:
 
@@ -41,6 +41,11 @@ On macOS, the following permissions are required for proper functionality:
 2. **Input Monitoring**: Required for listening to mouse events
 
 The system will automatically prompt you to grant these permissions while using the app. You can also manually configure them in "System Settings" > "Privacy & Security".
+
+### Extensions
+
+Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality (requires v0.5.0 or higher):
+![Extensions](screenshots/03.png)
 
 ### FAQ
 

@@ -10,7 +10,7 @@
 function process(data) {
     // data.clipboard - ${m.clipboard_text()}
     // data.selection - ${m.selected_text()}
-    return "";
+    return '';
 }
 `.trimStart();
 
