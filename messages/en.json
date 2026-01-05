@@ -164,6 +164,8 @@
   "script_options": "Script Execution Options",
   "nodejs_path": "Node.js Path",
   "nodejs_path_placeholder": "e.g., /usr/local/bin/node",
+  "deno_path": "Deno Path",
+  "deno_path_placeholder": "e.g., /usr/local/bin/deno",
   "python_path": "Python Path",
   "python_path_placeholder": "e.g., /usr/local/bin/python3",
   "ai_options": "Model Provider Options",

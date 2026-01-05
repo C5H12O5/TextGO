@@ -147,6 +147,9 @@ export const popupPinned = persisted<boolean>('popupPinned', false);
 // Node.js path
 export const nodePath = persisted<string>('nodePath', '');
 
+// Deno path
+export const denoPath = persisted<string>('denoPath', '');
+
 // Python path
 export const pythonPath = persisted<string>('pythonPath', '');
 

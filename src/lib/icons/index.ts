@@ -1,9 +1,11 @@
+export { default as Deno } from './Deno.svelte';
 export { default as GitHub } from './GitHub.svelte';
 export { default as JavaScript } from './JavaScript.svelte';
 export { default as Keyboard } from './Keyboard.svelte';
 export { default as LMStudio } from './LMStudio.svelte';
 export { default as Moon } from './Moon.svelte';
 export { default as NoData } from './NoData.svelte';
+export { default as NodeJS } from './NodeJS.svelte';
 export { default as Ollama } from './Ollama.svelte';
 export { default as Python } from './Python.svelte';
 export { default as Regexp } from './Regexp.svelte';

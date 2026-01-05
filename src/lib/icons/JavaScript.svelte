@@ -2,6 +2,7 @@
   const { class: _class }: { class?: string } = $props();
 </script>
 
+<!-- https://github.com/tandpfun/skill-icons -->
 <svg class={_class} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
   <g>
     <rect fill="#F0DB4F" width="256" height="256" rx="64" />

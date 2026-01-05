@@ -2,15 +2,16 @@
   import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
-  import { JavaScript, Python } from '$lib/icons';
+  import { Deno, JavaScript, NodeJS, Python } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { nodePath, pythonPath, scripts } from '$lib/stores.svelte';
+  import { denoPath, nodePath, pythonPath, scripts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
     nodePath: text().maxlength(256),
+    denoPath: text().maxlength(256),
     pythonPath: text().maxlength(256)
   }));
 
@@ -68,14 +69,36 @@
 <Modal icon={SlidersHorizontal} title={m.script_options()} bind:this={scriptOptions}>
   <form>
     <fieldset class="fieldset">
-      <Label>{m.nodejs_path()}</Label>
+      <Label>
+        {#snippet icon()}
+          <NodeJS class="h-5" />
+        {/snippet}
+        {m.nodejs_path()}
+      </Label>
       <input
         class="input w-full"
         placeholder={m.nodejs_path_placeholder()}
         {...schema.nodePath}
         bind:value={nodePath.current}
       />
-      <Label>{m.python_path()}</Label>
+      <Label>
+        {#snippet icon()}
+          <Deno class="h-5" />
+        {/snippet}
+        {m.deno_path()}
+      </Label>
+      <input
+        class="input w-full"
+        placeholder={m.deno_path_placeholder()}
+        {...schema.denoPath}
+        bind:value={denoPath.current}
+      />
+      <Label>
+        {#snippet icon()}
+          <Python class="h-5" />
+        {/snippet}
+        {m.python_path()}
+      </Label>
       <input
         class="input w-full"
         placeholder={m.python_path_placeholder()}

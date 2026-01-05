@@ -12,6 +12,7 @@ pub async fn execute_javascript(
     code: String,
     data: String,
     node_path: Option<String>,
+    deno_path: Option<String>,
 ) -> Result<String, AppError> {
     // create JavaScript code wrapper
     let wrapped_code = format!(
@@ -25,19 +26,26 @@ console.log(typeof result === 'string' ? result : JSON.stringify(result));
     );
 
     // if custom path is provided, use it directly
-    if let Some(program) = node_path {
-        if !program.is_empty() {
-            return execute_javascript_custom(&program, &wrapped_code).await;
-        }
-    }
+    if let Some(program) = node_path.filter(|p| !p.trim().is_empty()) {
+        return execute_javascript_custom(program.trim(), &wrapped_code, "node").await;
+    } else if let Some(program) = deno_path.filter(|p| !p.trim().is_empty()) {
+        return execute_javascript_custom(program.trim(), &wrapped_code, "deno").await;
+    };
 
     // use system path to execute
     execute_javascript_system(&wrapped_code).await
 }
 
 /// Execute JavaScript code with custom path.
-async fn execute_javascript_custom(program: &str, code: &str) -> Result<String, AppError> {
+async fn execute_javascript_custom(
+    program: &str,
+    code: &str,
+    runtime: &str,
+) -> Result<String, AppError> {
     debug!("Executing JavaScript with custom program: {}", program);
+
+    // check if it's deno runtime
+    let deno = runtime == "deno";
 
     // on Windows, special handling is needed for .bat files
     #[cfg(target_os = "windows")]
@@ -48,12 +56,20 @@ async fn execute_javascript_custom(program: &str, code: &str) -> Result<String, 
     let mut command = if use_stdin {
         // for .bat files, pass code through stdin to avoid parameter escaping issues
         let mut cmd = Command::new(program);
+        if deno {
+            cmd.arg("run").arg("-"); // use - to read from stdin
+        }
         cmd.stdin(Stdio::piped());
         cmd
     } else {
         // for regular executables, use -e parameter
         let mut cmd = Command::new(program);
-        cmd.arg("-e").arg(code);
+        if deno {
+            cmd.arg("eval");
+        } else {
+            cmd.arg("-e");
+        }
+        cmd.arg(code);
         cmd
     };
     command.stdout(Stdio::piped()).stderr(Stdio::piped());
@@ -191,10 +207,8 @@ print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=Fal
     );
 
     // if custom path is provided, use it directly
-    if let Some(program) = python_path {
-        if !program.is_empty() {
-            return execute_python_custom(&program, &wrapped_code).await;
-        }
+    if let Some(program) = python_path.filter(|p| !p.trim().is_empty()) {
+        return execute_python_custom(program.trim(), &wrapped_code).await;
     }
 
     // use system path to execute

@@ -2,6 +2,7 @@
   const { class: _class }: { class?: string } = $props();
 </script>
 
+<!-- https://github.com/oclero/qlementine-icons -->
 <svg class={_class} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
   <path
     fill="#3366CC"

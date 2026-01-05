@@ -2,6 +2,7 @@
   const { class: _class }: { class?: string } = $props();
 </script>
 
+<!-- https://github.com/vscode-icons/vscode-icons -->
 <svg class={_class} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <path
     fill="#0288D1"
