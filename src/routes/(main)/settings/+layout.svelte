@@ -16,9 +16,9 @@
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
   import { Button, Title, confirm } from '$lib/components';
-  import { GitHub } from '$lib/icons';
+  import { Extensions, GitHub } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { deLocalizeHref } from '$lib/paraglide/runtime';
+  import { deLocalizeHref, getLocale } from '$lib/paraglide/runtime';
   import { getVersion } from '@tauri-apps/api/app';
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { relaunch } from '@tauri-apps/plugin-process';
@@ -153,16 +153,27 @@
     class="border-none gradient bg-base-300"
     onclick={() => goto(resolve('/shortcuts'))}
   />
-  <div class="pointer-events-none mx-auto flex items-center gap-1">
+  <div class="pointer-events-none mx-auto flex items-center gap-1 pl-8">
     <GearSix class="size-5 opacity-80" />
     <span class="tracking-wider">{m.settings()}</span>
   </div>
-  <button
-    class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
-    onclick={() => openUrl('https://github.com/C5H12O5/TextGO')}
-  >
-    <GitHub class="size-5" />
-  </button>
+  <div class="flex items-center gap-2">
+    <button
+      class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
+      onclick={() => {
+        const locale = getLocale();
+        openUrl(`https://textgo.xylitol.top${locale === 'en' ? '' : `/${locale}`}/extensions.html`);
+      }}
+    >
+      <Extensions class="size-5" />
+    </button>
+    <button
+      class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
+      onclick={() => openUrl('https://github.com/C5H12O5/TextGO')}
+    >
+      <GitHub class="size-5" />
+    </button>
+  </div>
 </Title>
 
 {#snippet menu(icon: Component<IconComponentProps>, text: string, href: string)}

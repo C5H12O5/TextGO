@@ -1,4 +1,5 @@
 export { default as Deno } from './Deno.svelte';
+export { default as Extensions } from './Extensions.svelte';
 export { default as GitHub } from './GitHub.svelte';
 export { default as JavaScript } from './JavaScript.svelte';
 export { default as Keyboard } from './Keyboard.svelte';
