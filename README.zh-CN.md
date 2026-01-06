@@ -27,6 +27,9 @@
 - **开箱即用**：内置丰富的文本类型和处理动作，简单配置即可使用
 - **灵活扩展**：支持通过正则、机器学习模型、脚本或接入本地 AI 等方式扩展能力
 
+| <img align="center" src="screenshots/03.zh-CN.png" /> | <img align="center" src="screenshots/04.zh-CN.png" /> |
+| ----------------------------------------------------- | ----------------------------------------------------- |
+
 ## ⬇️ 使用说明
 
 ### 下载安装
@@ -45,7 +48,8 @@
 ### 获取扩展
 
 访问官方网站的[**扩展**](https://textgo.xylitol.top/zh-CN/extensions.html)页面，可浏览并安装各种扩展来增强应用功能（需要 v0.5.0 及以上版本）：
-![Extensions](screenshots/03.zh-CN.png)
+
+![Extensions](screenshots/05.zh-CN.png)
 
 ### 常见问题
 
