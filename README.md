@@ -12,9 +12,9 @@
 
 📖 English / [简体中文](README.zh-CN.md)
 
-</div>
+_TextGO is a cross-platform text processing tool that recognizes text types and executes custom actions._
 
-> TextGO is a cross-platform text processing tool that automatically recognizes text types and executes custom actions.
+</div>
 
 | <img align="center" src="screenshots/01.gif" /> | <img align="center" src="screenshots/02.gif" /> |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -110,8 +110,8 @@ _Follow these steps to resolve:_
 
 This project is built upon many excellent open source projects. We would like to express our sincere gratitude to all the developers and contributors of these projects.
 
-For a complete list of third-party dependencies and their licenses, please see [**LICENSES.md**](LICENSES.md).
+For a complete list of third-party dependencies and their licenses, please see [LICENSES.md](LICENSES.md).
 
 ## 📄 License
 
-This project is released under the [**GPLv3**](LICENSE) open source license.
+This project is released under the [GPLv3](LICENSE) open source license.
