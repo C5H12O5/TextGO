@@ -1,0 +1,25 @@
+name: 功能请求
+description: 提出新功能或改进建议
+title: '[Feature Request]: '
+body:
+  - type: textarea
+    id: feature
+    attributes:
+      label: 希望添加什么功能？
+      description: 请清晰简洁地描述您想要添加的功能
+      placeholder: 我希望添加...
+    validations:
+      required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 为什么需要这个功能？
+      description: 请解释为什么这个功能很重要，它解决了什么问题
+      placeholder: 这个功能可以帮助我...
+    validations:
+      required: true
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充说明（可选）
+      description: 在此添加有关功能请求的任何其他上下文、截图或示例

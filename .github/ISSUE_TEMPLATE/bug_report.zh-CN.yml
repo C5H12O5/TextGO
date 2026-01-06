@@ -1,0 +1,38 @@
+name: Bug 报告
+description: 报告 Bug 以帮助我们改进
+title: '[Bug Report]: '
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰简洁地描述这个 Bug
+      placeholder: 问题是...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 复现该问题的步骤
+      placeholder: |
+        1. 打开 '...'
+        2. 点击 '...'
+        3. 看到错误
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 系统信息
+      description: 请提供您的系统信息
+      value: |
+        - 系统：[例如 macOS 26]
+        - 版本：[例如 v1.0.0]
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截屏（可选）
+      description: 添加截图或录屏帮助解释您的问题
