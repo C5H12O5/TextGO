@@ -104,7 +104,7 @@
    */
   async function formatDocument(view: EditorView, language: string, tabSize: number, lineLength: number) {
     const formatOptions: Record<string, Options> = {
-      javascript: { parser: 'babel', plugins: [babel, estree] },
+      javascript: { parser: 'babel', plugins: [babel, estree], singleQuote: true },
       json: { parser: 'json', plugins: [babel, estree] },
       css: { parser: 'css', plugins: [postcss] },
       html: { parser: 'html', plugins: [html] },
@@ -232,7 +232,7 @@
    * Format document content.
    */
   export function format() {
-    formatDocument(editorView, languageName, tabSize, lineLength);
+    formatDocument(editorView, languageName.toLowerCase(), tabSize, lineLength);
   }
 
   /**
