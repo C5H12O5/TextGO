@@ -27,6 +27,9 @@
 - **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
 - **Highly Extensible**: Extend with regex, ML models, scripts, or local AI for custom recognition and processing.
 
+| <img align="center" src="screenshots/03.png" /> | <img align="center" src="screenshots/04.png" /> |
+| ----------------------------------------------- | ----------------------------------------------- |
+
 ## ⬇️ Getting Started
 
 ### Installation
@@ -45,7 +48,8 @@ The system will automatically prompt you to grant these permissions while using 
 ### Extensions
 
 Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality (requires v0.5.0 or higher):
-![Extensions](screenshots/03.png)
+
+![Extensions](screenshots/05.png)
 
 ### FAQ
 
