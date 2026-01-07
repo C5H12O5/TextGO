@@ -102,12 +102,12 @@
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
           <div class="min-w-0 space-y-2">
             <div class="flex h-6 items-center gap-2">
-              <Textbox class="size-4.5 opacity-80" />
-              <span class="text-sm opacity-60">{m.selected_text()}</span>
+              <Textbox class="size-4.5 shrink-0 opacity-80" />
+              <span class="truncate text-sm opacity-60">{m.selected_text()}</span>
               {#if entry.caseLabel}
-                <span class="badge gap-1 border badge-xs opacity-80">
-                  <FingerprintSimple class="size-3" />
-                  {entry.caseLabel}
+                <span class="badge min-w-14 gap-1 truncate border badge-xs opacity-80" title={entry.caseLabel}>
+                  <FingerprintSimple class="size-3 shrink-0" />
+                  <span class="truncate">{entry.caseLabel}</span>
                 </span>
               {/if}
             </div>
@@ -125,9 +125,9 @@
                 {/if}
                 <span class="truncate text-sm font-medium" title={entry.actionLabel}>{entry.actionLabel}</span>
                 {#if promptMode}
-                  <span class="badge gap-1 border badge-xs">
-                    <Cube class="size-3" />
-                    {entry.model}
+                  <span class="badge min-w-14 gap-1 truncate border badge-xs" title={entry.model}>
+                    <Cube class="size-3 shrink-0" />
+                    <span class="truncate">{entry.model}</span>
                   </span>
                 {/if}
               </div>

@@ -69,9 +69,9 @@
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
         {#if item.browser}
-          <span class="badge badge-ghost badge-sm">
+          <span class="badge min-w-14 truncate badge-ghost badge-sm" title={item.browser}>
             <Globe class="size-4 shrink-0 opacity-80" />
-            <span class="opacity-80">{item.browser}</span>
+            <span class="truncate opacity-80">{item.browser}</span>
           </span>
         {/if}
       </div>

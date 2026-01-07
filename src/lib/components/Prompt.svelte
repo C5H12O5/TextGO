@@ -15,7 +15,7 @@ ${m.prompt_variables_tip()}
   // form schema
   const schema = buildFormSchema(({ text }) => ({
     name: text().maxlength(64),
-    modelName: text().maxlength(32)
+    modelName: text().maxlength(64)
   }));
 
   // default values
