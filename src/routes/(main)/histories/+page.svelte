@@ -105,7 +105,7 @@
               <Textbox class="size-4.5 shrink-0 opacity-80" />
               <span class="truncate text-sm opacity-60">{m.selected_text()}</span>
               {#if entry.caseLabel}
-                <span class="badge gap-1 truncate border badge-xs opacity-80" title={entry.caseLabel}>
+                <span class="badge min-w-14 gap-1 truncate border badge-xs opacity-80" title={entry.caseLabel}>
                   <FingerprintSimple class="size-3 shrink-0" />
                   <span class="truncate">{entry.caseLabel}</span>
                 </span>
@@ -125,7 +125,7 @@
                 {/if}
                 <span class="truncate text-sm font-medium" title={entry.actionLabel}>{entry.actionLabel}</span>
                 {#if promptMode}
-                  <span class="badge gap-1 truncate border badge-xs" title={entry.model}>
+                  <span class="badge min-w-14 gap-1 truncate border badge-xs" title={entry.model}>
                     <Cube class="size-3 shrink-0" />
                     <span class="truncate">{entry.model}</span>
                   </span>
