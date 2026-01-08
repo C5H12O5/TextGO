@@ -49,7 +49,8 @@ _TextGO 是一个跨平台的文本处理工具，能够识别文本类型并执
 
 访问官方网站的[**扩展**](https://textgo.xylitol.top/zh-CN/extensions.html)页面，可浏览并安装各种扩展来增强应用功能（需要 v0.5.0 及以上版本）：
 
-![Extensions](screenshots/05.zh-CN.png)
+| <img align="center" src="screenshots/05.zh-CN.png" /> | <img align="center" src="screenshots/06.zh-CN.png" /> |
+| ----------------------------------------------------- | ----------------------------------------------------- |
 
 ### 常见问题
 

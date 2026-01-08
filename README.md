@@ -49,7 +49,8 @@ The system will automatically prompt you to grant these permissions while using 
 
 Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality (requires v0.5.0 or higher):
 
-![Extensions](screenshots/05.png)
+| <img align="center" src="screenshots/05.png" /> | <img align="center" src="screenshots/06.png" /> |
+| ----------------------------------------------- | ----------------------------------------------- |
 
 ### FAQ
 
