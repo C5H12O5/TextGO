@@ -22,7 +22,10 @@ impl Drop for ShortcutHandlerGuard {
 
 /// Pause shortcut event handling by unregistering all shortcuts.
 #[tauri::command]
-pub fn pause_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
+pub fn pause_shortcut_handling(
+    app: AppHandle,
+    unregister_all: Option<bool>,
+) -> Result<bool, AppError> {
     // check if already paused
     if SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return Ok(false);
@@ -32,14 +35,16 @@ pub fn pause_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
     SHORTCUT_PAUSED.store(true, Ordering::Relaxed);
 
     // unregister all shortcuts
-    let shortcuts: Vec<String> = {
-        let registered = REGISTERED_SHORTCUTS.lock()?;
-        registered.values().cloned().collect()
-    };
+    if unregister_all.unwrap_or(false) {
+        let shortcuts: Vec<String> = {
+            let registered = REGISTERED_SHORTCUTS.lock()?;
+            registered.values().cloned().collect()
+        };
 
-    for shortcut in shortcuts {
-        let hotkey = parse_shortcut(&shortcut)?;
-        app.global_shortcut().unregister(hotkey).ok();
+        for shortcut in shortcuts {
+            let hotkey = parse_shortcut(&shortcut)?;
+            app.global_shortcut().unregister(hotkey).ok();
+        }
     }
 
     Ok(true)
@@ -47,21 +52,26 @@ pub fn pause_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
 
 /// Resume shortcut event handling by re-registering all shortcuts.
 #[tauri::command]
-pub fn resume_shortcut_handling(app: AppHandle) -> Result<bool, AppError> {
+pub fn resume_shortcut_handling(
+    app: AppHandle,
+    register_all: Option<bool>,
+) -> Result<bool, AppError> {
     // check if already resumed
     if !SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return Ok(false);
     }
 
     // re-register all shortcuts
-    let shortcuts: Vec<String> = {
-        let registered = REGISTERED_SHORTCUTS.lock()?;
-        registered.values().cloned().collect()
-    };
+    if register_all.unwrap_or(false) {
+        let shortcuts: Vec<String> = {
+            let registered = REGISTERED_SHORTCUTS.lock()?;
+            registered.values().cloned().collect()
+        };
 
-    for shortcut in shortcuts {
-        let hotkey = parse_shortcut(&shortcut)?;
-        app.global_shortcut().register(hotkey).ok();
+        for shortcut in shortcuts {
+            let hotkey = parse_shortcut(&shortcut)?;
+            app.global_shortcut().register(hotkey).ok();
+        }
     }
 
     // set paused flag to false
