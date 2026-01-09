@@ -2,15 +2,20 @@
   import { afterNavigate, goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { Title } from '$lib/components';
+  import { modals } from '$lib/components/Modal.svelte';
   import { Moon, Sun } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { theme } from '$lib/stores.svelte';
+  import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { ClockCounterClockwise, GearSix, Stack } from 'phosphor-svelte';
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
+
+  // current window
+  const currentWindow = getCurrentWindow();
 
   // scroll to top after navigation
   let main: HTMLElement;
@@ -74,15 +79,15 @@
   });
 
   onMount(() => {
-    const unlisten = getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+    const unlisten = currentWindow.onFocusChanged(({ payload: focused }) => {
       if (focused) {
-        // in some cases, after hiding and showing the window,
-        // an element in the page may unexpectedly get focus,
-        // which is canceled here
-        const activeElement = document.activeElement as HTMLElement;
-        if (activeElement && activeElement !== document.body) {
-          activeElement.blur();
+        // pause shortcut handling when window gains focus and there are open modals
+        if (modals.size > 0) {
+          invoke('pause_shortcut_handling');
         }
+      } else {
+        // resume shortcut handling when window loses focus
+        invoke('resume_shortcut_handling');
       }
     });
     return () => {

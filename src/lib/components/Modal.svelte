@@ -52,7 +52,7 @@
       return;
     }
 
-    // pause shortcut handling
+    // pause shortcut handling to prevent conflicts
     resume = await invoke<boolean>('pause_shortcut_handling');
 
     // disable spellcheck for all inputs in this modal
@@ -84,7 +84,7 @@
       modal.onclose?.();
       modals.delete(id);
 
-      // resume shortcut handling
+      // resume shortcut handling if it was paused
       if (resume) {
         invoke('resume_shortcut_handling');
       }
