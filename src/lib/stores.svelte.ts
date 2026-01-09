@@ -31,6 +31,9 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   let syncing = false;
   let state = $state(initial);
 
+  // get current window label
+  const currentWindow = getCurrentWindow().label;
+
   // load data from store
   store.get<T>(key).then((item) => {
     if (item !== undefined) {
@@ -55,7 +58,6 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
         store.set(key, snapshot).then(() => {
           options?.onchange?.(snapshot);
           // use localStorage to notify other windows
-          const currentWindow = getCurrentWindow().label;
           localStorage.removeItem(key);
           localStorage.setItem(key, currentWindow);
           console.info(`[${currentWindow}] Persisted key "${key}" to store.`);
@@ -73,7 +75,6 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
       return;
     }
     // only handle changes for the specific key and ignore changes from the same window
-    const currentWindow = getCurrentWindow().label;
     if (event.key === key && event.newValue && event.newValue !== currentWindow) {
       console.info(`[${currentWindow}] Detected external change for key "${key}", reloading from store.`);
       syncing = true;
