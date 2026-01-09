@@ -148,8 +148,12 @@
       try {
         // get container size
         const rect = container.getBoundingClientRect();
+        const dpr = window.devicePixelRatio;
+        const scale = await currentWindow.scaleFactor();
+        const width = ((rect.width + 10) * dpr) / scale;
+        const height = ((rect.height + 10) * dpr) / scale;
         // set window size with some padding
-        currentWindow.setSize(new LogicalSize(rect.width + 10, rect.height + 10));
+        currentWindow.setSize(new LogicalSize(width, height));
       } catch (error) {
         console.error(`Failed to resize window: ${error}`);
       }
