@@ -1,5 +1,6 @@
 use crate::error::AppError;
 use log::debug;
+use serde_json::Value;
 use std::process::Stdio;
 use tokio::{io::AsyncWriteExt, process::Command};
 
@@ -371,4 +372,111 @@ async fn execute_python_system(code: &str) -> Result<String, AppError> {
     }
 
     Err("Python interpreter not found. Please install Python.".into())
+}
+
+/// Execute Shell script.
+#[tauri::command]
+pub async fn execute_shell(code: String, data: String) -> Result<String, AppError> {
+    // parse JSON data
+    let json_data: Value = serde_json::from_str(&data)?;
+
+    // generate shell variable definitions
+    let mut variables = String::new();
+    if let Some(obj) = json_data.as_object() {
+        for (k, v) in obj {
+            let value = match v {
+                // escape single quotes in strings
+                Value::String(s) => s.replace("'", "'\\''"),
+                _ => v.to_string(),
+            };
+            variables.push_str(&format!("{}='{}'\n", k, value));
+        }
+    }
+
+    // create shell script wrapper
+    let wrapped_code = format!("{}{}", variables, code);
+
+    debug!("Executing Shell script");
+
+    let mut command = Command::new("sh");
+    command.stdin(Stdio::piped());
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    // hide console window on Windows
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    match command.spawn() {
+        Ok(mut child) => {
+            // write code to stdin
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(wrapped_code.as_bytes()).await?;
+                drop(stdin); // close stdin
+            }
+
+            let output = child.wait_with_output().await?;
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                Ok(stdout.trim().to_string())
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!("Shell execution failed:\n\n{}", stderr).into())
+            }
+        }
+        Err(e) => Err(format!("Failed to execute shell: {}", e).into()),
+    }
+}
+
+/// Execute PowerShell script.
+#[tauri::command]
+pub async fn execute_powershell(code: String, data: String) -> Result<String, AppError> {
+    // parse JSON data
+    let json_data: Value = serde_json::from_str(&data)?;
+
+    // generate PowerShell variable definitions
+    let mut variables = String::new();
+    if let Some(obj) = json_data.as_object() {
+        for (k, v) in obj {
+            let value = match v {
+                // escape single quotes in strings
+                Value::String(s) => s.replace("'", "''"),
+                _ => v.to_string(),
+            };
+            variables.push_str(&format!("${} = '{}'\n", k, value));
+        }
+    }
+
+    // create PowerShell script wrapper
+    let wrapped_code = format!("{}{}", variables, code);
+
+    debug!("Executing PowerShell script");
+
+    let mut command = Command::new("powershell");
+    command.arg("-Command").arg("-");
+    command.stdin(Stdio::piped());
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
+    // hide console window on Windows
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    match command.spawn() {
+        Ok(mut child) => {
+            // write code to stdin
+            if let Some(mut stdin) = child.stdin.take() {
+                stdin.write_all(wrapped_code.as_bytes()).await?;
+                drop(stdin); // close stdin
+            }
+
+            let output = child.wait_with_output().await?;
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                Ok(stdout.trim().to_string())
+            } else {
+                let stderr = String::from_utf8_lossy(&output.stderr);
+                Err(format!("PowerShell execution failed:\n\n{}", stderr).into())
+            }
+        }
+        Err(e) => Err(format!("Failed to execute PowerShell: {}", e).into()),
+    }
 }

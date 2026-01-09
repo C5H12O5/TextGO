@@ -154,6 +154,8 @@ pub fn run() {
             clear_clipboard,
             execute_python,
             execute_javascript,
+            execute_shell,
+            execute_powershell,
             enter_text,
             setup_tray,
             show_about,
