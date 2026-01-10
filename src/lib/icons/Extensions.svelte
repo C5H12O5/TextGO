@@ -1,5 +1,7 @@
 <script lang="ts">
-  const { class: _class }: { class?: string } = $props();
+  import type { IconComponentProps } from 'phosphor-svelte';
+
+  const { class: _class }: IconComponentProps = $props();
 </script>
 
 <!-- https://github.com/tabler/tabler-icons -->
