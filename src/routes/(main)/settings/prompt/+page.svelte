@@ -102,12 +102,7 @@
 <Modal icon={SlidersHorizontal} title={m.ai_options()} bind:this={promptOptions}>
   <form>
     <fieldset class="fieldset">
-      <Label>
-        {#snippet icon()}
-          <Ollama class="h-5" />
-        {/snippet}
-        {m.ollama_host()}
-      </Label>
+      <Label icon={Ollama}>{m.ollama_host()}</Label>
       <input
         class="input w-full"
         placeholder="http://127.0.0.1:11434"
