@@ -77,7 +77,7 @@ export type ActionType = 'builtin' | 'script' | 'prompt' | 'searcher';
 /**
  * Script language.
  */
-export type ScriptLang = 'javascript' | 'python';
+export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 
 /**
  * AI model provider.

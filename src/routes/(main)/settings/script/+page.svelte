@@ -3,7 +3,7 @@
   import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
-  import { Deno, JavaScript, NodeJS, Python } from '$lib/icons';
+  import { Deno, JavaScript, NodeJS, PowerShell, Python, Shell } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { denoPath, nodePath, pythonPath, scripts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
@@ -85,6 +85,12 @@
           {:else if item.lang === 'python'}
             <Python class="h-4 shrink-0" />
             <span class="opacity-80">Python</span>
+          {:else if item.lang === 'shell'}
+            <Shell class="h-4 shrink-0" />
+            <span class="opacity-80">Shell</span>
+          {:else if item.lang === 'powershell'}
+            <PowerShell class="h-4 shrink-0" />
+            <span class="opacity-80">PowerShell</span>
           {/if}
         </span>
       </div>

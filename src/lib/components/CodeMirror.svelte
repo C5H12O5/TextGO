@@ -75,7 +75,8 @@
       json: 'JSON',
       css: 'CSS',
       html: 'HTML',
-      yaml: 'YAML'
+      yaml: 'YAML',
+      powershell: 'PowerShell'
     };
     // return mapped name or capitalized name
     return mappings[name] || name.charAt(0).toUpperCase() + name.slice(1);

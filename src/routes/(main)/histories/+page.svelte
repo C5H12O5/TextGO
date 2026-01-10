@@ -19,6 +19,7 @@
     FingerprintSimple,
     MagnifyingGlass,
     Robot,
+    TerminalWindow,
     Textbox,
     Trash
   } from 'phosphor-svelte';
@@ -43,6 +44,7 @@
     if (entry.actionType === 'searcher') return MagnifyingGlass;
     if (entry.scriptLang === 'javascript') return FileJs;
     if (entry.scriptLang === 'python') return FilePy;
+    if (entry.scriptLang?.endsWith('shell')) return TerminalWindow;
     return null;
   }
 </script>

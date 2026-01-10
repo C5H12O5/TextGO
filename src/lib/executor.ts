@@ -1,7 +1,7 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
-import { entries, historySize, nodePath, denoPath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
+import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
 import type { Entry, Processor, Prompt, Rule, Script } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
@@ -399,13 +399,17 @@ export async function execute(rule: Rule, selection: string): Promise<string> {
  */
 async function executeScript(script: Script, entry: Entry): Promise<Result> {
   try {
+    // get script language and code
+    const { lang: language, script: code } = script;
+    // prepare input data
     const data = {
       datetime: entry.datetime,
       clipboard: entry.clipboard,
       selection: entry.selection
     };
-    if (script.lang === 'javascript') {
-      // if no custom node path, try to execute in frontend first
+
+    if (language === 'javascript') {
+      // if no custom path, try to execute in frontend first
       if (!nodePath.current && !denoPath.current) {
         try {
           console.debug('Executing JavaScript in WebView');
@@ -413,7 +417,7 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
           const wrappedCode = `
             (function() {
               const data = ${JSON.stringify(data)};
-              ${script.script}
+              ${code}
               const result = process(data);
               return typeof result === 'string' ? result : JSON.stringify(result);
             })()
@@ -425,24 +429,31 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
         }
       }
 
-      // execute JavaScript code in backend
+      // execute JavaScript in backend
       const result = await invoke<string>('execute_javascript', {
-        code: script.script,
+        code: code,
         data: JSON.stringify(data),
         nodePath: nodePath.current,
         denoPath: denoPath.current
       });
       return { text: result };
-    } else if (script.lang === 'python') {
-      // execute Python code in backend
+    } else if (language === 'python') {
+      // execute Python in backend
       const result = await invoke<string>('execute_python', {
-        code: script.script,
+        code: code,
         data: JSON.stringify(data),
         pythonPath: pythonPath.current
       });
       return { text: result };
+    } else if (language.endsWith('shell')) {
+      // execute Shell/PowerShell in backend
+      const result = await invoke<string>(`execute_${language}`, {
+        code: code,
+        data: JSON.stringify(data)
+      });
+      return { text: result };
     } else {
-      throw new Error(`unsupported script language: ${script.lang}`);
+      throw new Error(`unsupported script language: ${language}`);
     }
   } catch (error) {
     return { text: String(error), error: true };

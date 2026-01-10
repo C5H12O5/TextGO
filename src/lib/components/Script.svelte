@@ -2,6 +2,12 @@
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
   import type { Script, ScriptLang } from '$lib/types';
+  import { javascript } from '@codemirror/lang-javascript';
+  import { python } from '@codemirror/lang-python';
+  import { StreamLanguage } from '@codemirror/language';
+  import { powerShell } from '@codemirror/legacy-modes/mode/powershell';
+  import { shell } from '@codemirror/legacy-modes/mode/shell';
+  import { type } from '@tauri-apps/plugin-os';
 
   /**
    * JavaScript code template.
@@ -24,6 +30,62 @@ def process(data):
     return ""
 `.trimStart();
 
+  /**
+   * Shell script placeholder.
+   */
+  const SHELL_PLACEHOLDER = `
+\${clipboard} - ${m.clipboard_text()}
+\${selection} - ${m.selected_text()}
+`.trimStart();
+
+  /**
+   * PowerShell script placeholder.
+   */
+  const POWERSHELL_PLACEHOLDER = `
+\${clipboard} - ${m.clipboard_text()}
+\${selection} - ${m.selected_text()}
+`.trimStart();
+
+  /**
+   * Get CodeMirror language package by language type.
+   *
+   * @param lang - script language type
+   * @returns language package and template
+   */
+  const getLanguage = (lang: ScriptLang) => {
+    switch (lang) {
+      case 'javascript':
+        return {
+          package: javascript(),
+          template: JAVASCRIPT_TEMPLATE,
+          placeholder: ''
+        };
+      case 'python':
+        return {
+          package: python(),
+          template: PYTHON_TEMPLATE,
+          placeholder: ''
+        };
+      case 'shell':
+        return {
+          package: StreamLanguage.define(shell),
+          template: '',
+          placeholder: SHELL_PLACEHOLDER
+        };
+      case 'powershell':
+        return {
+          package: StreamLanguage.define(powerShell),
+          template: '',
+          placeholder: POWERSHELL_PLACEHOLDER
+        };
+      default:
+        return null;
+    }
+  };
+
+  // operating system type
+  const osType = type();
+
   // form schema
   const schema = buildFormSchema(({ text }) => ({ name: text().maxlength(64) }));
 
@@ -39,8 +101,6 @@ def process(data):
   import { SCRIPT_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
-  import { javascript } from '@codemirror/lang-javascript';
-  import { python } from '@codemirror/lang-python';
 
   const { scripts }: { scripts: Script[] } = $props();
   const loading = new Loading();
@@ -154,7 +214,8 @@ def process(data):
         value={scriptLang}
         options={[
           { value: 'javascript', label: 'JavaScript' },
-          { value: 'python', label: 'Python' }
+          { value: 'python', label: 'Python' },
+          osType === 'windows' ? { value: 'powershell', label: 'PowerShell' } : { value: 'shell', label: 'Shell' }
         ]}
         class="w-full select-sm"
         disabled={!!scriptId}
@@ -162,10 +223,10 @@ def process(data):
           const target = event.currentTarget;
           const onconfirm = () => {
             scriptLang = target.value as ScriptLang;
-            scriptText = scriptLang === 'python' ? PYTHON_TEMPLATE : JAVASCRIPT_TEMPLATE;
+            scriptText = getLanguage(scriptLang)?.template || '';
           };
           // determine if current code is template code
-          if (scriptText === (scriptLang === 'python' ? PYTHON_TEMPLATE : JAVASCRIPT_TEMPLATE)) {
+          if (scriptText === getLanguage(scriptLang)?.template) {
             // change type directly
             onconfirm();
           } else {
@@ -180,9 +241,11 @@ def process(data):
       />
       <Label required>{m.script()}</Label>
       {#key scriptLang}
+        {@const language = getLanguage(scriptLang)}
         <CodeMirror
           title={m.script()}
-          language={scriptLang === 'python' ? python() : javascript()}
+          language={language?.package}
+          placeholder={language?.placeholder}
           bind:document={scriptText}
         />
       {/key}

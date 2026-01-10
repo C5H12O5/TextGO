@@ -380,7 +380,7 @@ pub async fn execute_shell(code: String, data: String) -> Result<String, AppErro
     // parse JSON data
     let json_data: Value = serde_json::from_str(&data)?;
 
-    // generate shell variable definitions
+    // generate Shell variable definitions
     let mut variables = String::new();
     if let Some(obj) = json_data.as_object() {
         for (k, v) in obj {
@@ -393,7 +393,7 @@ pub async fn execute_shell(code: String, data: String) -> Result<String, AppErro
         }
     }
 
-    // create shell script wrapper
+    // create Shell script wrapper
     let wrapped_code = format!("{}{}", variables, code);
 
     debug!("Executing Shell script");
@@ -420,10 +420,10 @@ pub async fn execute_shell(code: String, data: String) -> Result<String, AppErro
                 Ok(stdout.trim().to_string())
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                Err(format!("Shell execution failed:\n\n{}", stderr).into())
+                Err(format!("Shell script execution failed:\n\n{}", stderr).into())
             }
         }
-        Err(e) => Err(format!("Failed to execute shell: {}", e).into()),
+        Err(e) => Err(format!("Failed to execute Shell script: {}", e).into()),
     }
 }
 
@@ -474,9 +474,9 @@ pub async fn execute_powershell(code: String, data: String) -> Result<String, Ap
                 Ok(stdout.trim().to_string())
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
-                Err(format!("PowerShell execution failed:\n\n{}", stderr).into())
+                Err(format!("PowerShell script execution failed:\n\n{}", stderr).into())
             }
         }
-        Err(e) => Err(format!("Failed to execute PowerShell: {}", e).into()),
+        Err(e) => Err(format!("Failed to execute PowerShell script: {}", e).into()),
     }
 }
