@@ -157,6 +157,9 @@ export const pythonPath = persisted<string>('pythonPath', '');
 // Ollama service address
 export const ollamaHost = persisted<string>('ollamaHost', '');
 
+// LM Studio service address
+export const lmstudioHost = persisted<string>('lmstudioHost', '');
+
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);
 

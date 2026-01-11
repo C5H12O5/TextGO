@@ -1,12 +1,12 @@
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
-  import { ollamaHost, popupPinned, prompts } from '$lib/stores.svelte';
+  import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
+  import { popupPinned, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { marked } from 'marked';
-  import { Ollama } from 'ollama/browser';
   import {
     ArrowClockwise,
     ArrowCounterClockwise,
@@ -38,11 +38,8 @@
   // CodeMirror instance
   let codeMirror: CodeMirror | null = $state(null);
 
-  // Ollama instance
-  let ollama = new Ollama();
-  $effect(() => {
-    ollama = new Ollama({ host: ollamaHost.current || undefined });
-  });
+  // LLM client instance
+  let llmClient: LLMClient | null = $state(null);
 
   // streaming status
   let streaming: boolean = $state(false);
@@ -57,12 +54,16 @@
   let scrollTimer: ReturnType<typeof setInterval> | null = $state(null);
 
   /**
-   * Start conversation.
+   * Start AI conversation.
    */
   async function chat() {
-    if (streaming || !entry || !entry.result || !entry.model || entry.actionType !== 'prompt') {
+    if (streaming || !entry?.result || !entry?.model || !entry?.provider) {
       return;
     }
+
+    // create or update LLM client based on provider
+    llmClient = createLLMClient(entry.provider);
+
     let aborted = false;
     try {
       // start streaming
@@ -70,25 +71,24 @@
       // start auto scroll
       startAutoScroll();
       // add user prompt
-      const messages = [{ role: 'user', content: entry.result }];
+      const messages: ChatMessage[] = [{ role: 'user', content: entry.result }];
       // add system prompt
       const systemPrompt = entry.systemPrompt?.trim();
       if (systemPrompt) {
         messages.unshift({ role: 'system', content: systemPrompt });
       }
-      const response = await ollama.chat({
+      const response = llmClient.chat({
         model: entry.model,
-        messages: messages,
-        stream: true
+        messages: messages
       });
       // save reply content
       entry.response = '';
-      for await (const part of response) {
+      for await (const chunk of response) {
         if (!streaming) {
           // abort streaming
           break;
         }
-        entry.response += part.message.content;
+        entry.response += chunk;
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -113,7 +113,7 @@
    */
   function abort() {
     autoScroll && stopAutoScroll();
-    streaming && ollama.abort();
+    streaming && llmClient?.abort();
     streaming = false;
   }
 
@@ -185,7 +185,9 @@
     const unlistenWindowShow = listen<string>('show-popup', (event) => {
       setup(JSON.parse(event.payload) as Entry);
       // start chat if in prompt mode
-      chat();
+      if (entry?.actionType === 'prompt') {
+        chat();
+      }
       // show and focus window
       currentWindow.isVisible().then((visible) => {
         if (!visible) {

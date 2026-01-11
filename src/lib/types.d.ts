@@ -80,9 +80,9 @@ export type ActionType = 'builtin' | 'script' | 'prompt' | 'searcher';
 export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 
 /**
- * AI model provider.
+ * Large Language Model provider.
  */
-export type ModelProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google';
+export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google';
 
 /**
  * Type of shortcut-triggered record.
@@ -111,7 +111,7 @@ export type Entry = {
   /** Script language. */
   scriptLang?: ScriptLang;
   /** Model provider. */
-  provider?: ModelProvider;
+  provider?: LLMProvider;
   /** Model name. */
   model?: string;
   /** System prompt. */
@@ -217,7 +217,7 @@ export type Prompt = {
   /** Action icon. */
   icon?: string;
   /** Model provider. */
-  provider: ModelProvider;
+  provider: LLMProvider;
   /** Model name. */
   model: string;
   /** Prompt content. */

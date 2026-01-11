@@ -44,6 +44,11 @@
           "app": true
         }
       ]
+    },
+    "http:default",
+    {
+      "identifier": "http:default",
+      "allow": [{ "url": "http://*:*" }, { "url": "https://*:*" }]
     }
   ]
 }

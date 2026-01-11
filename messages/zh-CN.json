@@ -172,6 +172,7 @@
   "python_path_placeholder": "例如: /usr/local/bin/python3",
   "ai_options": "模型提供商选项",
   "ollama_host": "Ollama 服务地址",
+  "lmstudio_host": "LM Studio 服务地址",
   "uuid": "UUID",
   "guid": "GUID",
   "url": "网址",

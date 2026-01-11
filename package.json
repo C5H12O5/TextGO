@@ -38,6 +38,7 @@
     "@tauri-apps/plugin-autostart": "^2.5.1",
     "@tauri-apps/plugin-dialog": "^2.4.2",
     "@tauri-apps/plugin-fs": "^2.4.4",
+    "@tauri-apps/plugin-http": "^2.5.5",
     "@tauri-apps/plugin-log": "^2.7.1",
     "@tauri-apps/plugin-opener": "^2.5.2",
     "@tauri-apps/plugin-os": "^2.3.2",
@@ -50,7 +51,7 @@
     "es-toolkit": "^1.43.0",
     "franc-min": "^6.2.0",
     "marked": "^17.0.1",
-    "ollama": "^0.6.3",
+    "openai": "^6.16.0",
     "phosphor-svelte": "^3.0.1",
     "tippy.js": "^6.3.7"
   },

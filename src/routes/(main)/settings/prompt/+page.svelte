@@ -5,7 +5,7 @@
   import { dumpExtension } from '$lib/helpers';
   import { LMStudio, Ollama } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { ollamaHost, prompts } from '$lib/stores.svelte';
+  import { lmstudioHost, ollamaHost, prompts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
@@ -14,7 +14,8 @@
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
-    ollamaHost: text().maxlength(256)
+    ollamaHost: text().maxlength(256),
+    lmstudioHost: text().maxlength(256)
   }));
 
   // prompt components
@@ -108,6 +109,13 @@
         placeholder="http://127.0.0.1:11434"
         {...schema.ollamaHost}
         bind:value={ollamaHost.current}
+      />
+      <Label icon={LMStudio}>{m.lmstudio_host()}</Label>
+      <input
+        class="input w-full"
+        placeholder="http://127.0.0.1:1234"
+        {...schema.lmstudioHost}
+        bind:value={lmstudioHost.current}
       />
     </fieldset>
   </form>

@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { ModelProvider, Prompt } from '$lib/types';
+  import type { LLMProvider, Prompt } from '$lib/types';
 
   /**
    * Prompt template variable explanation.
@@ -41,7 +41,7 @@ ${m.prompt_variables_tip()}
   let promptIcon: string = $state(DEFAULT_ICON);
   let promptText: string = $state('');
   let systemPromptText: string = $state('');
-  let modelProvider: ModelProvider = $state(DEFAULT_PROVIDER);
+  let modelProvider: LLMProvider = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
 
   // fill form fields
@@ -160,7 +160,6 @@ ${m.prompt_variables_tip()}
               { value: 'lmstudio', label: 'LM Studio' }
             ]}
             class="w-full select-sm"
-            disabled={true}
           />
         </span>
         <span>

@@ -172,6 +172,7 @@
   "python_path_placeholder": "e.g., /usr/local/bin/python3",
   "ai_options": "Model Provider Options",
   "ollama_host": "Ollama Host",
+  "lmstudio_host": "LM Studio Host",
   "uuid": "UUID",
   "guid": "GUID",
   "url": "URL",
