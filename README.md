@@ -47,7 +47,7 @@ The system will automatically prompt you to grant these permissions while using 
 
 ### Extensions
 
-Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality (requires v0.5.0 or higher):
+Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality:
 
 | <img align="center" src="screenshots/05.png" /> | <img align="center" src="screenshots/06.png" /> |
 | ----------------------------------------------- | ----------------------------------------------- |
@@ -80,6 +80,9 @@ _Follow these steps to resolve:_
 4. Enter your login password and confirm
 
 </details>
+
+> [!TIP]
+> For detailed usage instructions, please refer to the [User Guide](https://textgo.xylitol.top/guide/getting-started.html).
 
 ## 🛠️ Development
 

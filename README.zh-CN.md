@@ -47,7 +47,7 @@ _TextGO 是一个跨平台的文本处理工具，能够识别文本类型并执
 
 ### 获取扩展
 
-访问官方网站的[**扩展**](https://textgo.xylitol.top/zh-CN/extensions.html)页面，可浏览并安装各种扩展来增强应用功能（需要 v0.5.0 及以上版本）：
+访问官方网站的[**扩展页面**](https://textgo.xylitol.top/zh-CN/extensions.html)，可浏览并安装各种扩展来增强应用功能：
 
 | <img align="center" src="screenshots/05.zh-CN.png" /> | <img align="center" src="screenshots/06.zh-CN.png" /> |
 | ----------------------------------------------------- | ----------------------------------------------------- |
@@ -80,6 +80,9 @@ _可以按照以下步骤解决：_
 4. 输入你的登录密码后点击确认
 
 </details>
+
+> [!TIP]
+> 更详细的使用说明，请参考[用户指南](https://textgo.xylitol.top/zh-CN/guide/getting-started.html)
 
 ## 🛠️ 开发指南
 
