@@ -54,10 +54,10 @@ export abstract class OpenAICompatibleClient implements LLMClient {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(`${this.constructor.name} API error: ${response.status} - ${error}`);
+        throw new Error(`${response.status}${error ? ` - ${error}` : ''}`);
       }
       if (!response.body) {
-        throw new Error('Response body is empty');
+        throw new Error('response body is empty');
       }
 
       // use OpenAI SDK's Stream to handle SSE parsing
@@ -70,7 +70,7 @@ export abstract class OpenAICompatibleClient implements LLMClient {
         if (error.name === 'AbortError') {
           throw error;
         }
-        throw new Error(`${this.constructor.name} request failed: ${error.message}`);
+        throw new Error(`request failed: ${error.message}`);
       }
       throw error;
     } finally {
