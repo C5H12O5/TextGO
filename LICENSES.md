@@ -1,10 +1,10 @@
 # Third-Party License Notices
 
-> This document was automatically generated on January 5, 2026 at 05:30 PM GMT+8
+> This document was automatically generated on January 11, 2026 at 05:27 PM GMT+8
 
 ## Frontend Dependencies
 
-> **57** packages included
+> **59** packages included
 
 | Package                                                                                    | Version | License           | Description                                                                                                                                       |
 | ------------------------------------------------------------------------------------------ | ------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -14,6 +14,7 @@
 | [@codemirror/lang-markdown](https://github.com/codemirror/lang-markdown)                   | 6.5.0   | MIT               | Markdown language support for the CodeMirror code editor                                                                                          |
 | [@codemirror/lang-python](https://github.com/codemirror/lang-python)                       | 6.2.1   | MIT               | Python language support for the CodeMirror code editor                                                                                            |
 | [@codemirror/language](https://github.com/codemirror/language)                             | 6.11.3  | MIT               | Language support infrastructure for the CodeMirror code editor                                                                                    |
+| [@codemirror/legacy-modes](https://github.com/codemirror/legacy-modes)                     | 6.5.2   | MIT               | Collection of ported legacy language modes for the CodeMirror code editor                                                                         |
 | [@codemirror/lint](https://github.com/codemirror/lint)                                     | 6.9.2   | MIT               | Linting support for the CodeMirror code editor                                                                                                    |
 | [@codemirror/search](https://github.com/codemirror/search)                                 | 6.5.11  | MIT               | Search functionality for the CodeMirror code editor                                                                                               |
 | [@codemirror/state](https://github.com/codemirror/state)                                   | 6.5.3   | MIT               | Editor state data structures for the CodeMirror code editor                                                                                       |
@@ -35,6 +36,7 @@
 | [@tauri-apps/plugin-autostart](https://github.com/tauri-apps/plugins-workspace)            | 2.5.1   | MIT OR Apache-2.0 | ![plugin-autostart](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/autostart/banner.png)                                          |
 | [@tauri-apps/plugin-dialog](https://github.com/tauri-apps/plugins-workspace)               | 2.4.2   | MIT OR Apache-2.0 | ![plugin-dialog](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/dialog/banner.png)                                                |
 | [@tauri-apps/plugin-fs](https://github.com/tauri-apps/plugins-workspace)                   | 2.4.4   | MIT OR Apache-2.0 | Access the file system.                                                                                                                           |
+| [@tauri-apps/plugin-http](https://github.com/tauri-apps/plugins-workspace)                 | 2.5.5   | MIT OR Apache-2.0 | ![plugin-http](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/http/banner.png)                                                    |
 | [@tauri-apps/plugin-log](https://github.com/tauri-apps/plugins-workspace)                  | 2.7.1   | MIT OR Apache-2.0 | Configurable logging for your Tauri app.                                                                                                          |
 | [@tauri-apps/plugin-opener](https://github.com/tauri-apps/plugins-workspace)               | 2.5.2   | MIT OR Apache-2.0 | Open files and URLs using their default application.                                                                                              |
 | [@tauri-apps/plugin-os](https://github.com/tauri-apps/plugins-workspace)                   | 2.3.2   | MIT OR Apache-2.0 | ![plugin-os](https://github.com/tauri-apps/plugins-workspace/raw/v2/plugins/os/banner.png)                                                        |
@@ -53,7 +55,7 @@
 | [franc-min](https://github.com/wooorm/franc/tree/main/packages/franc-min)                  | 6.2.0   | MIT               | Detect the language of text                                                                                                                       |
 | [globals](https://github.com/sindresorhus/globals)                                         | 17.0.0  | MIT               | Global identifiers from different JavaScript environments                                                                                         |
 | [marked](https://github.com/markedjs/marked)                                               | 17.0.1  | MIT               | A markdown parser built for speed                                                                                                                 |
-| [ollama](https://github.com/ollama/ollama-js)                                              | 0.6.3   | MIT               | Ollama Javascript library                                                                                                                         |
+| [openai](https://github.com/openai/openai-node)                                            | 6.16.0  | Apache-2.0        | The official TypeScript library for the OpenAI API                                                                                                |
 | [phosphor-svelte](https://github.com/haruaki07/phosphor-svelte)                            | 3.0.1   | MIT               | A clean and friendly icon family for Svelte                                                                                                       |
 | [prettier-plugin-svelte](https://github.com/sveltejs/prettier-plugin-svelte)               | 3.4.1   | MIT               | Svelte plugin for prettier                                                                                                                        |
 | [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) | 0.7.2   | MIT               | A Prettier plugin for sorting Tailwind CSS classes.                                                                                               |
@@ -68,7 +70,7 @@
 
 ## Backend Dependencies
 
-> **25** packages included
+> **26** packages included
 
 | Package                                                                         | Version | License           | Description                                                                                                                                                                        |
 | ------------------------------------------------------------------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -86,8 +88,9 @@
 | [tauri-plugin-autostart](https://github.com/tauri-apps/plugins-workspace)       | 2.5.1   | Apache-2.0 OR MIT | Automatically launch your application at startup.                                                                                                                                  |
 | [tauri-plugin-deep-link](https://github.com/tauri-apps/plugins-workspace)       | 2.4.5   | Apache-2.0 OR MIT | Set your Tauri application as the default handler for an URL                                                                                                                       |
 | [tauri-plugin-dialog](https://github.com/tauri-apps/plugins-workspace)          | 2.4.2   | Apache-2.0 OR MIT | Native system dialogs for opening and saving files along with message dialogs on your Tauri application.                                                                           |
-| [tauri-plugin-fs](https://github.com/tauri-apps/plugins-workspace)              | 2.4.4   | Apache-2.0 OR MIT | Access the file system.                                                                                                                                                            |
+| [tauri-plugin-fs](https://github.com/tauri-apps/plugins-workspace)              | 2.4.5   | Apache-2.0 OR MIT | Access the file system.                                                                                                                                                            |
 | [tauri-plugin-global-shortcut](https://github.com/tauri-apps/plugins-workspace) | 2.3.1   | Apache-2.0 OR MIT | Register global hotkeys listeners on your Tauri application.                                                                                                                       |
+| [tauri-plugin-http](https://github.com/tauri-apps/plugins-workspace)            | 2.5.5   | Apache-2.0 OR MIT | Access an HTTP client written in Rust.                                                                                                                                             |
 | [tauri-plugin-log](https://github.com/tauri-apps/plugins-workspace)             | 2.7.1   | Apache-2.0 OR MIT | Configurable logging for your Tauri app.                                                                                                                                           |
 | [tauri-plugin-opener](https://github.com/tauri-apps/plugins-workspace)          | 2.5.2   | Apache-2.0 OR MIT | Open files and URLs using their default application.                                                                                                                               |
 | [tauri-plugin-os](https://github.com/tauri-apps/plugins-workspace)              | 2.3.2   | Apache-2.0 OR MIT | Read information about the operating system.                                                                                                                                       |
