@@ -42,6 +42,7 @@ export abstract class OpenAICompatibleClient implements LLMClient {
       const response = await fetch(`${this.host}/v1/chat/completions`, {
         method: 'POST',
         headers: {
+          Origin: 'http://localhost',
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
