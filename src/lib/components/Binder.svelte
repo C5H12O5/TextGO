@@ -94,7 +94,7 @@
   // display and output modes
   let displayMode: DisplayMode = $state('both');
   let preview: boolean = $state(false);
-  let outputMode: OutputMode | undefined = $state('replace');
+  let outputMode: OutputMode | undefined = $state('no_op');
   let history: boolean = $state(false);
   let clipboard: boolean = $state(false);
 
@@ -104,7 +104,7 @@
       untrack(() => {
         displayMode = 'both';
         preview = false;
-        outputMode = selectedAction.noResult ? undefined : selectedAction.promptMode ? 'popup' : 'replace';
+        outputMode = selectedAction.noResult ? 'no_op' : selectedAction.promptMode ? 'popup' : 'replace';
         history = !selectedAction.builtIn;
         clipboard = false;
       });
@@ -356,7 +356,7 @@
   }
 </script>
 
-<Modal maxWidth="36.5rem" icon={Sparkle} title="{ruleId ? m.update() : m.add()}{m.rule()}" bind:this={modal}>
+<Modal maxWidth="40rem" icon={Sparkle} title="{ruleId ? m.update() : m.add()}{m.rule()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ cancel }) => {
@@ -471,6 +471,14 @@
               labelClass="text-sm"
               radioClass="radio-sm"
               disabled={selectedAction?.noResult}
+            />
+            <Radio
+              bind:group={outputMode}
+              value="no_op"
+              iconClass="size-5"
+              label={m.no_op()}
+              labelClass="text-sm"
+              radioClass="radio-sm"
             />
           </div>
           <Toggle

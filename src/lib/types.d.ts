@@ -62,7 +62,7 @@ export type ExecutionMode = 'quiet' | 'toolbar';
 /**
  * Output mode for execution result.
  */
-export type OutputMode = 'replace' | 'popup';
+export type OutputMode = 'replace' | 'popup' | 'no_op';
 
 /**
  * Display mode for action in toolbar.

@@ -61,6 +61,7 @@
   "execution_result": "Execution Result",
   "replace_selection": "Replace Selection",
   "show_in_popup": "Show in Popup",
+  "no_op": "Do Nothing",
   "save_to_history": "Save result to history",
   "copy_to_clipboard": "Copy result to clipboard",
   "preview": "Preview",
