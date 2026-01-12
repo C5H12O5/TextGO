@@ -1,6 +1,6 @@
 [package]
 name = "text-go"
-version = "0.6.1"
+version = "0.6.2"
 description = "A customizable text selection popup tool"
 authors = ["Xylitol <jam.xylitol@gmail.com>"]
 license = "GPL-3.0-or-later"
