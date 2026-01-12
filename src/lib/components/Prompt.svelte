@@ -26,7 +26,7 @@ ${m.prompt_variables_tip()}
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { CodeMirror, IconSelector, Label, Modal, Select, alert } from '$lib/components';
+  import { CodeMirror, IconSelector, Label, Modal, Select, Toggle, alert } from '$lib/components';
   import { PROMPT_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
@@ -43,6 +43,7 @@ ${m.prompt_variables_tip()}
   let systemPromptText: string = $state('');
   let modelProvider: LLMProvider = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
+  let cacheEnabled: boolean = $state(true);
 
   // fill form fields
   const fillForm = (prompt: Prompt) => {
@@ -52,6 +53,7 @@ ${m.prompt_variables_tip()}
     systemPromptText = prompt.systemPrompt || '';
     modelProvider = prompt.provider;
     modelName = prompt.model;
+    cacheEnabled = prompt.cache ?? true;
   };
 
   // show modal dialog
@@ -111,6 +113,7 @@ ${m.prompt_variables_tip()}
       prompt.systemPrompt = systemPromptText;
       prompt.provider = modelProvider;
       prompt.model = modelName;
+      prompt.cache = cacheEnabled;
       alert(m.prompt_updated_success());
     } else {
       // add new prompt
@@ -120,7 +123,8 @@ ${m.prompt_variables_tip()}
         prompt: promptText,
         systemPrompt: systemPromptText,
         provider: modelProvider,
-        model: modelName
+        model: modelName,
+        cache: cacheEnabled
       });
       // reset form
       promptName = '';
@@ -129,6 +133,7 @@ ${m.prompt_variables_tip()}
       systemPromptText = '';
       modelProvider = DEFAULT_PROVIDER;
       modelName = DEFAULT_MODEL;
+      cacheEnabled = true;
       alert(m.prompt_added_success());
     }
     modal.close();
@@ -170,6 +175,7 @@ ${m.prompt_variables_tip()}
           </label>
         </span>
       </div>
+      <Toggle bind:value={cacheEnabled} label={m.prompt_cache()} class="mt-1" />
       <Label required tip={m.prompt_tip()}>{m.prompt()}</Label>
       <CodeMirror
         title={m.prompt()}

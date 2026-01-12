@@ -220,6 +220,8 @@ export type Prompt = {
   provider: LLMProvider;
   /** Model name. */
   model: string;
+  /** Whether to cache AI response for identical prompts. */
+  cache?: boolean;
   /** Prompt content. */
   prompt: string;
   /** System prompt. */

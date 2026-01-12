@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
+  import { getCachedAIResponse, setCachedAIResponse } from '$lib/ai-cache';
   import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
   import { popupPinned, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
@@ -56,15 +57,36 @@
   /**
    * Start AI conversation.
    */
-  async function chat() {
+  async function chat(options?: { bypassCache?: boolean }) {
     if (streaming || !entry?.result || !entry?.model || !entry?.provider) {
       return;
+    }
+
+    const templateId = entry.actionLabel;
+    const cacheEnabled = !!templateId && (prompts.current.find((p) => p.id === templateId)?.cache ?? true);
+
+    if (cacheEnabled && !options?.bypassCache) {
+      try {
+        const cached = await getCachedAIResponse(entry.result);
+        if (cached) {
+          entry.response = cached;
+          tick().then(() => {
+            if (scrollElement) {
+              scrollElement.scrollTo({ top: scrollElement.scrollHeight, behavior: 'auto' });
+            }
+          });
+          return;
+        }
+      } catch (error) {
+        console.warn(`Failed to read AI cache: ${error}`);
+      }
     }
 
     // create or update LLM client based on provider
     llmClient = createLLMClient(entry.provider);
 
     let aborted = false;
+    let succeeded = false;
     try {
       // start streaming
       streaming = true;
@@ -85,11 +107,12 @@
       entry.response = '';
       for await (const chunk of response) {
         if (!streaming) {
-          // abort streaming
-          break;
+          // user aborted streaming
+          return;
         }
         entry.response += chunk;
       }
+      succeeded = true;
     } catch (error) {
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
@@ -105,6 +128,12 @@
         // end streaming
         streaming = false;
       }
+    }
+
+    if (succeeded && cacheEnabled && entry?.response) {
+      setCachedAIResponse(entry.result, entry.response).catch((error) => {
+        console.warn(`Failed to write AI cache: ${error}`);
+      });
     }
   }
 
@@ -246,7 +275,7 @@
               iconWeight="bold"
               iconClass="opacity-80"
               disabled={streaming || !entry?.response}
-              onclick={() => chat()}
+              onclick={() => chat({ bypassCache: true })}
             />
           {:else}
             <Button icon={ArrowCounterClockwise} onclick={() => codeMirror?.reset()} />

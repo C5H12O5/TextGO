@@ -1,4 +1,5 @@
 mod clipboard;
+mod ai_cache;
 mod executor;
 mod permission;
 mod selection;
@@ -9,6 +10,7 @@ mod window;
 
 // re-export all command functions
 pub use clipboard::*;
+pub use ai_cache::*;
 pub use executor::*;
 pub use permission::*;
 pub use selection::*;

@@ -39,6 +39,7 @@ serde_json = "1.0.148"
 clipboard-rs = "0.3.1"
 enigo = "0.6.1"
 rdev = { git = "https://github.com/C5H12O5/rdev", rev = "5a5596d" }
+rusqlite = { version = "0.32.1", features = ["bundled"] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10.1"

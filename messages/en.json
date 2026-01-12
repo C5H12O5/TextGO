@@ -115,6 +115,7 @@
   "prompt_tip": "Clearly describe the specific task or goal you want AI to perform",
   "prompt_template": "Prompt Template",
   "prompt_template_count": "{count} prompt templates",
+  "prompt_cache": "Cache result",
   "prompt_variables_tip": "The following variables can be used in prompts:",
   "prompt_content_empty": "Prompt content cannot be empty!",
   "prompt_added_success": "Prompt template added successfully!",

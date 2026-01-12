@@ -115,6 +115,7 @@
   "prompt_tip": "明确描述您希望 AI 执行的具体任务或目标",
   "prompt_template": "提示词模板",
   "prompt_template_count": "{count}个提示词模板",
+  "prompt_cache": "缓存结果",
   "prompt_variables_tip": "提示词中可使用以下变量：",
   "prompt_content_empty": "提示词内容不能为空！",
   "prompt_added_success": "提示词模板添加成功！",

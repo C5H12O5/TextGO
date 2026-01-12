@@ -144,6 +144,8 @@ pub fn run() {
             show_toolbar,
             show_toolbar_regardless,
             navigate_to,
+            ai_cache_get,
+            ai_cache_set,
             register_shortcut,
             unregister_shortcut,
             is_shortcut_registered,
