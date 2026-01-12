@@ -3,7 +3,7 @@
   import { Button, Icon, Label, List, Modal, Prompt, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
-  import { LMStudio, Ollama } from '$lib/icons';
+  import { LMStudio, Ollama, OpenAI } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { lmstudioHost, ollamaHost, prompts } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
@@ -82,6 +82,8 @@
             <Ollama class="h-4 shrink-0" />
           {:else if item.provider === 'lmstudio'}
             <LMStudio class="h-4 shrink-0" />
+          {:else if item.provider === 'openai'}
+            <OpenAI class="h-4 shrink-0" />
           {/if}
           <span class="truncate opacity-80">{item.model}</span>
         </span>

@@ -4,6 +4,7 @@ export { default as GitHub } from './GitHub.svelte';
 export { default as JavaScript } from './JavaScript.svelte';
 export { default as Keyboard } from './Keyboard.svelte';
 export { default as LMStudio } from './LMStudio.svelte';
+export { default as OpenAI } from './OpenAI.svelte';
 export { default as Moon } from './Moon.svelte';
 export { default as NoData } from './NoData.svelte';
 export { default as NodeJS } from './NodeJS.svelte';

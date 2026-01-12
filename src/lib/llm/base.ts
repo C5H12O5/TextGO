@@ -29,22 +29,29 @@ export interface LLMClient {
 export abstract class OpenAICompatibleClient implements LLMClient {
   protected abortController: AbortController | null = null;
   protected host: string;
+  protected apiKey: string | undefined;
 
-  constructor(host: string) {
+  constructor(host: string, apiKey?: string) {
     this.host = host;
+    this.apiKey = apiKey;
   }
 
   async *chat(request: ChatCompletionParams): AsyncIterable<string> {
     this.abortController = new AbortController();
 
     try {
+      const headers: Record<string, string> = {
+        Origin: 'http://localhost',
+        'Content-Type': 'application/json'
+      };
+      if (this.apiKey) {
+        headers.Authorization = `Bearer ${this.apiKey}`;
+      }
+
       // send request to OpenAI-compatible endpoint using Tauri's fetch
       const response = await fetch(`${this.host}/v1/chat/completions`, {
         method: 'POST',
-        headers: {
-          Origin: 'http://localhost',
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify({
           model: request.model,
           messages: request.messages,

@@ -224,6 +224,8 @@ export type Prompt = {
   prompt: string;
   /** System prompt. */
   systemPrompt?: string;
+  /** API key */
+  apiKey?: string;
 };
 
 /**

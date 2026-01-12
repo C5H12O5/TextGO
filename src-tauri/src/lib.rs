@@ -137,7 +137,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             show_main_window,
             hide_main_window,
-            toggle_main_window,
             mark_popup_initialized,
             mark_toolbar_initialized,
             show_popup,

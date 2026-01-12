@@ -66,7 +66,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
     });
 
     // ensure it won't be cleaned up
-    return () => {};
+    return () => { };
   });
 
   // listen for localStorage changes to implement cross-window sync
@@ -156,6 +156,9 @@ export const ollamaHost = persisted<string>('ollamaHost', '');
 
 // LM Studio service address
 export const lmstudioHost = persisted<string>('lmstudioHost', '');
+
+// OpenAI API key
+export const openaiApiKey = persisted<string>('openaiApiKey', '');
 
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);

@@ -43,6 +43,7 @@ ${m.prompt_variables_tip()}
   let systemPromptText: string = $state('');
   let modelProvider: LLMProvider = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
+  let apiKey: string = $state('');
 
   // fill form fields
   const fillForm = (prompt: Prompt) => {
@@ -52,6 +53,7 @@ ${m.prompt_variables_tip()}
     systemPromptText = prompt.systemPrompt || '';
     modelProvider = prompt.provider;
     modelName = prompt.model;
+    apiKey = prompt.apiKey || '';
   };
 
   // show modal dialog
@@ -96,6 +98,12 @@ ${m.prompt_variables_tip()}
       alert({ level: 'error', message: m.prompt_content_empty() });
       return;
     }
+    if (modelProvider === 'openai' && (!apiKey || apiKey.trim().length === 0)) {
+      alert({ level: 'error', message: m.api_key_required() });
+      const apiKeyInput = form.querySelector('input[type="password"]');
+      (apiKeyInput as HTMLInputElement | null)?.focus();
+      return;
+    }
 
     // start saving
     loading.start();
@@ -111,6 +119,7 @@ ${m.prompt_variables_tip()}
       prompt.systemPrompt = systemPromptText;
       prompt.provider = modelProvider;
       prompt.model = modelName;
+      prompt.apiKey = apiKey;
       alert(m.prompt_updated_success());
     } else {
       // add new prompt
@@ -120,7 +129,8 @@ ${m.prompt_variables_tip()}
         prompt: promptText,
         systemPrompt: systemPromptText,
         provider: modelProvider,
-        model: modelName
+        model: modelName,
+        apiKey: apiKey
       });
       // reset form
       promptName = '';
@@ -129,6 +139,7 @@ ${m.prompt_variables_tip()}
       systemPromptText = '';
       modelProvider = DEFAULT_PROVIDER;
       modelName = DEFAULT_MODEL;
+      apiKey = '';
       alert(m.prompt_added_success());
     }
     modal.close();
@@ -157,7 +168,8 @@ ${m.prompt_variables_tip()}
             bind:value={modelProvider}
             options={[
               { value: 'ollama', label: 'Ollama' },
-              { value: 'lmstudio', label: 'LM Studio' }
+              { value: 'lmstudio', label: 'LM Studio' },
+              { value: 'openai', label: 'OpenAI' }
             ]}
             class="w-full select-sm"
           />
@@ -169,6 +181,18 @@ ${m.prompt_variables_tip()}
             <input class="grow" {...schema.modelName} bind:value={modelName} />
           </label>
         </span>
+        {#if modelProvider === 'openai'}
+          <span class="col-span-2">
+            <Label required>{m.openai_api_key()}</Label>
+            <input
+              class="input input-sm w-full"
+              type="password"
+              autocomplete="off"
+              placeholder={m.openai_api_key_placeholder()}
+              bind:value={apiKey}
+            />
+          </span>
+        {/if}
       </div>
       <Label required tip={m.prompt_tip()}>{m.prompt()}</Label>
       <CodeMirror

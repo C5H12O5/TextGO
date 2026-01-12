@@ -32,12 +32,6 @@ pub fn hide_main_window(app: AppHandle) {
     hide_window(&app, "main");
 }
 
-/// Toggle main window visibility.
-#[tauri::command]
-pub fn toggle_main_window(app: AppHandle) {
-    toggle_window(&app, "main");
-}
-
 /// Navigate to a specific page in the main window.
 #[tauri::command]
 pub fn navigate_to(app: AppHandle, url: String) {
@@ -251,16 +245,11 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     Ok(())
 }
 
-/// Show and focus window.
+// /// Show and focus window.
 pub fn show_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
     if let Some(window) = app.get_webview_window(label) {
-        if window.is_minimized().unwrap_or(false) {
-            // unminimize
-            let _ = window.unminimize();
-        } else {
-            // show window
-            let _ = window.show();
-        }
+        // show window
+        let _ = window.show();
         // focus window
         let _ = window.set_focus();
 
@@ -282,33 +271,6 @@ pub fn hide_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
         }
 
         Some(window)
-    } else {
-        None
-    }
-}
-
-/// Toggle window visibility.
-pub fn toggle_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
-    if let Some(window) = app.get_webview_window(label) {
-        // check if window is minimized
-        if window.is_minimized().unwrap_or(false) {
-            let _ = window.unminimize();
-            return Some(window);
-        }
-
-        // check if window is not visible
-        if !window.is_visible().unwrap_or(false) {
-            return show_window(app, label);
-        }
-
-        // check if window is not focused
-        #[cfg(target_os = "macos")]
-        if !window.is_focused().unwrap_or(false) {
-            return show_window(app, label);
-        }
-
-        // hide when window is visible and not minimized
-        hide_window(app, label)
     } else {
         None
     }

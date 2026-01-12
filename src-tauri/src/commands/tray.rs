@@ -47,7 +47,7 @@ pub fn setup_tray(
             .show_menu_on_left_click(true)
             .on_menu_event(|app, event| match event.id.as_ref() {
                 "main_window" => {
-                    crate::commands::toggle_main_window(app.clone());
+                    crate::commands::show_main_window(app.clone());
                 }
                 "shortcuts" => {
                     crate::commands::navigate_to(app.clone(), "/shortcuts".to_string());
