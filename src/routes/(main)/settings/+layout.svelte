@@ -128,6 +128,7 @@
         }
       });
       // relaunch to apply the update
+      latestFlag = true;
       updateStatus = m.relaunch_to_update();
       setTimeout(relaunch, 3000);
     } catch (error) {
