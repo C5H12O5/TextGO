@@ -278,6 +278,7 @@ const promptExecutor: Executor = async (rule, entry) => {
     entry.actionLabel = promptId;
     entry.result = result;
     entry.systemPrompt = prompt.systemPrompt;
+    entry.apiKey = prompt.apiKey;
     entry.provider = prompt.provider;
     entry.model = prompt.model;
     if (rule.history) {

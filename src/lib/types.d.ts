@@ -114,6 +114,8 @@ export type Entry = {
   provider?: LLMProvider;
   /** Model name. */
   model?: string;
+  /** API key. */
+  apiKey?: string;
   /** System prompt. */
   systemPrompt?: string;
   /** Response content. */

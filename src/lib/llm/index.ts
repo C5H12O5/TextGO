@@ -10,14 +10,14 @@ import { OpenAIClient } from './openai';
  * @param provider - LLM provider type
  * @returns LLM client instance
  */
-export function createLLMClient(provider: LLMProvider): LLMClient {
+export function createLLMClient(provider: LLMProvider, apiKey?: string): LLMClient {
   switch (provider) {
     case 'ollama':
       return new OllamaClient();
     case 'lmstudio':
       return new LMStudioClient();
     case 'openai':
-      return new OpenAIClient();
+      return new OpenAIClient(apiKey);
     default:
       throw new Error(`Unsupported LLM provider: ${provider}`);
   }

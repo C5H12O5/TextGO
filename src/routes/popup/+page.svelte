@@ -62,7 +62,7 @@
     }
 
     // create or update LLM client based on provider
-    llmClient = createLLMClient(entry.provider);
+    llmClient = createLLMClient(entry.provider, entry.apiKey);
 
     let aborted = false;
     try {

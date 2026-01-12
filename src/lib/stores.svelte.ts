@@ -157,9 +157,6 @@ export const ollamaHost = persisted<string>('ollamaHost', '');
 // LM Studio service address
 export const lmstudioHost = persisted<string>('lmstudioHost', '');
 
-// OpenAI API key
-export const openaiApiKey = persisted<string>('openaiApiKey', '');
-
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);
 
