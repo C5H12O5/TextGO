@@ -67,7 +67,7 @@
 
     if (cacheEnabled && !options?.bypassCache) {
       try {
-        const cached = await getCachedAIResponse(entry.result);
+        const cached = await getCachedAIResponse(entry.result.trim());
         if (cached) {
           entry.response = cached;
           tick().then(() => {
