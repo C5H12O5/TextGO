@@ -248,7 +248,8 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
 // /// Show and focus window.
 pub fn show_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
     if let Some(window) = app.get_webview_window(label) {
-        // show window
+        let _ = window.unminimize();
+
         let _ = window.show();
         // focus window
         let _ = window.set_focus();
