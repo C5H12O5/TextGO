@@ -131,7 +131,7 @@
     }
 
     if (succeeded && cacheEnabled && entry?.response) {
-      setCachedAIResponse(entry.result, entry.response).catch((error) => {
+      setCachedAIResponse(entry.result.trim(), entry.response).catch((error) => {
         console.warn(`Failed to write AI cache: ${error}`);
       });
     }
