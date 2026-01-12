@@ -139,9 +139,6 @@ export const minimizeToTray = persisted<boolean>('minimizeToTray', false);
 // accessibility permission granted
 export const accessibility = persisted<boolean>('accessibility', false);
 
-// input monitoring permission granted
-export const inputMonitoring = persisted<boolean>('inputMonitoring', false);
-
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);
 

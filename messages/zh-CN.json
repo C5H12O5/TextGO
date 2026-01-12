@@ -148,7 +148,7 @@
   "dark_theme": "深色",
   "behavior_settings": "行为权限",
   "accessibility": "辅助功能权限",
-  "accessibility_explain": "启用辅助功能以允许应用模拟键盘操作",
+  "accessibility_explain": "启用辅助功能以允许应用获取选中文本",
   "input_monitoring": "输入监控权限",
   "input_monitoring_explain": "启用输入监控以允许应用监听鼠标事件",
   "request_permission": "请求权限",

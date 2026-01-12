@@ -40,8 +40,7 @@ Download the installer for your platform from [**GitHub Releases**](https://gith
 
 On macOS, the following permissions are required for proper functionality:
 
-1. **Accessibility**: Required for simulating keyboard input
-2. **Input Monitoring**: Required for listening to mouse events
+- **Accessibility**: Used to access selected text and simulate keyboard actions
 
 The system will automatically prompt you to grant these permissions while using the app. You can also manually configure them in "System Settings" > "Privacy & Security".
 

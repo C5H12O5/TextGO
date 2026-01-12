@@ -3708,7 +3708,7 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 [[package]]
 name = "rdev"
 version = "0.6.0"
-source = "git+https://github.com/Narsil/rdev?rev=c14f2dc#c14f2dc5c8100a96c5d7e3013de59d6aa0b9eae2"
+source = "git+https://github.com/C5H12O5/rdev?rev=5a5596d#5a5596d53d900ef1c69b482b7248dd685af0fcf5"
 dependencies = [
  "core-foundation 0.10.1",
  "core-foundation-sys",

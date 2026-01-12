@@ -148,7 +148,7 @@
   "dark_theme": "Dark",
   "behavior_settings": "Behavior & Permissions",
   "accessibility": "Accessibility Permission",
-  "accessibility_explain": "Enable accessibility to allow the app to simulate keyboard input",
+  "accessibility_explain": "Enable accessibility to allow the app to access selected text",
   "input_monitoring": "Input Monitoring Permission",
   "input_monitoring_explain": "Enable input monitoring to allow the app to listen to mouse events",
   "request_permission": "Request Permission",
