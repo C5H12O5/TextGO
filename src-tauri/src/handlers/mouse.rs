@@ -1,4 +1,3 @@
-use crate::commands::get_selection;
 use crate::error::AppError;
 use crate::platform;
 use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
@@ -113,8 +112,8 @@ fn handle_mouse_release() -> Result<(), AppError> {
         if valid_cursor && valid_interval && valid_distance {
             // emit double click event
             emit_event("MouseClick+MouseClick")?;
-            // reset last click state
-            LAST_CLICK.set(None);
+            // keep last click so the next click (triple click/select-all) can also trigger
+            LAST_CLICK.set(Some((now, pos, valid_cursor)));
         } else {
             LAST_CLICK.set(Some((now, pos, is_valid_cursor)));
         }
@@ -147,15 +146,14 @@ fn emit_event(shortcut: &str) -> Result<(), AppError> {
         let app_handle = app.clone();
         let shortcut = shortcut.to_string();
         tauri::async_runtime::spawn(async move {
-            if let Ok(selection) = get_selection(app_handle.clone()).await {
-                if !selection.trim().is_empty() {
-                    // emit event if selection is not empty
-                    let event_data = serde_json::json!({
-                        "shortcut": shortcut,
-                        "selection": selection
-                    });
-                    let _ = app_handle.emit("shortcut", event_data);
-                }
+            let selection = platform::get_selection().unwrap_or_default();
+            if !selection.trim().is_empty() {
+                // emit event if selection is not empty
+                let event_data = serde_json::json!({
+                    "shortcut": shortcut,
+                    "selection": selection
+                });
+                let _ = app_handle.emit("shortcut", event_data);
             }
         });
     }

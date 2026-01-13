@@ -1,16 +1,18 @@
 use crate::error::AppError;
 use windows::core::Interface;
+use windows::Win32::Foundation::POINT;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
 };
 use windows::Win32::UI::Accessibility::{
     CUIAutomation, IUIAutomation, IUIAutomationElement, IUIAutomationLegacyIAccessiblePattern,
-    IUIAutomationTextPattern, IUIAutomationTextRange, IUIAutomationValuePattern,
-    TextPatternRangeEndpoint_Start, TextUnit_Character, UIA_DocumentControlTypeId,
+    IUIAutomationTextPattern, IUIAutomationTextRange, IUIAutomationTreeWalker,
+    IUIAutomationValuePattern, TextPatternRangeEndpoint_Start, TextUnit_Character,
+    UIA_DocumentControlTypeId,
     UIA_EditControlTypeId, UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetCursorInfo, LoadCursorW, CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
+    GetCursorInfo, GetCursorPos, LoadCursorW, CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
 };
 
 // bounds validation constants
@@ -21,6 +23,9 @@ const MAX_VALID_COORDINATE: f64 = 10000.0;
 // editable legacy control roles
 const ROLE_SYSTEM_TEXT: u32 = 42;
 const ROLE_SYSTEM_COMBOBOX: u32 = 46;
+
+// maximum depth to search for a parent element supporting TextPattern
+const MAX_TEXT_PATTERN_PARENT_DEPTH: usize = 10;
 
 // import SafeArray functions from oleaut32.dll
 #[link(name = "oleaut32")]
@@ -80,63 +85,118 @@ impl Drop for ComGuard {
     }
 }
 
-/// Get currently focused UI element.
-fn get_focused_element() -> Result<IUIAutomationElement, AppError> {
+/// Create UI Automation instance.
+fn create_automation() -> Result<IUIAutomation, AppError> {
     unsafe {
-        // create UI Automation instance
-        let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)
-            .map_err(|e| format!("Failed to create UI Automation instance: {}", e))?;
-
-        // get focused element
-        automation
-            .GetFocusedElement()
-            .map_err(|e| format!("Failed to get focused element: {}", e).into())
+        CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL)
+            .map_err(|e| format!("Failed to create UI Automation instance: {}", e).into())
     }
 }
 
-/// Get first selected text range from given element.
-fn get_selected_range(element: &IUIAutomationElement) -> Result<IUIAutomationTextRange, AppError> {
-    unsafe {
-        // get text pattern from element
-        let text_pattern: IUIAutomationTextPattern = element
-            .GetCurrentPattern(UIA_TextPatternId)
-            .and_then(|p| p.cast())
-            .map_err(|_| "Failed to get text pattern")?;
+fn get_focused_element(automation: &IUIAutomation) -> windows::core::Result<IUIAutomationElement> {
+    unsafe { automation.GetFocusedElement() }
+}
 
-        // get currently selected text ranges
-        let text_ranges = text_pattern
-            .GetSelection()
-            .map_err(|_| "Failed to get text selection")?;
+fn get_cursor_point() -> Option<POINT> {
+    unsafe {
+        let mut point = POINT { x: 0, y: 0 };
+        if GetCursorPos(&mut point).is_ok() {
+            Some(point)
+        } else {
+            None
+        }
+    }
+}
+
+fn get_element_from_cursor(
+    automation: &IUIAutomation,
+) -> windows::core::Result<Option<IUIAutomationElement>> {
+    unsafe {
+        let Some(point) = get_cursor_point() else {
+            return Ok(None);
+        };
+
+        automation.ElementFromPoint(point).map(Some)
+    }
+}
+
+fn try_get_selected_range(
+    element: &IUIAutomationElement,
+) -> windows::core::Result<Option<IUIAutomationTextRange>> {
+    unsafe {
+        let Ok(text_pattern) = element
+            .GetCurrentPattern(UIA_TextPatternId)
+            .and_then(|p| p.cast::<IUIAutomationTextPattern>())
+        else {
+            return Ok(None);
+        };
+
+        let Ok(text_ranges) = text_pattern.GetSelection() else {
+            return Ok(None);
+        };
 
         if text_ranges.Length().unwrap_or(0) == 0 {
-            return Err("No text selection found".into());
+            return Ok(None);
         }
 
-        // get first selection range
-        text_ranges
-            .GetElement(0)
-            .map_err(|_| "Failed to get first selection range".into())
+        text_ranges.GetElement(0).map(Some)
     }
 }
 
-/// Get selected text in currently focused element.
+fn find_selected_range(
+    automation: &IUIAutomation,
+    start: &IUIAutomationElement,
+) -> windows::core::Result<Option<IUIAutomationTextRange>> {
+    unsafe {
+        let walker: IUIAutomationTreeWalker = automation.ControlViewWalker()?;
+        let mut current = start.clone();
+
+        for _ in 0..=MAX_TEXT_PATTERN_PARENT_DEPTH {
+            if let Some(range) = try_get_selected_range(&current)? {
+                return Ok(Some(range));
+            }
+
+            let Ok(parent) = walker.GetParentElement(&current) else {
+                break;
+            };
+            current = parent;
+        }
+
+        Ok(None)
+    }
+}
+
+/// Get selected text in currently focused element (best-effort, does not simulate input).
 pub fn get_selection() -> Result<String, AppError> {
     unsafe {
         // initialize COM
         let _com = ComGuard::new()?;
+        let automation = create_automation()?;
 
-        // get focused element
-        let focused_element = get_focused_element()?;
+        let mut candidates: Vec<IUIAutomationElement> = Vec::with_capacity(2);
+        if let Ok(focused) = get_focused_element(&automation) {
+            candidates.push(focused);
+        }
+        if let Ok(Some(element)) = get_element_from_cursor(&automation) {
+            candidates.push(element);
+        }
 
-        // get first selected text range
-        let text_range = get_selected_range(&focused_element)?;
+        for element in candidates {
+            let Ok(Some(text_range)) = find_selected_range(&automation, &element) else {
+                continue;
+            };
 
-        // extract text from range
-        let text = text_range
-            .GetText(-1)
-            .map_err(|_| "Failed to get text from selection")?;
+            let Ok(text) = text_range.GetText(-1) else {
+                continue;
+            };
 
-        Ok(text.to_string())
+            let text = text.to_string();
+            if !text.trim().is_empty() {
+                return Ok(text);
+            }
+        }
+
+        Ok(String::new())
     }
 }
 
@@ -146,22 +206,42 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
         // initialize COM
         let _com = ComGuard::new()?;
 
-        // get focused element
-        let focused_element = get_focused_element()?;
+        let fallback = get_cursor_point()
+            .map(|p| (p.x, p.y))
+            .ok_or_else(|| AppError::from("Failed to get cursor position"))?;
 
-        // get first selected text range
-        let text_range = get_selected_range(&focused_element)?;
+        let automation = create_automation()?;
+
+        let mut candidates: Vec<IUIAutomationElement> = Vec::with_capacity(2);
+        if let Ok(focused) = get_focused_element(&automation) {
+            candidates.push(focused);
+        }
+        if let Ok(Some(element)) = get_element_from_cursor(&automation) {
+            candidates.push(element);
+        }
+
+        let mut text_range: Option<IUIAutomationTextRange> = None;
+        for element in candidates {
+            if let Ok(Some(range)) = find_selected_range(&automation, &element) {
+                text_range = Some(range);
+                break;
+            }
+        }
+
+        let Some(text_range) = text_range else {
+            return Ok(fallback);
+        };
 
         // get bounding rectangles for the text range
-        let rect_array = text_range
-            .GetBoundingRectangles()
-            .map_err(|_| "Failed to get bounding rectangles")?;
+        let Ok(rect_array) = text_range.GetBoundingRectangles() else {
+            return Ok(fallback);
+        };
 
         // access the SafeArray data
         let mut rect_ptr: *mut f64 = std::ptr::null_mut();
         let hr = SafeArrayAccessData(rect_array as *mut _, &mut rect_ptr as *mut _ as *mut _);
         if hr != 0 {
-            return Err("Failed to access SafeArray data".into());
+            return Ok(fallback);
         }
 
         // get array bounds
@@ -170,22 +250,22 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
         let hr = SafeArrayGetLBound(rect_array as *mut _, 1, &mut lower_bound);
         if hr != 0 {
             SafeArrayUnaccessData(rect_array as *mut _);
-            return Err("Failed to get lower bound".into());
+            return Ok(fallback);
         }
         let hr = SafeArrayGetUBound(rect_array as *mut _, 1, &mut upper_bound);
         if hr != 0 {
             SafeArrayUnaccessData(rect_array as *mut _);
-            return Err("Failed to get upper bound".into());
+            return Ok(fallback);
         }
 
         let rect_count = ((upper_bound - lower_bound + 1) / 4) as usize;
         if rect_count == 0 {
             SafeArrayUnaccessData(rect_array as *mut _);
-            return Err("No bounding rectangles found".into());
+            return Ok(fallback);
         }
 
         // find last valid rectangle and calculate coordinates
-        let mut result = Err("No valid rectangle found".into());
+        let mut result: Option<(i32, i32)> = None;
         for i in (0..rect_count).rev() {
             let rect_index = i * 4;
             let left = *rect_ptr.add(rect_index);
@@ -205,7 +285,7 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
                 // calculate bottom-right corner coordinates
                 let bottom_right_x = (left + width) as i32;
                 let bottom_right_y = (top + height) as i32;
-                result = Ok((bottom_right_x, bottom_right_y));
+                result = Some((bottom_right_x, bottom_right_y));
                 break;
             }
         }
@@ -213,7 +293,7 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
         // unaccess the SafeArray data
         SafeArrayUnaccessData(rect_array as *mut _);
 
-        result
+        Ok(result.unwrap_or(fallback))
     }
 }
 
@@ -223,8 +303,11 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
         // initialize COM
         let _com = ComGuard::new()?;
 
+        let automation = create_automation()?;
+
         // get focused element
-        let focused_element = get_focused_element()?;
+        let focused_element = get_focused_element(&automation)
+            .map_err(|e| format!("Failed to get focused element: {}", e))?;
 
         // 1. check if control type is editable
         if let Ok(control_type) = focused_element.CurrentControlType() {
@@ -297,11 +380,13 @@ pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
         // initialize COM
         let _com = ComGuard::new()?;
 
-        // get focused element
-        let focused_element = get_focused_element()?;
+        let automation = create_automation()?;
+        let focused_element = get_focused_element(&automation)
+            .map_err(|e| format!("Failed to get focused element: {}", e))?;
 
-        // get first selected text range
-        let text_range = get_selected_range(&focused_element)?;
+        let text_range = find_selected_range(&automation, &focused_element)
+            .map_err(|e| format!("Failed to get text selection: {}", e))?
+            .ok_or_else(|| AppError::from("No text selection found"))?;
 
         // move endpoint backward
         text_range
