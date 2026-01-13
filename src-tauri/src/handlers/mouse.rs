@@ -83,17 +83,15 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // reset drag start position
     DRAG_START_POS.set(None);
 
-    // only process text selection if cursor was valid
-    // inspired by https://github.com/0xfullex/selection-hook
+    // Cursor shape is not reliable (some apps use custom cursors),
+    // so we emit based on whether we can actually read a non-empty selection.
     let is_valid_cursor = IS_VALID_CURSOR.get() || platform::is_ibeam_cursor();
 
     // check for drag end
     if IS_DRAGGING.get() {
         debug!("checking for drag end (cursor: {})", is_valid_cursor);
-        if is_valid_cursor {
-            // emit drag end event
-            emit_event("MouseClick+MouseMove")?;
-        }
+        // emit drag end event (emit_event will skip if selection is empty)
+        emit_event("MouseClick+MouseMove")?;
         IS_DRAGGING.set(false);
         return Ok(());
     }
@@ -109,7 +107,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
             "checking for double click (cursor: {}, interval: {}, distance: {})",
             valid_cursor, valid_interval, valid_distance
         );
-        if valid_cursor && valid_interval && valid_distance {
+        if valid_interval && valid_distance {
             // emit double click event
             emit_event("MouseClick+MouseClick")?;
             // keep last click so the next click (triple click/select-all) can also trigger
