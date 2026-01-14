@@ -135,6 +135,9 @@
         const result = await execute(action.rule, selection);
         if (result) {
           action.label = result;
+        } else {
+          // disable preview if execution failed
+          action.rule.preview = false;
         }
       }
     }
