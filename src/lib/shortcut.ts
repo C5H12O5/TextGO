@@ -112,6 +112,7 @@ export class Manager {
           return;
         }
         // execute action immediately
+        rule.preview = false;
         await execute(rule, selection);
       }
     } catch (error) {
