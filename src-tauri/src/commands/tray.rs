@@ -11,7 +11,6 @@ pub fn setup_tray(
     shortcuts_text: String,
     histories_text: String,
     settings_text: String,
-    about_text: String,
     quit_text: String,
 ) -> Result<(), AppError> {
     // create new menu
@@ -25,10 +24,13 @@ pub fn setup_tray(
             &MenuItem::with_id(&app, "settings", settings_text, true, Some("CmdOrCtrl+,"))?,
             // about
             &PredefinedMenuItem::separator(&app)?,
-            #[cfg(target_os = "macos")]
-            &PredefinedMenuItem::about(&app, Some(&about_text), None)?,
-            #[cfg(not(target_os = "macos"))]
-            &MenuItem::with_id(&app, "about", about_text, true, None::<&str>)?,
+            &MenuItem::with_id(
+                &app,
+                "about",
+                format!("v{}", app.package_info().version),
+                false,
+                None::<&str>,
+            )?,
             // quit
             &PredefinedMenuItem::separator(&app)?,
             &MenuItem::with_id(&app, "quit", quit_text, true, Some("CmdOrCtrl+Q"))?,

@@ -193,11 +193,10 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     // setup system tray
     setup_tray(
         app_handle.clone(),
-        "Show / Hide".to_string(),
+        "Open TextGO".to_string(),
         "Manage Shortcuts".to_string(),
         "View History".to_string(),
         "Settings...".to_string(),
-        "About TextGO".to_string(),
         "Quit".to_string(),
     )?;
 

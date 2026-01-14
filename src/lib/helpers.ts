@@ -169,7 +169,6 @@ export async function setupTray() {
       shortcutsText: m.tray_shortcuts(),
       historiesText: m.tray_histories(),
       settingsText: m.tray_settings(),
-      aboutText: m.tray_about(),
       quitText: m.tray_quit()
     });
   } catch (error) {
