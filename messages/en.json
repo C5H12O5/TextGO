@@ -15,8 +15,6 @@
   "clipboard_text": "Clipboard Text",
   "type_name": "Type Name",
   "action_name": "Action Name",
-  "invalid_type": "Invalid Type",
-  "invalid_action": "Invalid Action",
   "recognize_type": "Recognize Type",
   "execute_action": "Execute Action",
   "rule_already_used": "This rule is already in use!",

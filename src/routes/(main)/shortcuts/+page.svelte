@@ -268,7 +268,9 @@
               {:else if !caseLabel}
                 <!-- invalid type -->
                 <Warning class="size-5 shrink-0 opacity-50" />
-                <span class="truncate opacity-50">{m.invalid_type()}</span>
+                <span class="truncate line-through opacity-50">
+                  {item.case.substring(item.case.indexOf('-') + 1)}
+                </span>
               {:else}
                 <!-- valid type -->
                 {#if caseIcon}
@@ -288,7 +290,9 @@
               {:else if !actionLabel}
                 <!-- invalid action -->
                 <Warning class="size-5 shrink-0 opacity-50" />
-                <span class="truncate opacity-50">{m.invalid_action()}</span>
+                <span class="truncate line-through opacity-50">
+                  {item.action.substring(item.action.indexOf('-') + 1)}
+                </span>
               {:else}
                 <!-- valid action -->
                 {#if actionIcon}

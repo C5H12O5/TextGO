@@ -15,8 +15,6 @@
   "clipboard_text": "剪贴板文本",
   "type_name": "类型名称",
   "action_name": "动作名称",
-  "invalid_type": "类型已失效",
-  "invalid_action": "动作已失效",
   "recognize_type": "识别类型",
   "execute_action": "执行动作",
   "rule_already_used": "该规则已被使用！",
