@@ -1,8 +1,10 @@
 <div align="center">
 
-<img src="TextGO.png" alt="logo" height="200">
+<img src="TextGO.png" alt="logo" height="120">
 
 <h1>TextGO</h1>
+
+<p><strong>全能文本处理工具</strong></p>
 
 [![GitHub Release](https://img.shields.io/github/v/release/C5H12O5/TextGO?label=Release&color=blue&style=flat)](https://github.com/C5H12O5/TextGO/releases)
 [![GitHub Stars](https://img.shields.io/github/stars/C5H12O5/TextGO?logo=github&label=Stars&style=flat&color=yellow)](https://github.com/C5H12O5/TextGO/stargazers)
