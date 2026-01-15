@@ -229,8 +229,8 @@
       // set fill color for SVG icons
       if (svg && osType === 'macos') {
         // detect if system is in dark mode
-        const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        svg.style.color = isDark ? '#ffffff' : '#000000';
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        svg.style.color = prefersDark ? '#ffffff' : '#000000';
       }
 
       // create URL for the icon

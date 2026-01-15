@@ -157,7 +157,6 @@
 
 <script lang="ts">
   import { Button, Modal } from '$lib/components';
-  import { theme } from '$lib/stores.svelte';
   import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
   import {
@@ -186,6 +185,7 @@
     placeholder,
     rectangularSelection
   } from '@codemirror/view';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { ArrowCounterClockwise, Code, CopySimple, FrameCorners, TextIndent } from 'phosphor-svelte';
   import { onMount } from 'svelte';
   import CodeMirror from './CodeMirror.svelte';
@@ -338,20 +338,6 @@
   const tabKeyHandler: Extension = $derived([keymap.of([indentWithTab]), indentUnit.of(' '.repeat(tabSize))]);
 
   /**
-   * Extension for editor theme.
-   */
-  const getTheme = () => (darkMode === true || (darkMode === 'auto' && theme.current !== 'light') ? oneDark : []);
-  const editorTheme = new Compartment();
-  const themeHandler: Extension = editorTheme.of(getTheme());
-  $effect(() => {
-    if (theme.current && editorView) {
-      editorView.dispatch({
-        effects: editorTheme.reconfigure(getTheme())
-      });
-    }
-  });
-
-  /**
    * Extension for making editor read-only.
    */
   const readOnlyHandler: Extension = (() => {
@@ -367,8 +353,37 @@
    */
   const placeholderHandler: Extension = $derived(_placeholder ? placeholder(_placeholder) : []);
 
+  /**
+   * Extension for editor theme.
+   */
+  const editorTheme = new Compartment();
+  const getEditorTheme = () => {
+    if (darkMode === true) {
+      return oneDark;
+    } else if (darkMode === 'auto') {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        return oneDark;
+      }
+    }
+    return [];
+  };
+  const themeHandler: Extension = editorTheme.of(getEditorTheme());
+
+  // listen to theme change events
   onMount(() => {
-    // create editor view
+    const unlisten = getCurrentWindow().onThemeChanged(() => {
+      if (editorView) {
+        editorView.dispatch({ effects: editorTheme.reconfigure(getEditorTheme()) });
+      }
+    });
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  });
+
+  // create editor view
+  onMount(() => {
     editorView = new EditorView({
       parent: editor,
       // create editor state
@@ -380,9 +395,9 @@
           languageSupport,
           updateListener,
           tabKeyHandler,
-          themeHandler,
           readOnlyHandler,
-          placeholderHandler
+          placeholderHandler,
+          themeHandler
         ]
       })
     });

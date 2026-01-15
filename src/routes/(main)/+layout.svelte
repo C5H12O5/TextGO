@@ -117,19 +117,21 @@
       </div>
       <div class="ml-auto flex items-center gap-2">
         <!-- themes -->
-        <label class="swap swap-rotate opacity-50 transition-opacity hover:opacity-100">
-          <input
-            type="checkbox"
-            class="theme-controller"
-            checked={theme.current === 'light'}
-            onclick={(event) => {
-              const isLight = (event.target as HTMLInputElement).checked;
-              theme.current = isLight ? 'light' : 'dark';
-            }}
-          />
-          <Moon class="swap-off size-5" />
-          <Sun class="swap-on size-5" />
-        </label>
+        {#if theme.current !== 'system'}
+          <label class="swap swap-rotate opacity-50 transition-opacity hover:opacity-100">
+            <input
+              type="checkbox"
+              class="theme-controller"
+              checked={theme.current === 'light'}
+              onclick={(event) => {
+                const checked = (event.target as HTMLInputElement).checked;
+                theme.current = checked ? 'light' : 'dark';
+              }}
+            />
+            <Moon class="swap-off size-5" />
+            <Sun class="swap-on size-5" />
+          </label>
+        {/if}
         <!-- histories -->
         <button
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"

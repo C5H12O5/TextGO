@@ -144,6 +144,7 @@
   "theme_settings": "Theme",
   "light_theme": "Light",
   "dark_theme": "Dark",
+  "system_theme": "System",
   "behavior_settings": "Behavior & Permissions",
   "accessibility": "Accessibility Permission",
   "accessibility_explain": "Enable accessibility to allow the app to access selected text",

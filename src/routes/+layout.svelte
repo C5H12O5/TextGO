@@ -1,9 +1,11 @@
 <script lang="ts">
   import { dev } from '$app/environment';
   import { Alert, Confirm } from '$lib/components';
+  import { theme } from '$lib/stores.svelte';
   import { platform } from '@tauri-apps/plugin-os';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
+  import { MediaQuery } from 'svelte/reactivity';
   // import fonts
   import '@fontsource-variable/noto-sans';
   import '@fontsource-variable/noto-sans-sc';
@@ -13,6 +15,15 @@
   import '../app.css';
 
   let { children }: { children: Snippet } = $props();
+
+  // auto switch theme when system theme changes
+  const prefersDark = new MediaQuery('(prefers-color-scheme: dark)');
+  $effect(() => {
+    if (theme.current === 'system') {
+      const root = document.documentElement;
+      root.setAttribute('data-theme', prefersDark.current ? 'dark' : 'light');
+    }
+  });
 
   // disable right-click menu
   if (!dev) {
