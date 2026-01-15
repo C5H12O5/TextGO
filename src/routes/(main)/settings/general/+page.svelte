@@ -72,7 +72,7 @@
       <Select
         options={[
           { value: 'light', label: m.light_theme() },
-          { value: 'dracula', label: m.dark_theme() }
+          { value: 'dark', label: m.dark_theme() }
         ]}
         bind:value={theme.current}
         class="w-36 select-sm"

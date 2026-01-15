@@ -124,7 +124,7 @@
             checked={theme.current === 'light'}
             onclick={(event) => {
               const isLight = (event.target as HTMLInputElement).checked;
-              theme.current = isLight ? 'light' : 'dracula';
+              theme.current = isLight ? 'light' : 'dark';
             }}
           />
           <Moon class="swap-off size-5" />
