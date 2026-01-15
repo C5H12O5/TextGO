@@ -42,11 +42,16 @@ Download the installer for your platform from [**GitHub Releases**](https://gith
 
 ### Permissions
 
-On macOS, the following permissions are required for proper functionality:
+TextGO requires the `Accessibility` permission on macOS to function properly.
 
-- **Accessibility**: Used to access selected text and simulate keyboard actions
+**Setup Steps**:
 
-The system will automatically prompt you to grant these permissions while using the app. You can also manually configure them in "System Settings" > "Privacy & Security".
+1. Open "System Settings" > "Privacy & Security" > "Accessibility"
+2. Find TextGO and check it
+3. If not listed, click the "+" button to manually add TextGO
+
+> [!TIP]
+> The system will automatically prompt for authorization when the app is used for the first time.
 
 ### Extensions
 
@@ -84,7 +89,7 @@ _Follow these steps to resolve:_
 
 </details>
 
-> [!TIP]
+> [!NOTE]
 > For detailed usage instructions, please refer to the [User Guide](https://textgo.xylitol.top/guide/getting-started.html).
 
 ## 🛠️ Development
