@@ -89,7 +89,7 @@
   }
 
   .modal-box {
-    @apply mt-4 flex max-h-[90%]! flex-col gap-4 overscroll-none! p-4!;
+    @apply mt-6 flex max-h-[88%]! flex-col gap-4 overscroll-none! p-4!;
     > form {
       @apply flex flex-col gap-4;
     }
