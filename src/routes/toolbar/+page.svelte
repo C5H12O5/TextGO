@@ -370,9 +370,9 @@
 <main class="bg-transparent p-1 select-none">
   {#if initialized && actions.length > 0}
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
-      <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+      <div class="flex h-7.5 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
-          class="flex cursor-move items-center px-0.5 opacity-20 transition-opacity"
+          class="flex cursor-move items-center opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
           data-tauri-drag-region
         >
@@ -389,21 +389,21 @@
             title={action.label}
           >
             {#if showIcon && action.icon}
-              <Icon icon={action.icon} class="size-4.5 shrink-0" />
+              <Icon icon={action.icon} class="size-4 shrink-0" />
             {/if}
             {#if showLabel}
-              <span class="max-w-30 truncate text-sm font-[450] opacity-90">{action.label}</span>
+              <span class="max-w-30 truncate text-xs font-normal opacity-75">{action.label}</span>
             {/if}
           </button>
         {/each}
         {#if overflowActions.length > 0}
           <button
-            class="h-8 cursor-pointer px-0.5 opacity-60 transition-all"
+            class="h-7.5 cursor-pointer opacity-60 transition-all"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:opacity-100={mouseEntered}
             onclick={showMoreActions}
           >
-            <DotsThreeVertical weight="bold" class="size-6" />
+            <DotsThreeVertical weight="bold" class="size-5" />
           </button>
         {/if}
       </div>
