@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="TextGO.png" alt="logo" height="120">
+<img src="TextGO.png" alt="logo" height="150">
 
 <h1>TextGO</h1>
 
