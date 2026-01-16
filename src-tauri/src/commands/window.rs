@@ -115,11 +115,11 @@ pub fn show_popup_sameplace(
             let screen_y = screen_position.y;
 
             // calculate safe area for window
+            let safe_area_bottom = SAFE_AREA_BOTTOM as f64 / scale_factor;
             let min_x = screen_x;
             let max_x = (screen_x + screen_width - window_width).max(min_x);
             let min_y = screen_y;
-            let max_y =
-                (screen_y + screen_height - window_height - SAFE_AREA_BOTTOM as f64).max(min_y);
+            let max_y = (screen_y + screen_height - window_height - safe_area_bottom).max(min_y);
 
             // clamp window position to safe area
             LogicalPosition {
@@ -299,10 +299,11 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let screen_y = (monitor_position.y as f64 / scale_factor) as i32;
 
     // calculate safe area for window
+    let safe_area_bottom = (SAFE_AREA_BOTTOM as f64 / scale_factor) as i32;
     let min_x = screen_x;
     let max_x = (screen_x + screen_width - window_width).max(min_x);
     let min_y = screen_y;
-    let max_y = (screen_y + screen_height - window_height - SAFE_AREA_BOTTOM).max(min_y);
+    let max_y = (screen_y + screen_height - window_height - safe_area_bottom).max(min_y);
 
     // set adjusted window position
     let window_offset = if mouse_position {
