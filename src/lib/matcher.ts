@@ -623,9 +623,10 @@ export async function guessProgrammingLanguage(text: string, langs: string[]): P
     if (results.length === 0) {
       return null;
     }
+    console.debug(`Programming language detection result: ${JSON.stringify(results)}`);
     // get the top result
     const result = results[0];
-    if (result.confidence >= MIN_CONFIDENCE) {
+    if (result.confidence >= MIN_CONFIDENCE / 2) {
       return result.languageId;
     }
     return null;

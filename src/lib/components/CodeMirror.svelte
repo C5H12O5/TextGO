@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import { guessProgrammingLanguage } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import type { Language, LanguageSupport } from '@codemirror/language';
   import type { Extension } from '@codemirror/state';
@@ -55,6 +56,24 @@
     /** Callback function when document changes. */
     onchange: (doc: string) => void;
   }>;
+
+  /**
+   * Guess language type from document content.
+   *
+   * @param doc - document content
+   */
+  async function guessLanguageType(doc: string): Promise<string | null> {
+    const langs: Record<string, string> = {
+      js: 'javascript',
+      json: 'json',
+      css: 'css',
+      html: 'css',
+      yaml: 'yaml',
+      md: 'markdown'
+    };
+    const lang = await guessProgrammingLanguage(doc, Object.keys(langs));
+    return lang ? langs[lang] : null;
+  }
 
   /**
    * Get language name from language support object.
@@ -237,7 +256,17 @@
    * Format document content.
    */
   export function format() {
-    formatDocument(editorView, languageName, tabSize, lineLength);
+    if (language) {
+      // use language type from language support object
+      formatDocument(editorView, languageName, tabSize, lineLength);
+    } else if (document) {
+      // try to guess language type from document content
+      guessLanguageType(document).then((lang) => {
+        if (lang) {
+          formatDocument(editorView, lang, tabSize, lineLength);
+        }
+      });
+    }
   }
 
   /**
