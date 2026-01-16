@@ -96,6 +96,18 @@
   }
 
   /**
+   * Supported formatting options for different languages.
+   */
+  const formatOptions: Record<string, Options> = {
+    javascript: { parser: 'babel', plugins: [babel, estree], singleQuote: true },
+    json: { parser: 'json', plugins: [babel, estree] },
+    css: { parser: 'css', plugins: [postcss] },
+    html: { parser: 'html', plugins: [html] },
+    yaml: { parser: 'yaml', plugins: [yaml], singleQuote: true },
+    markdown: { parser: 'markdown', plugins: [markdown] }
+  };
+
+  /**
    * Format document based on language type.
    *
    * @param view - editor view
@@ -104,15 +116,7 @@
    * @param lineLength - maximum line length
    */
   async function formatDocument(view: EditorView, language: string, tabSize: number, lineLength: number) {
-    const formatOptions: Record<string, Options> = {
-      javascript: { parser: 'babel', plugins: [babel, estree], singleQuote: true },
-      json: { parser: 'json', plugins: [babel, estree] },
-      css: { parser: 'css', plugins: [postcss] },
-      html: { parser: 'html', plugins: [html] },
-      yaml: { parser: 'yaml', plugins: [yaml], singleQuote: true },
-      markdown: { parser: 'markdown', plugins: [markdown] }
-    };
-    const option = formatOptions[language as keyof typeof formatOptions];
+    const option = formatOptions[language.toLowerCase()];
     if (!option) {
       return;
     }
@@ -233,7 +237,7 @@
    * Format document content.
    */
   export function format() {
-    formatDocument(editorView, languageName.toLowerCase(), tabSize, lineLength);
+    formatDocument(editorView, languageName, tabSize, lineLength);
   }
 
   /**
@@ -425,7 +429,7 @@
       {#if !readOnly && resetter}
         <Button icon={ArrowCounterClockwise} class="border-0 bg-transparent shadow-none" onclick={reset} />
       {/if}
-      {#if !readOnly && language && formatter}
+      {#if !readOnly && formatter && languageName.toLowerCase() in formatOptions}
         <Button icon={TextIndent} class="border-0 bg-transparent shadow-none" onclick={format} />
       {/if}
       {#if copier}

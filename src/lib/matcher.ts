@@ -606,3 +606,31 @@ async function matchModelCase(model: Model, text: string): Promise<boolean> {
   const confidence = await predict(model.id, text);
   return confidence !== null && confidence >= model.threshold;
 }
+
+/**
+ * Guess the programming language of the given text from possible languages.
+ *
+ * @param text - text to analyze
+ * @param langs - possible programming languages
+ * @returns the detected programming language ID, or null if not confident
+ */
+export async function guessProgrammingLanguage(text: string, langs: string[]): Promise<string | null> {
+  try {
+    // run programming language detection model
+    let results = await MODEL_OPERATIONS.runModel(text);
+    // filter results to only include possible languages
+    results = results.filter((result) => langs.includes(result.languageId));
+    if (results.length === 0) {
+      return null;
+    }
+    // get the top result
+    const result = results[0];
+    if (result.confidence >= MIN_CONFIDENCE) {
+      return result.languageId;
+    }
+    return null;
+  } catch (error) {
+    console.error(`Programming language detection failed: ${error}`);
+    return null;
+  }
+}
