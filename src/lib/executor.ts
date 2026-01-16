@@ -1,4 +1,5 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
+import { evalAsync, evalSync } from '$lib/evaluator';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
 import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
@@ -414,17 +415,13 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
       if (!nodePath.current && !denoPath.current) {
         try {
           console.debug('Executing JavaScript in WebView');
-          // wrap user code in a function to isolate scope
-          const wrappedCode = `
-            (function() {
-              const data = ${JSON.stringify(data)};
-              ${code}
-              const result = process(data);
-              return typeof result === 'string' ? result : JSON.stringify(result);
-            })()
-          `;
-          const result = eval(wrappedCode);
-          return { text: result };
+          // check if code contains async process function
+          const asyncPattern = /^\s*async\s+function\s+process\s*\(/m;
+          if (asyncPattern.test(code)) {
+            return { text: await evalAsync(data, code) };
+          } else {
+            return { text: evalSync(data, code) };
+          }
         } catch (error) {
           console.error(`Failed to execute JavaScript in WebView: ${error}`);
         }
