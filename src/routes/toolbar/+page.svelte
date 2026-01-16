@@ -3,13 +3,13 @@
   import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { prompts, scripts, searchers } from '$lib/stores.svelte';
-  import type { Rule } from '$lib/types';
+  import type { Rule, WindowPlacement } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
   import { Image } from '@tauri-apps/api/image';
   import { IconMenuItem, Menu } from '@tauri-apps/api/menu';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
   import { type } from '@tauri-apps/plugin-os';
   import { memoize } from 'es-toolkit/function';
   import type { IconComponentProps } from 'phosphor-svelte';
@@ -294,13 +294,31 @@
   }
 
   /**
+   * Get current window placement information.
+   */
+  async function windowPlacement(): Promise<WindowPlacement> {
+    const outerPosition = await currentWindow.outerPosition();
+    const scaleFactor = await currentWindow.scaleFactor();
+    const monitor = await currentMonitor();
+    return {
+      screenSize: monitor?.size.toLogical(scaleFactor),
+      screenPosition: monitor?.position.toLogical(scaleFactor),
+      windowPosition: outerPosition.toLogical(scaleFactor)
+    };
+  }
+
+  /**
    * Handle action click event.
    *
    * @param action - toolbar action
    */
   async function executeAction(action: Action) {
     try {
+      // get current window placement
+      const placement = await windowPlacement();
+      // hide the toolbar window
       await currentWindow.hide();
+
       if (action.rule.preview) {
         if (action.rule.outputMode === 'replace') {
           // replace selection with preview text
@@ -310,18 +328,18 @@
           });
         } else if (action.rule.outputMode === 'popup') {
           // show popup with preview text
-          await invoke('show_popup', {
+          await invoke('show_popup_sameplace', {
             payload: JSON.stringify({
               id: crypto.randomUUID(),
               result: action.label,
               copyOnPopup: action.rule.clipboard
             }),
-            mouse: true
+            placement: placement
           });
         }
       } else {
         // execute the action normally
-        await execute(action.rule, selection);
+        await execute(action.rule, selection, placement);
       }
     } catch (error) {
       console.error(`Failed to execute action: ${error}`);

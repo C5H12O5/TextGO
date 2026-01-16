@@ -141,6 +141,7 @@ pub fn run() {
             mark_popup_initialized,
             mark_toolbar_initialized,
             show_popup,
+            show_popup_sameplace,
             show_toolbar,
             show_toolbar_regardless,
             navigate_to,

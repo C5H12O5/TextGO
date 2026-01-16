@@ -1,5 +1,15 @@
+import type { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import type { IconComponentProps } from 'phosphor-svelte';
 import type { Component } from 'svelte';
+
+/**
+ * Type representing window placement information.
+ */
+export type WindowPlacement = {
+  screenSize?: LogicalSize;
+  screenPosition?: LogicalPosition;
+  windowPosition: LogicalPosition;
+};
 
 /**
  * Convert all properties in type T to nullable.

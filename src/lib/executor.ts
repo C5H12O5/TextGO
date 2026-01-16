@@ -2,7 +2,7 @@ import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
 import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
-import type { Entry, Processor, Prompt, Rule, Script } from '$lib/types';
+import type { Entry, Processor, Prompt, Rule, Script, WindowPlacement } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
 import { memoize } from 'es-toolkit/function';
@@ -30,7 +30,7 @@ import { ArrowsClockwise, Browsers, CopySimple, FolderOpen, Function } from 'pho
  * Executor function type.
  * Returns true if the action was handled, false otherwise.
  */
-type Executor = (rule: Rule, entry: Entry) => Promise<boolean | string>;
+type Executor = (rule: Rule, entry: Entry, placement?: WindowPlacement) => Promise<boolean | string>;
 
 /**
  * Script execution result type.
@@ -220,7 +220,7 @@ const defaultExecutor: Executor = async (rule) => {
 /**
  * Script executor - executes user-defined scripts.
  */
-const scriptExecutor: Executor = async (rule, entry) => {
+const scriptExecutor: Executor = async (rule, entry, placement) => {
   if (!rule.action.startsWith(SCRIPT_MARK)) {
     return false;
   }
@@ -252,7 +252,7 @@ const scriptExecutor: Executor = async (rule, entry) => {
       } else if (rule.outputMode === 'popup') {
         // show popup window
         entry.copyOnPopup = rule.clipboard;
-        await showPopup(entry);
+        await showPopup(entry, placement);
       }
     }
   }
@@ -263,7 +263,7 @@ const scriptExecutor: Executor = async (rule, entry) => {
 /**
  * Prompt executor - generates AI prompts and shows popup window.
  */
-const promptExecutor: Executor = async (rule, entry) => {
+const promptExecutor: Executor = async (rule, entry, placement) => {
   if (!rule.action.startsWith(PROMPT_MARK)) {
     return false;
   }
@@ -284,7 +284,7 @@ const promptExecutor: Executor = async (rule, entry) => {
       saveHistory(entry);
     }
     // show popup window
-    await showPopup(entry);
+    await showPopup(entry, placement);
   }
 
   return true;
@@ -321,7 +321,7 @@ const searcherExecutor: Executor = async (rule, entry) => {
 /**
  * Builtin executor - executes built-in text processing actions.
  */
-const builtinExecutor: Executor = async (rule, entry) => {
+const builtinExecutor: Executor = async (rule, entry, placement) => {
   const builtin = findBuiltinAction(rule.action);
   if (!builtin) {
     return false;
@@ -349,7 +349,7 @@ const builtinExecutor: Executor = async (rule, entry) => {
   } else if (rule.outputMode === 'popup') {
     // show popup window
     entry.copyOnPopup = rule.clipboard;
-    await showPopup(entry);
+    await showPopup(entry, placement);
   }
 
   return true;
@@ -365,8 +365,9 @@ const EXECUTORS: Executor[] = [defaultExecutor, scriptExecutor, promptExecutor, 
  *
  * @param rule - rule object
  * @param selection - selected text
+ * @param placement - optional placement for popup window
  */
-export async function execute(rule: Rule, selection: string): Promise<string> {
+export async function execute(rule: Rule, selection: string, placement?: WindowPlacement): Promise<string> {
   const datetime = new Date().toISOString();
   const clipboard = await invoke<string>('get_clipboard_text');
 
@@ -382,7 +383,7 @@ export async function execute(rule: Rule, selection: string): Promise<string> {
 
   // execute executors in chain until one succeeds
   for (const executor of EXECUTORS) {
-    const result = await executor(rule, entry);
+    const result = await executor(rule, entry, placement);
     if (result) {
       return typeof result === 'string' ? result : '';
     }
@@ -495,13 +496,21 @@ function saveHistory(entry: Entry): void {
  * Show popup window.
  *
  * @param entry - record object to display
+ * @param placement - optional placement for popup window
  */
-async function showPopup(entry: Entry): Promise<void> {
+async function showPopup(entry: Entry, placement?: WindowPlacement): Promise<void> {
   try {
-    await invoke('show_popup', {
-      payload: JSON.stringify(entry),
-      mouse: isMouseShortcut(entry.shortcut)
-    });
+    if (placement) {
+      await invoke('show_popup_sameplace', {
+        payload: JSON.stringify(entry),
+        placement: placement
+      });
+    } else {
+      await invoke('show_popup', {
+        payload: JSON.stringify(entry),
+        mouse: isMouseShortcut(entry.shortcut)
+      });
+    }
   } catch (error) {
     console.error(`Failed to show popup window: ${error}`);
   }

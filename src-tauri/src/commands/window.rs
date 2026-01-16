@@ -2,10 +2,20 @@ use crate::error::AppError;
 use crate::platform;
 use crate::ENIGO;
 use enigo::Mouse;
+use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, Manager, WebviewWindow};
+use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Position, WebviewWindow};
 use tokio::time::sleep;
+
+// structure to hold window placement information
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WindowPlacement {
+    pub screen_size: Option<LogicalSize<f64>>,
+    pub screen_position: Option<LogicalPosition<f64>>,
+    pub window_position: LogicalPosition<f64>,
+}
 
 // window position offset from cursor
 const WINDOW_OFFSET: i32 = 5;
@@ -59,7 +69,7 @@ pub fn mark_toolbar_initialized() {
     TOOLBAR_INITIALIZED.store(true, Ordering::Relaxed);
 }
 
-/// Show popup and position it near the cursor.
+/// Show popup window and position it near the cursor.
 #[tauri::command]
 pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
     if let Some(window) = app.get_webview_window("popup") {
@@ -80,7 +90,64 @@ pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Resul
     Ok(())
 }
 
-/// Show toolbar and position it near the cursor.
+/// Show popup window and position it at the given logical position.
+#[tauri::command]
+pub fn show_popup_sameplace(
+    app: AppHandle,
+    payload: String,
+    placement: WindowPlacement,
+) -> Result<(), AppError> {
+    if let Some(window) = app.get_webview_window("popup") {
+        // set window position with safe area constraints if screen info is provided
+        let position = if let (Some(screen_size), Some(screen_position)) =
+            (placement.screen_size, placement.screen_position)
+        {
+            // get popup window size
+            let window_size = window.outer_size()?;
+            let scale_factor = window.scale_factor()?;
+            let window_width = window_size.width as f64 / scale_factor;
+            let window_height = window_size.height as f64 / scale_factor;
+
+            // get screen size and position
+            let screen_width = screen_size.width;
+            let screen_height = screen_size.height;
+            let screen_x = screen_position.x;
+            let screen_y = screen_position.y;
+
+            // calculate safe area for window
+            let min_x = screen_x;
+            let max_x = (screen_x + screen_width - window_width).max(min_x);
+            let min_y = screen_y;
+            let max_y =
+                (screen_y + screen_height - window_height - SAFE_AREA_BOTTOM as f64).max(min_y);
+
+            // clamp window position to safe area
+            LogicalPosition {
+                x: placement.window_position.x.clamp(min_x, max_x),
+                y: placement.window_position.y.clamp(min_y, max_y),
+            }
+        } else {
+            // use window position directly if screen info is not available
+            placement.window_position
+        };
+
+        window.set_position(Position::Logical(position))?;
+
+        // show and focus window
+        if !POPUP_INITIALIZED.load(Ordering::Relaxed) {
+            show_window(&app, "popup");
+        }
+
+        // wait for initialization and emit event
+        wait_and_emit(&POPUP_INITIALIZED, window, payload);
+    } else {
+        return Err("Popup window not found".into());
+    }
+
+    Ok(())
+}
+
+/// Show toolbar window and position it near the cursor.
 #[tauri::command]
 pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
     if let Some(window) = app.get_webview_window("toolbar") {
@@ -243,7 +310,7 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     } else {
         -WINDOW_OFFSET
     };
-    window.set_position(tauri::Position::Logical(tauri::LogicalPosition {
+    window.set_position(Position::Logical(LogicalPosition {
         x: (x + window_offset).clamp(min_x, max_x) as f64,
         y: (y + window_offset).clamp(min_y, max_y) as f64,
     }))?;
