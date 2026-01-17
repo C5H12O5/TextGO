@@ -34,6 +34,7 @@
   --depth: 0;
 }
 
+/* global scrollbar style */
 * {
   scrollbar-width: thin;
 }
@@ -190,6 +191,18 @@ html[data-tauri-platform='windows'] .rounded-container {
   @apply rounded-none;
 }
 
+/* remove number input spinners */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+input[type='number'] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+/* tippy.js tooltip themes */
 .tippy-box[data-theme~='default'] {
   @apply gradient bg-neutral/90 text-xs text-neutral-content;
 }

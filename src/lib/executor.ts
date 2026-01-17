@@ -281,6 +281,9 @@ const promptExecutor: Executor = async (rule, entry, placement) => {
     entry.systemPrompt = prompt.systemPrompt;
     entry.provider = prompt.provider;
     entry.model = prompt.model;
+    entry.maxTokens = prompt.maxTokens;
+    entry.temperature = prompt.temperature;
+    entry.topP = prompt.topP;
     if (rule.history) {
       saveHistory(entry);
     }

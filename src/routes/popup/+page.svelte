@@ -79,7 +79,10 @@
       }
       const response = llmClient.chat({
         model: entry.model,
-        messages: messages
+        messages: messages,
+        max_tokens: entry.maxTokens,
+        temperature: entry.temperature,
+        top_p: entry.topP
       });
       // save reply content
       entry.response = '';

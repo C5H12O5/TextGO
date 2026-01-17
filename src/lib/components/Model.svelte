@@ -185,7 +185,7 @@
         bind:document={modelSample}
       />
       <Label required tip={m.confidence_threshold_tip()}>{m.confidence_threshold()}</Label>
-      <label class="flex w-full items-center gap-4">
+      <label class="flex items-center gap-4">
         <input class="range grow text-emphasis range-xs" {...schema.threshold} bind:value={modelThreshold} />
         <span class="w-10 text-base font-light tracking-widest">{(modelThreshold * 100).toFixed(0)}%</span>
       </label>

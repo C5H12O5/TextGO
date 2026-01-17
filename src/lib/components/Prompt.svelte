@@ -13,15 +13,20 @@ ${m.prompt_variables_tip()}
 `.trimStart();
 
   // form schema
-  const schema = buildFormSchema(({ text }) => ({
+  const schema = buildFormSchema(({ text, number, range }) => ({
     name: text().maxlength(64),
-    modelName: text().maxlength(64)
+    modelName: text().maxlength(64),
+    maxTokens: number().min(1).required(false),
+    temperature: range().min(0).max(2).step(0.1).required(false),
+    topP: range().min(0).max(1).step(0.1).required(false)
   }));
 
   // default values
   const DEFAULT_ICON = 'Robot';
   const DEFAULT_MODEL = 'gemma3:4b';
   const DEFAULT_PROVIDER = 'ollama';
+  const DEFAULT_TEMPERATURE = 1;
+  const DEFAULT_TOP_P = 1;
 </script>
 
 <script lang="ts">
@@ -31,7 +36,7 @@ ${m.prompt_variables_tip()}
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import { markdown } from '@codemirror/lang-markdown';
-  import { Cube, HeadCircuit } from 'phosphor-svelte';
+  import { Cube, SlidersHorizontal } from 'phosphor-svelte';
 
   const { prompts }: { prompts: Prompt[] } = $props();
   const loading = new Loading();
@@ -40,18 +45,24 @@ ${m.prompt_variables_tip()}
   let promptName: string = $state('');
   let promptIcon: string = $state(DEFAULT_ICON);
   let promptText: string = $state('');
-  let systemPromptText: string = $state('');
+  let systemPrompt: string = $state('');
   let modelProvider: LLMProvider = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
+  let maxTokens: number | undefined = $state(undefined);
+  let temperature: number | undefined = $state(DEFAULT_TEMPERATURE);
+  let topP: number | undefined = $state(DEFAULT_TOP_P);
 
   // fill form fields
   const fillForm = (prompt: Prompt) => {
     promptName = prompt.id;
     promptIcon = prompt.icon || DEFAULT_ICON;
     promptText = prompt.prompt;
-    systemPromptText = prompt.systemPrompt || '';
+    systemPrompt = prompt.systemPrompt || '';
     modelProvider = prompt.provider;
     modelName = prompt.model;
+    maxTokens = prompt.maxTokens;
+    temperature = prompt.temperature;
+    topP = prompt.topP;
   };
 
   // show modal dialog
@@ -108,9 +119,12 @@ ${m.prompt_variables_tip()}
       }
       prompt.icon = promptIcon;
       prompt.prompt = promptText;
-      prompt.systemPrompt = systemPromptText;
+      prompt.systemPrompt = systemPrompt;
       prompt.provider = modelProvider;
       prompt.model = modelName;
+      prompt.maxTokens = maxTokens;
+      prompt.temperature = temperature;
+      prompt.topP = topP;
       alert(m.prompt_updated_success());
     } else {
       // add new prompt
@@ -118,17 +132,23 @@ ${m.prompt_variables_tip()}
         id: promptName,
         icon: promptIcon,
         prompt: promptText,
-        systemPrompt: systemPromptText,
+        systemPrompt: systemPrompt,
         provider: modelProvider,
-        model: modelName
+        model: modelName,
+        maxTokens: maxTokens,
+        temperature: temperature,
+        topP: topP
       });
       // reset form
       promptName = '';
       promptIcon = DEFAULT_ICON;
       promptText = '';
-      systemPromptText = '';
+      systemPrompt = '';
       modelProvider = DEFAULT_PROVIDER;
       modelName = DEFAULT_MODEL;
+      maxTokens = undefined;
+      temperature = DEFAULT_TEMPERATURE;
+      topP = DEFAULT_TOP_P;
       alert(m.prompt_added_success());
     }
     modal.close();
@@ -180,16 +200,44 @@ ${m.prompt_variables_tip()}
       <div class="collapse-arrow collapse mt-2 border">
         <input type="checkbox" class="peer" />
         <div class="collapse-title border-b-transparent transition-all duration-200 peer-checked:border-b">
-          <HeadCircuit class="size-5" />
-          {m.system_prompt_explain()}
+          <SlidersHorizontal class="size-5" />
+          {m.more_options()}
         </div>
-        <div class="collapse-content p-0!">
-          <CodeMirror
-            title={m.system_prompt()}
-            language={markdown()}
-            bind:document={systemPromptText}
-            class="rounded-t-none border-x-0 border-b-0"
-          />
+        <div class="collapse-content space-y-1.5">
+          <!-- system prompt -->
+          <Label>{m.system_prompt()}</Label>
+          <CodeMirror title={m.system_prompt()} language={markdown()} bind:document={systemPrompt} />
+          <!-- max tokens -->
+          <Label tip={m.max_tokens_tip()}>{m.max_tokens()}</Label>
+          <input class="input input-sm w-full" placeholder="0" {...schema.maxTokens} bind:value={maxTokens} />
+          <!-- temperature -->
+          <Label tip={m.temperature_tip()}>{m.temperature()}</Label>
+          <label class="flex items-center gap-4">
+            <div class="grow">
+              <input class="range w-full text-emphasis range-xs" {...schema.temperature} bind:value={temperature} />
+              <div class="mt-2 flex justify-between pl-1 text-xs opacity-70">
+                <span>0</span>
+                <span>0.5</span>
+                <span>1.0</span>
+                <span>1.5</span>
+                <span>2.0</span>
+              </div>
+            </div>
+            <span class="w-7 text-base font-light tracking-widest">{temperature?.toFixed(1)}</span>
+          </label>
+          <!-- top p -->
+          <Label tip={m.top_p_tip()}>{m.top_p()}</Label>
+          <label class="flex items-center gap-4">
+            <div class="grow">
+              <input class="range w-full text-emphasis range-xs" {...schema.topP} bind:value={topP} />
+              <div class="mt-2 flex justify-between pl-1 text-xs opacity-70">
+                <span>0</span>
+                <span>0.5</span>
+                <span>1.0</span>
+              </div>
+            </div>
+            <span class="w-7 text-base font-light tracking-widest">{topP?.toFixed(1)}</span>
+          </label>
         </div>
       </div>
     </fieldset>

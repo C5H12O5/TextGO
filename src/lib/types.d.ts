@@ -95,6 +95,20 @@ export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google';
 
 /**
+ * Chat options for AI conversation.
+ */
+export type ChatOptions = {
+  /** System prompt. */
+  systemPrompt?: string;
+  /** Maximum tokens for response generation. */
+  maxTokens?: number;
+  /** Temperature for response generation. */
+  temperature?: number;
+  /** Top-p (nucleus sampling) for response generation. */
+  topP?: number;
+};
+
+/**
  * Type of shortcut-triggered record.
  */
 export type Entry = {
@@ -124,11 +138,9 @@ export type Entry = {
   provider?: LLMProvider;
   /** Model name. */
   model?: string;
-  /** System prompt. */
-  systemPrompt?: string;
   /** Response content. */
   response?: string;
-};
+} & ChatOptions;
 
 /**
  * Type of rule within a shortcut.
@@ -170,8 +182,6 @@ export type Shortcut = {
   disabled?: boolean;
   /** Whether the rules are collapsed in the UI. */
   collapsed?: boolean;
-  /** Blacklisted application bundle IDs. */
-  blacklist?: string[];
 };
 
 /**
@@ -232,9 +242,7 @@ export type Prompt = {
   model: string;
   /** Prompt content. */
   prompt: string;
-  /** System prompt. */
-  systemPrompt?: string;
-};
+} & ChatOptions;
 
 /**
  * Web search action.

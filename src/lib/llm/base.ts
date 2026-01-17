@@ -46,9 +46,13 @@ export abstract class OpenAICompatibleClient implements LLMClient {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          stream: true,
           model: request.model,
           messages: request.messages,
-          stream: true
+          max_tokens: request.max_tokens,
+          max_completion_tokens: request.max_tokens,
+          temperature: request.temperature,
+          top_p: request.top_p
         }),
         signal: this.abortController.signal
       });
