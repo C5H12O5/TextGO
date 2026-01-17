@@ -124,6 +124,7 @@
   "temperature_tip": "控制生成文本的随机性，值越高输出越随机",
   "top_p": "Top-P",
   "top_p_tip": "通过核采样控制生成文本的多样性",
+  "continue_chat": "继续对话...",
   "ai": "AI",
   "ai_conversation": "AI 对话",
   "ai_conversation_hint": "通过预设的提示词与 AI 模型对话",

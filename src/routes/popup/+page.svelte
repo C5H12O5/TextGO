@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
   import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
+  import { m } from '$lib/paraglide/messages';
   import { popupPinned, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
@@ -8,8 +9,10 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { marked } from 'marked';
   import {
+    ArrowCircleRight,
     ArrowClockwise,
     ArrowCounterClockwise,
+    ChatTeardropDots,
     CopySimple,
     PushPin,
     StopCircle,
@@ -17,6 +20,7 @@
     X
   } from 'phosphor-svelte';
   import { onMount, tick } from 'svelte';
+  import { fade, fly } from 'svelte/transition';
 
   // current window
   const currentWindow = getCurrentWindow();
@@ -24,7 +28,7 @@
   // shortcut trigger record
   let entry: Entry | null = $state(null);
 
-  // check if in prompt mode
+  // determine if in prompt mode
   let promptMode: boolean = $derived.by(() => entry?.actionType === 'prompt');
   let promptIcon: string = $derived.by(() => {
     let icon = 'Robot';
@@ -44,20 +48,30 @@
   // streaming status
   let streaming: boolean = $state(false);
 
-  // auto scroll status
+  // auto scroll control
   let autoScroll = $state(false);
-
-  // scroll container element
   let scrollElement: HTMLElement | null = $state(null);
-
-  // scroll timer
   let scrollTimer: ReturnType<typeof setInterval> | null = $state(null);
+
+  // chat messages history
+  let chatMessages: ChatMessage[] = $state([]);
+  let replyBox = $state(false);
+  let userMessage = $state('');
+  let userMessageInput: HTMLInputElement | null = $state(null);
 
   /**
    * Start AI conversation.
+   *
+   * @param message - optional user message
    */
-  async function chat() {
-    if (streaming || !entry?.result || !entry?.model || !entry?.provider) {
+  async function chat(message?: string) {
+    if (streaming || !entry?.model || !entry?.provider) {
+      return;
+    }
+
+    // determine user message
+    const userMessage = message || entry?.result;
+    if (!userMessage) {
       return;
     }
 
@@ -70,13 +84,24 @@
       streaming = true;
       // start auto scroll
       startAutoScroll();
-      // add user prompt
-      const messages: ChatMessage[] = [{ role: 'user', content: entry.result }];
+
+      // build messages array
+      const messages: ChatMessage[] = [];
+
       // add system prompt
       const systemPrompt = entry.systemPrompt?.trim();
       if (systemPrompt) {
-        messages.unshift({ role: 'system', content: systemPrompt });
+        messages.push({ role: 'system', content: systemPrompt });
       }
+
+      // add chat history if exists
+      if (chatMessages.length > 0) {
+        messages.push(...chatMessages);
+      }
+
+      // add current user message
+      messages.push({ role: 'user', content: userMessage });
+
       const response = llmClient.chat({
         model: entry.model,
         messages: messages,
@@ -84,6 +109,7 @@
         temperature: entry.temperature,
         top_p: entry.topP
       });
+
       // save reply content
       entry.response = '';
       for await (const chunk of response) {
@@ -92,6 +118,12 @@
           break;
         }
         entry.response += chunk;
+      }
+
+      // save to chat history
+      if (entry.response) {
+        chatMessages.push({ role: 'user', content: userMessage });
+        chatMessages.push({ role: 'assistant', content: entry.response });
       }
     } catch (error) {
       if (error instanceof Error) {
@@ -112,7 +144,20 @@
   }
 
   /**
-   * Abort conversation.
+   * Continue AI conversation.
+   */
+  function reply() {
+    const message = userMessage.trim();
+    if (!message) {
+      return;
+    }
+    replyBox = false;
+    userMessage = '';
+    chat(message);
+  }
+
+  /**
+   * Abort AI conversation.
    */
   function abort() {
     autoScroll && stopAutoScroll();
@@ -182,6 +227,10 @@
     const setup = (data: Entry | null) => {
       entry = data;
       abort();
+      // reset chat history
+      chatMessages = [];
+      replyBox = false;
+      userMessage = '';
     };
 
     // listen to window show/hide events
@@ -221,7 +270,7 @@
   {@const height = 'calc(100vh - 2.625rem)'}
   <main class="bg-transparent p-1">
     <div class="overflow-hidden rounded-box border shadow-sm">
-      <!-- title -->
+      <!-- popup window title -->
       <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
         <Button
           icon={PushPin}
@@ -260,7 +309,7 @@
           <Button icon={X} onclick={() => currentWindow.hide()} />
         </div>
       </div>
-      <!-- body -->
+      <!-- popup window body -->
       <div style:height class="overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
         {#if promptMode}
           <div class="px-4 pt-2 pb-10">
@@ -273,7 +322,47 @@
               </div>
             {/if}
           </div>
+          <!-- continue chat button -->
+          {#if !streaming && entry?.response && !replyBox}
+            <button
+              class="btn fixed right-3 bottom-3 btn-circle bg-base-300/80 btn-ghost btn-sm hover:bg-base-300"
+              onclick={() => {
+                replyBox = true;
+                tick().then(() => {
+                  userMessageInput?.focus();
+                });
+              }}
+              transition:fade={{ duration: 150 }}
+            >
+              <ChatTeardropDots class="size-4.5 -scale-x-100 opacity-70" />
+            </button>
+          {/if}
+          <!-- continue chat input -->
+          {#if replyBox}
+            <div
+              class="fixed inset-1 top-9 z-50 flex items-end justify-center rounded-b-box bg-black/20"
+              transition:fade={{ duration: 150 }}
+            >
+              <label
+                class="input mx-4 mb-3 w-full rounded-box border-0 bg-base-100/95 shadow-lg"
+                transition:fly={{ y: 20, duration: 150 }}
+              >
+                <input
+                  type="text"
+                  class="grow"
+                  spellcheck="false"
+                  placeholder={m.continue_chat()}
+                  bind:value={userMessage}
+                  bind:this={userMessageInput}
+                  onblur={() => setTimeout(() => (replyBox = false), 200)}
+                  onkeydown={(event) => event.key === 'Enter' && reply()}
+                />
+                <Button size="sm" icon={ArrowCircleRight} onclick={reply} disabled={!userMessage.trim()} />
+              </label>
+            </div>
+          {/if}
         {:else}
+          <!-- show result in CodeMirror in non-prompt mode -->
           <CodeMirror
             bind:this={codeMirror}
             document={entry?.result}

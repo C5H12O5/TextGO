@@ -124,6 +124,7 @@
   "temperature_tip": "Controls the randomness of the generated text, higher values produce more random output",
   "top_p": "Top-P",
   "top_p_tip": "Controls the diversity of the generated text by nucleus sampling",
+  "continue_chat": "Continue the conversation...",
   "ai": "AI",
   "ai_conversation": "AI Conversation",
   "ai_conversation_hint": "Converse with AI models through preset prompts",
