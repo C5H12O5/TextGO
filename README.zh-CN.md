@@ -10,7 +10,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/C5H12O5/TextGO?logo=github&label=Stars&style=flat&color=yellow)](https://github.com/C5H12O5/TextGO/stargazers)
 [![GPLv3 License](https://img.shields.io/badge/License-GPLv3-BD0000.svg?style=flat)](LICENSE)
 [![Tauri Version](https://img.shields.io/badge/Tauri-v2.9.5-24C8D8.svg?style=flat&logo=tauri)](https://tauri.app/)
-[![Svelte Version](https://img.shields.io/badge/Svelte-v5.46.1-FF3E00.svg?style=flat&logo=svelte)](https://svelte.dev/)
+[![Svelte Version](https://img.shields.io/badge/Svelte-v5.46.4-FF3E00.svg?style=flat&logo=svelte)](https://svelte.dev/)
 ![macOS](https://img.shields.io/badge/macOS-333333.svg?style=flat&logo=apple)
 ![Windows](https://img.shields.io/badge/Windows-0078D4.svg?style=flat&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+Cgk8cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTA0IDE0NHY1MS42NGE4IDggMCAwIDEtOCA4YTguNSA4LjUgMCAwIDEtMS40My0uMTNsLTY0LTExLjY0QTggOCAwIDAgMSAyNCAxODR2LTQwYTggOCAwIDAgMSA4LThoNjRhOCA4IDAgMCAxIDggOG0tMi44Ny04OS43OGE4IDggMCAwIDAtNi41Ni0xLjczbC02NCAxMS42NEE4IDggMCAwIDAgMjQgNzJ2NDBhOCA4IDAgMCAwIDggOGg2NGE4IDggMCAwIDAgOC04VjYwLjM2YTggOCAwIDAgMC0yLjg3LTYuMTRNMjA4IDEzNmgtODBhOCA4IDAgMCAwLTggOHY1Ny40NWE4IDggMCAwIDAgNi41NyA3Ljg4bDgwIDE0LjU0YTcuNiA3LjYgMCAwIDAgMS40My4xM2E4IDggMCAwIDAgOC04di03MmE4IDggMCAwIDAtOC04bTUuMTMtMTAyLjE0YTggOCAwIDAgMC02LjU2LTEuNzNsLTgwIDE0LjU1YTggOCAwIDAgMC02LjU3IDcuODdWMTEyYTggOCAwIDAgMCA4IDhoODBhOCA4IDAgMCAwIDgtOFY0MGE4IDggMCAwIDAtMi44Ny02LjE0IiBzdHJva2Utd2lkdGg9IjYuNSIgc3Ryb2tlPSIjZmZmIiAvPgo8L3N2Zz4=)
 
@@ -29,7 +29,7 @@ _TextGO 是一个跨平台的文本处理工具，能够识别文本类型并执
 - **灵活模式**：支持立即执行或工具栏交互两大模式，自由切换应对不同场景
 - **个性图标**：工具栏图标支持上传自定义的 SVG 图片，打造专属风格
 - **开箱即用**：内置丰富的文本类型和处理动作，简单配置即可使用
-- **灵活扩展**：支持通过正则、机器学习模型、脚本或接入本地 AI 等方式扩展能力
+- **灵活扩展**：支持通过正则、机器学习模型、脚本或接入本地/在线 AI 等方式扩展能力
 
 | <img align="center" src="screenshots/03.zh-CN.png" /> | <img align="center" src="screenshots/04.zh-CN.png" /> |
 | ----------------------------------------------------- | ----------------------------------------------------- |
