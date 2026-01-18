@@ -3,9 +3,18 @@
   import { Button, Icon, Label, List, Modal, Prompt, Setting } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
-  import { LMStudio, Ollama } from '$lib/icons';
+  import { Anthropic, Gemini, LMStudio, Ollama, OpenAI, OpenRouter, XAI } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { lmstudioHost, ollamaHost, prompts } from '$lib/stores.svelte';
+  import {
+    anthropicApiKey,
+    geminiApiKey,
+    lmstudioHost,
+    ollamaHost,
+    openaiApiKey,
+    openrouterApiKey,
+    prompts,
+    xaiApiKey
+  } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
@@ -13,9 +22,14 @@
   import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
 
   // form constraints
-  const schema = buildFormSchema(({ text }) => ({
+  const schema = buildFormSchema(({ text, password }) => ({
     ollamaHost: text().maxlength(256),
-    lmstudioHost: text().maxlength(256)
+    lmstudioHost: text().maxlength(256),
+    openrouterApiKey: password().maxlength(256),
+    openaiApiKey: password().maxlength(256),
+    anthropicApiKey: password().maxlength(256),
+    geminiApiKey: password().maxlength(256),
+    xaiApiKey: password().maxlength(256)
   }));
 
   // prompt components
@@ -103,6 +117,7 @@
 <Modal icon={SlidersHorizontal} title={m.ai_options()} bind:this={promptOptions}>
   <form>
     <fieldset class="fieldset">
+      <!-- Local LLM Providers -->
       <Label icon={Ollama}>{m.ollama_host()}</Label>
       <input
         class="input w-full"
@@ -117,6 +132,38 @@
         {...schema.lmstudioHost}
         bind:value={lmstudioHost.current}
       />
+      <!-- Cloud LLM Providers -->
+      <div class="my-2 border-b border-dashed opacity-80"></div>
+      <Label icon={OpenRouter}>OpenRouter API Key</Label>
+      <input
+        class="input w-full"
+        placeholder="OpenRouter API Key"
+        {...schema.openrouterApiKey}
+        bind:value={openrouterApiKey.current}
+      />
+      <Label icon={OpenAI}>OpenAI API Key</Label>
+      <input
+        class="input w-full"
+        placeholder="OpenAI API Key"
+        {...schema.openaiApiKey}
+        bind:value={openaiApiKey.current}
+      />
+      <Label icon={Anthropic}>Anthropic API Key</Label>
+      <input
+        class="input w-full"
+        placeholder="Anthropic API Key"
+        {...schema.anthropicApiKey}
+        bind:value={anthropicApiKey.current}
+      />
+      <Label icon={Gemini}>Gemini API Key</Label>
+      <input
+        class="input w-full"
+        placeholder="Gemini API Key"
+        {...schema.geminiApiKey}
+        bind:value={geminiApiKey.current}
+      />
+      <Label icon={XAI}>xAI API Key</Label>
+      <input class="input w-full" placeholder="xAI API Key" {...schema.xaiApiKey} bind:value={xaiApiKey.current} />
     </fieldset>
   </form>
 </Modal>

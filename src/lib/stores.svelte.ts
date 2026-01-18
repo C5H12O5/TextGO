@@ -1,5 +1,6 @@
 import { manager } from '$lib/shortcut';
 import type { Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$lib/types';
+import { decrypt, encrypt } from '$lib/utils';
 import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { debounce } from 'es-toolkit';
@@ -14,8 +15,10 @@ const store = new LazyStore('.settings.dat');
 type Options<T> = {
   /** Callback function when loading is complete. */
   onload?: (value: T) => void;
+  decrypt?: (value: T) => T;
   /** Callback function when the stored value changes. */
   onchange?: (value: T | $state.Snapshot<T>) => void;
+  encrypt?: (value: T | $state.Snapshot<T>) => T;
 };
 
 /**
@@ -37,9 +40,9 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   // load data from store
   store.get<T>(key).then((item) => {
     if (item !== undefined) {
-      state = item;
-      options?.onload?.(item);
-      options?.onchange?.(item);
+      state = options?.decrypt?.(item) ?? item;
+      options?.onload?.(state);
+      options?.onchange?.(state);
     }
     // mark as initialized
     tick().then(() => (initialized = true));
@@ -55,7 +58,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
           return;
         }
         // persist to store
-        store.set(key, snapshot).then(() => {
+        store.set(key, options?.encrypt?.(snapshot) ?? snapshot).then(() => {
           options?.onchange?.(snapshot);
           // use localStorage to notify other windows
           localStorage.removeItem(key);
@@ -80,8 +83,8 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
       syncing = true;
       store.get<T>(key).then((item) => {
         if (item !== undefined) {
-          state = item;
-          options?.onchange?.(item);
+          state = options?.decrypt?.(item) ?? item;
+          options?.onchange?.(state);
         }
         // mark syncing as complete
         tick().then(() => (syncing = false));
@@ -147,21 +150,6 @@ export const accessibility = persisted<boolean>('accessibility', false);
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);
 
-// Node.js path
-export const nodePath = persisted<string>('nodePath', '');
-
-// Deno path
-export const denoPath = persisted<string>('denoPath', '');
-
-// Python path
-export const pythonPath = persisted<string>('pythonPath', '');
-
-// Ollama service address
-export const ollamaHost = persisted<string>('ollamaHost', '');
-
-// LM Studio service address
-export const lmstudioHost = persisted<string>('lmstudioHost', '');
-
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);
 
@@ -182,3 +170,25 @@ export const prompts = persisted<Prompt[]>('prompts', []);
 
 // searcher
 export const searchers = persisted<Searcher[]>('searchers', []);
+
+// Node.js path
+export const nodePath = persisted<string>('nodePath', '');
+
+// Deno path
+export const denoPath = persisted<string>('denoPath', '');
+
+// Python path
+export const pythonPath = persisted<string>('pythonPath', '');
+
+// Ollama service address
+export const ollamaHost = persisted<string>('ollamaHost', '');
+
+// LM Studio service address
+export const lmstudioHost = persisted<string>('lmstudioHost', '');
+
+// API keys
+export const openrouterApiKey = persisted<string>('openrouterApiKey', '', { encrypt, decrypt });
+export const openaiApiKey = persisted<string>('openaiApiKey', '', { encrypt, decrypt });
+export const anthropicApiKey = persisted<string>('anthropicApiKey', '', { encrypt, decrypt });
+export const geminiApiKey = persisted<string>('geminiApiKey', '', { encrypt, decrypt });
+export const xaiApiKey = persisted<string>('xaiApiKey', '', { encrypt, decrypt });

@@ -35,6 +35,7 @@ ${m.prompt_variables_tip()}
   import { PROMPT_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
+  import { anthropicApiKey, geminiApiKey, openaiApiKey, openrouterApiKey, xaiApiKey } from '$lib/stores.svelte';
   import { markdown } from '@codemirror/lang-markdown';
   import { Cube, SlidersHorizontal } from 'phosphor-svelte';
 
@@ -177,8 +178,20 @@ ${m.prompt_variables_tip()}
             bind:value={modelProvider}
             options={[
               { value: 'ollama', label: 'Ollama' },
-              { value: 'lmstudio', label: 'LM Studio' }
+              { value: 'lmstudio', label: 'LM Studio' },
+              { value: 'openrouter', label: 'OpenRouter', disabled: !openrouterApiKey.current },
+              { value: 'openai', label: 'OpenAI', disabled: !openaiApiKey.current },
+              { value: 'anthropic', label: 'Anthropic', disabled: !anthropicApiKey.current },
+              { value: 'google', label: 'Google', disabled: !geminiApiKey.current },
+              { value: 'xai', label: 'xAI', disabled: !xaiApiKey.current }
             ]}
+            onchange={(event) => {
+              const target = event.currentTarget;
+              if (target.value !== 'ollama' && target.value !== 'lmstudio') {
+                // reset model name for cloud providers
+                modelName = '';
+              }
+            }}
             class="w-full select-sm"
           />
         </span>

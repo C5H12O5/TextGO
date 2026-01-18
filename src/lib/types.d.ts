@@ -92,7 +92,7 @@ export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 /**
  * Large Language Model provider.
  */
-export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google';
+export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google' | 'xai';
 
 /**
  * Chat options for AI conversation.

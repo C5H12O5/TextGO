@@ -28,10 +28,12 @@ export interface LLMClient {
  */
 export abstract class OpenAICompatibleClient implements LLMClient {
   protected abortController: AbortController | null = null;
-  protected host: string;
+  protected baseUrl: string;
+  protected apiKey: string;
 
-  constructor(host: string) {
-    this.host = host;
+  constructor(baseUrl: string, apiKey: string) {
+    this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
   }
 
   async *chat(request: ChatCompletionParams): AsyncIterable<string> {
@@ -39,11 +41,12 @@ export abstract class OpenAICompatibleClient implements LLMClient {
 
     try {
       // send request to OpenAI-compatible endpoint using Tauri's fetch
-      const response = await fetch(`${this.host}/v1/chat/completions`, {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
           Origin: 'http://localhost',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
           stream: true,
@@ -58,8 +61,8 @@ export abstract class OpenAICompatibleClient implements LLMClient {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`${response.status}${error ? ` - ${error}` : ''}`);
+        const responseText = await response.text();
+        throw new Error(this.errorMessage(response.status, responseText));
       }
       if (!response.body) {
         throw new Error('response body is empty');
@@ -88,5 +91,25 @@ export abstract class OpenAICompatibleClient implements LLMClient {
       this.abortController.abort();
       this.abortController = null;
     }
+  }
+
+  /**
+   * Extract error message from response text.
+   *
+   * @param httpStatus - HTTP status code
+   * @param responseText - response body text
+   * @returns formatted error message
+   */
+  private errorMessage(httpStatus: number, responseText: string): string {
+    try {
+      const response = JSON.parse(responseText);
+      if (response?.error?.message) {
+        return `${httpStatus} - ${response.error.message}`;
+      }
+    } catch {
+      // ignore JSON parse errors
+    }
+    // fallback to raw response text
+    return `${httpStatus}${responseText ? ` - ${responseText}` : ''}`;
   }
 }

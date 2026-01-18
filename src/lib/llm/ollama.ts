@@ -6,6 +6,7 @@ import { OpenAICompatibleClient } from './base';
  */
 export class OllamaClient extends OpenAICompatibleClient {
   constructor() {
-    super(ollamaHost.current || 'http://127.0.0.1:11434');
+    const baseUrl = `${ollamaHost.current || 'http://127.0.0.1:11434'}/v1`;
+    super(baseUrl, 'ollama');
   }
 }

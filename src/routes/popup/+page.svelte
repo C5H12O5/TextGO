@@ -7,6 +7,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
+  import { openUrl } from '@tauri-apps/plugin-opener';
   import { marked } from 'marked';
   import {
     ArrowCircleRight,
@@ -75,11 +76,11 @@
       return;
     }
 
-    // create or update LLM client based on provider
-    llmClient = createLLMClient(entry.provider);
-
     let aborted = false;
     try {
+      // create or update LLM client based on provider
+      llmClient = createLLMClient(entry.provider);
+
       // start streaming
       streaming = true;
       // start auto scroll
@@ -218,6 +219,23 @@
     }
   }
 
+  /**
+   * Handle link click events in rendered HTML.
+   *
+   * @param event - mouse event
+   */
+  function handleLinkClick(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    // check if clicked element is a link
+    if (target.tagName === 'A' && target instanceof HTMLAnchorElement) {
+      const href = target.getAttribute('href');
+      if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+        event.preventDefault();
+        openUrl(href);
+      }
+    }
+  }
+
   onMount(async () => {
     // mark popup as initialized
     await invoke('mark_popup_initialized');
@@ -316,7 +334,9 @@
             {#if streaming && !entry?.response}
               <div class="loading loading-sm loading-dots opacity-70"></div>
             {:else if entry?.response}
-              <div class="prose prose-sm max-w-none text-base-content/90">
+              <!-- svelte-ignore a11y_click_events_have_key_events -->
+              <!-- svelte-ignore a11y_no_static_element_interactions -->
+              <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -->
                 {@html marked(entry.response + (streaming ? ' |' : ''))}
               </div>
