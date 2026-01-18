@@ -20,8 +20,8 @@ _TextGO 是一个跨平台的文本处理工具，能够识别文本类型并执
 
 </div>
 
-| <img align="center" src="screenshots/01.zh-CN.gif" /> | <img align="center" src="screenshots/02.zh-CN.gif" /> |
-| ----------------------------------------------------- | ----------------------------------------------------- |
+| <img align="center" src="screenshots/toolbar_mode.zh-CN.gif" /> | <img align="center" src="screenshots/quiet_mode.zh-CN.gif" /> |
+| --------------------------------------------------------------- | ------------------------------------------------------------- |
 
 ## ✨ 核心特性
 
@@ -29,10 +29,10 @@ _TextGO 是一个跨平台的文本处理工具，能够识别文本类型并执
 - **灵活模式**：支持立即执行或工具栏交互两大模式，自由切换应对不同场景
 - **个性图标**：工具栏图标支持上传自定义的 SVG 图片，打造专属风格
 - **开箱即用**：内置丰富的文本类型和处理动作，简单配置即可使用
-- **灵活扩展**：支持通过正则、机器学习模型、脚本或接入本地/在线 AI 等方式扩展能力
+- **灵活扩展**：支持通过正则表达式、机器学习模型、脚本或接入本地/在线 AI 等方式扩展能力
 
-| <img align="center" src="screenshots/03.zh-CN.png" /> | <img align="center" src="screenshots/04.zh-CN.png" /> |
-| ----------------------------------------------------- | ----------------------------------------------------- |
+| <img align="center" src="screenshots/new_rule.zh-CN.png" /> | <img align="center" src="screenshots/model_providers.zh-CN.png" /> | <img align="center" src="screenshots/update_script.zh-CN.png" /> |
+| ----------------------------------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------- |
 
 ## ⬇️ 使用说明
 
@@ -57,8 +57,8 @@ TextGO 在 macOS 上需要开启`辅助功能`权限才能正常工作。
 
 访问官方网站的[**扩展页面**](https://textgo.xylitol.top/zh-CN/extensions.html)，可浏览并安装各种扩展来增强应用功能：
 
-| <img align="center" src="screenshots/05.zh-CN.png" /> | <img align="center" src="screenshots/06.zh-CN.png" /> |
-| ----------------------------------------------------- | ----------------------------------------------------- |
+| <img align="center" src="screenshots/scripts.zh-CN.png" /> | <img align="center" src="screenshots/websites.zh-CN.png" /> |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
 
 ### 常见问题
 

@@ -20,8 +20,8 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 
 </div>
 
-| <img align="center" src="screenshots/01.gif" /> | <img align="center" src="screenshots/02.gif" /> |
-| ----------------------------------------------- | ----------------------------------------------- |
+| <img align="center" src="screenshots/toolbar_mode.gif" /> | <img align="center" src="screenshots/quiet_mode.gif" /> |
+| --------------------------------------------------------- | ------------------------------------------------------- |
 
 ## ✨ Core Features
 
@@ -31,8 +31,8 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 - **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
 - **Highly Extensible**: Extend with regex, ML models, scripts, or local/cloud AI for custom recognition and processing.
 
-| <img align="center" src="screenshots/03.png" /> | <img align="center" src="screenshots/04.png" /> |
-| ----------------------------------------------- | ----------------------------------------------- |
+| <img align="center" src="screenshots/new_rule.png" /> | <img align="center" src="screenshots/model_providers.png" /> | <img align="center" src="screenshots/update_script.png" /> |
+| ----------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
 
 ## ⬇️ Getting Started
 
@@ -57,8 +57,8 @@ TextGO requires the `Accessibility` permission on macOS to function properly.
 
 Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality:
 
-| <img align="center" src="screenshots/05.png" /> | <img align="center" src="screenshots/06.png" /> |
-| ----------------------------------------------- | ----------------------------------------------- |
+| <img align="center" src="screenshots/scripts.png" /> | <img align="center" src="screenshots/websites.png" /> |
+| ---------------------------------------------------- | ----------------------------------------------------- |
 
 ### FAQ
 
