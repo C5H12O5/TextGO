@@ -1,4 +1,6 @@
 use crate::error::AppError;
+use std::fs;
+use std::path::Path;
 use windows::core::Interface;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
@@ -319,4 +321,22 @@ pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
 
         Ok(())
     }
+}
+
+/// Get application identifier from an application path.
+pub fn get_app_identifier(app_path: &Path) -> Result<String, AppError> {
+    // canonicalize the application path
+    if let Ok(canonical_path) = fs::canonicalize(app_path) {
+        if let Some(normalized_path) = canonical_path.to_str() {
+            // remove the "\\?\" prefix that Windows adds for long paths
+            let normalized_path = if normalized_path.starts_with(r"\\?\") {
+                &normalized_path[4..]
+            } else {
+                normalized_path
+            };
+            return Ok(normalized_path.to_string());
+        }
+    }
+
+    Err("Failed to get application identifier".into())
 }

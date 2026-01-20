@@ -3,7 +3,9 @@ use core_foundation::array::CFArray;
 use core_foundation::base::{CFRange, CFType, CFTypeRef, TCFType};
 use core_foundation::string::{CFString, CFStringRef};
 use std::collections::HashMap;
+use std::fs;
 use std::os::raw::c_void;
+use std::path::Path;
 use std::sync::Mutex;
 use std::time::Instant;
 
@@ -537,4 +539,32 @@ pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
 
         Ok(())
     }
+}
+
+/// Get application identifier from an application path.
+pub fn get_app_identifier(app_path: &Path) -> Result<String, AppError> {
+    // construct path to Info.plist
+    let info_plist_path = app_path.join("Contents").join("Info.plist");
+    if !info_plist_path.exists() {
+        return Err("Invalid application bundle path".into());
+    }
+
+    // read Info.plist content
+    let plist_content = fs::read_to_string(&info_plist_path)?;
+
+    // simple parsing to find CFBundleIdentifier
+    if let Some(key_pos) = plist_content.find("<key>CFBundleIdentifier</key>") {
+        let remaining_content = &plist_content[key_pos + 29..];
+        if let Some(string_start) = remaining_content.find("<string>") {
+            let remaining_content = &remaining_content[string_start + 8..];
+            if let Some(string_end) = remaining_content.find("</string>") {
+                let bundle_id = remaining_content[..string_end].trim().to_string();
+                if !bundle_id.is_empty() {
+                    return Ok(bundle_id);
+                }
+            }
+        }
+    }
+
+    Err("Failed to get application identifier".into())
 }

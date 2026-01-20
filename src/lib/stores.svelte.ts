@@ -3,7 +3,7 @@ import type { Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$
 import { decrypt, encrypt } from '$lib/utils';
 import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';
-import { debounce } from 'es-toolkit';
+import { debounce } from 'es-toolkit/function';
 import { tick, untrack } from 'svelte';
 
 // create a global LazyStore instance
@@ -137,6 +137,9 @@ export const shortcuts = persisted<Record<string, Shortcut>>(
     }
   }
 );
+
+// blacklist of applications
+export const blacklist = persisted<string[]>('blacklist', []);
 
 // auto start setting
 export const autoStart = persisted<boolean>('autoStart', false);

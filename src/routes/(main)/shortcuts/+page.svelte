@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { alert, Binder, Button, confirm, Icon, List, Recorder, Shortcut } from '$lib/components';
+  import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut } from '$lib/components';
   import { DBCLICK_SHORTCUT, DRAG_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { shortcuts } from '$lib/stores.svelte';
+  import { blacklist, shortcuts } from '$lib/stores.svelte';
   import {
     ArrowArcRight,
     ArrowCircleRight,
@@ -14,6 +14,7 @@
     GearSix,
     Keyboard,
     MouseLeftClick,
+    Prohibit,
     Sparkle,
     StackPlus,
     Trash,
@@ -30,10 +31,13 @@
   let recorder: Recorder;
 
   // rule binder
-  let binder: Binder | null = $state(null);
+  let ruleBinder: Binder | null = $state(null);
 
   // rule updater
-  let updater: Binder | null = $state(null);
+  let ruleUpdater: Binder | null = $state(null);
+
+  // blacklist manager
+  let blacklistManager: BWList;
 
   // dropdown element
   let dropdown: HTMLDetailsElement;
@@ -113,13 +117,17 @@
 />
 
 <div class="relative min-h-(--app-h) rounded-container">
-  <div class="flex items-center justify-between">
+  <div class="flex items-center gap-2">
     <span class="pl-1 text-sm opacity-60">
       {m.shortcuts_count()}: {Object.keys(shortcuts.current).length}
       {#if totalRules > 0}
         <span class="text-xs tracking-wider opacity-50">({m.rule_count({ count: totalRules })})</span>
       {/if}
     </span>
+    <button class="btn ml-auto btn-soft btn-sm" onclick={() => blacklistManager.showModal()}>
+      <Prohibit class="size-5" />
+      <span class="text-sm font-normal">{m.blacklist()}</span>
+    </button>
     <details class="dropdown dropdown-end" bind:this={dropdown} bind:open={dropdownOpen}>
       <summary
         class="btn text-sm btn-sm btn-submit"
@@ -223,7 +231,7 @@
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
-            const clear = () => binder?.clear(shortcut);
+            const clear = () => ruleBinder?.clear(shortcut);
             // delete directly if rule is empty, otherwise need confirmation
             if (rules.length > 0) {
               confirm({
@@ -243,8 +251,8 @@
         bind:data={shortcuts.current[shortcut].rules}
         bind:collapsed={shortcuts.current[shortcut].collapsed}
         collapsible
-        oncreate={() => binder?.showModal(shortcut)}
-        ondelete={(item) => binder?.unbind(item)}
+        oncreate={() => ruleBinder?.showModal(shortcut)}
+        ondelete={(item) => ruleBinder?.unbind(item)}
       >
         {#snippet title()}
           <Sparkle class="mx-1 size-4 opacity-60" />
@@ -257,8 +265,8 @@
           </span>
         {/snippet}
         {#snippet row(item)}
-          {@const { label: caseLabel, icon: caseIcon } = binder?.getCaseOption(item.case) ?? {}}
-          {@const { label: actionLabel, icon: actionIcon } = binder?.getActionOption(item.action) ?? {}}
+          {@const { label: caseLabel, icon: caseIcon } = ruleBinder?.getCaseOption(item.case) ?? {}}
+          {@const { label: actionLabel, icon: actionIcon } = ruleBinder?.getActionOption(item.action) ?? {}}
           <div class="list-col-grow grid grid-cols-12 items-center gap-4 pl-4">
             <div class="col-span-5 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
@@ -307,7 +315,7 @@
             iconWeight="fill"
             onclick={(event) => {
               event.stopPropagation();
-              updater?.showModal(shortcut, item.id);
+              ruleUpdater?.showModal(shortcut, item.id);
             }}
           />
         {/snippet}
@@ -318,6 +326,8 @@
 
 <Recorder bind:this={recorder} onrecord={register} />
 
-<Binder bind:this={binder} />
+<Binder bind:this={ruleBinder} />
 
-<Binder bind:this={updater} />
+<Binder bind:this={ruleUpdater} />
+
+<BWList bind:this={blacklistManager} bind:list={blacklist.current} />
