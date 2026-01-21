@@ -15,11 +15,25 @@
     prompts,
     xaiApiKey
   } from '$lib/stores.svelte';
+  import type { LLMProvider } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
+  import type { Component } from 'svelte';
+
+  // mapping of provider icons
+  const providerIcons: Record<LLMProvider, Component<IconComponentProps>> = {
+    ollama: Ollama,
+    lmstudio: LMStudio,
+    openrouter: OpenRouter,
+    openai: OpenAI,
+    anthropic: Anthropic,
+    google: Gemini,
+    xai: XAI
+  };
 
   // form constraints
   const schema = buildFormSchema(({ text, password }) => ({
@@ -88,14 +102,13 @@
     }}
   >
     {#snippet row(item)}
+      {@const ProviderIcon = providerIcons[item.provider]}
       <Icon icon={item.icon || 'Robot'} class="size-5" />
       <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
         <span class="badge min-w-14 truncate badge-ghost badge-sm" title={item.model}>
-          {#if item.provider === 'ollama'}
-            <Ollama class="h-4 shrink-0" />
-          {:else if item.provider === 'lmstudio'}
-            <LMStudio class="h-4 shrink-0" />
+          {#if ProviderIcon}
+            <ProviderIcon class="h-4 shrink-0" />
           {/if}
           <span class="truncate opacity-80">{item.model}</span>
         </span>
