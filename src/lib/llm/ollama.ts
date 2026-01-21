@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * Ollama REST API client.
+ *
+ * https://docs.ollama.com/api/openai-compatibility
  */
 export class OllamaClient extends OpenAICompatibleClient {
   constructor() {

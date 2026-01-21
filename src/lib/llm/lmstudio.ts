@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * LM Studio REST API client.
+ *
+ * https://lmstudio.ai/docs/developer/openai-compat
  */
 export class LMStudioClient extends OpenAICompatibleClient {
   constructor() {

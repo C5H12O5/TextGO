@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * Anthropic REST API client.
+ *
+ * https://platform.claude.com/docs/en/api/openai-sdk
  */
 export class AnthropicClient extends OpenAICompatibleClient {
   constructor() {

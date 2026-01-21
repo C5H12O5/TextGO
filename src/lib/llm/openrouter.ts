@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * OpenRouter REST API client.
+ *
+ * https://openrouter.ai/docs/quickstart#using-the-openai-sdk
  */
 export class OpenRouterClient extends OpenAICompatibleClient {
   constructor() {

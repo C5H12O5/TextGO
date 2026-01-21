@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * OpenAI REST API client.
+ *
+ * https://platform.openai.com/docs/api-reference/chat
  */
 export class OpenAIClient extends OpenAICompatibleClient {
   constructor() {

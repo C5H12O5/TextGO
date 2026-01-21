@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * Google Gemini REST API client.
+ *
+ * https://ai.google.dev/gemini-api/docs/openai
  */
 export class GeminiClient extends OpenAICompatibleClient {
   constructor() {

@@ -3,6 +3,8 @@ import { OpenAICompatibleClient } from './base';
 
 /**
  * xAI REST API client.
+ *
+ * https://docs.x.ai/docs/api-reference#chat-completions
  */
 export class XAIClient extends OpenAICompatibleClient {
   constructor() {
