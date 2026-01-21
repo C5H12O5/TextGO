@@ -133,37 +133,42 @@
         bind:value={lmstudioHost.current}
       />
       <!-- Cloud LLM Providers -->
-      <div class="my-2 border-b border-dashed opacity-80"></div>
-      <Label icon={OpenRouter}>OpenRouter API Key</Label>
+      <div class="divider mb-0 opacity-50">{m.api_keys()}</div>
+      <Label icon={OpenRouter}>OpenRouter</Label>
       <input
         class="input w-full"
-        placeholder="OpenRouter API Key"
+        placeholder={m.api_key({ provider: 'OpenRouter' })}
         {...schema.openrouterApiKey}
         bind:value={openrouterApiKey.current}
       />
-      <Label icon={OpenAI}>OpenAI API Key</Label>
+      <Label icon={OpenAI}>OpenAI</Label>
       <input
         class="input w-full"
-        placeholder="OpenAI API Key"
+        placeholder={m.api_key({ provider: 'OpenAI' })}
         {...schema.openaiApiKey}
         bind:value={openaiApiKey.current}
       />
-      <Label icon={Anthropic}>Anthropic API Key</Label>
+      <Label icon={Anthropic}>Anthropic</Label>
       <input
         class="input w-full"
-        placeholder="Anthropic API Key"
+        placeholder={m.api_key({ provider: 'Anthropic' })}
         {...schema.anthropicApiKey}
         bind:value={anthropicApiKey.current}
       />
-      <Label icon={Gemini}>Gemini API Key</Label>
+      <Label icon={Gemini}>Gemini</Label>
       <input
         class="input w-full"
-        placeholder="Gemini API Key"
+        placeholder={m.api_key({ provider: 'Gemini' })}
         {...schema.geminiApiKey}
         bind:value={geminiApiKey.current}
       />
-      <Label icon={XAI}>xAI API Key</Label>
-      <input class="input w-full" placeholder="xAI API Key" {...schema.xaiApiKey} bind:value={xaiApiKey.current} />
+      <Label icon={XAI}>xAI</Label>
+      <input
+        class="input w-full"
+        placeholder={m.api_key({ provider: 'xAI' })}
+        {...schema.xaiApiKey}
+        bind:value={xaiApiKey.current}
+      />
     </fieldset>
   </form>
 </Modal>

@@ -133,6 +133,8 @@
   "top_p": "Top-P",
   "top_p_tip": "Controls the diversity of the generated text by nucleus sampling",
   "continue_chat": "Continue the conversation...",
+  "api_key": "{provider} API Key",
+  "api_keys": "API Keys",
   "ai": "AI",
   "ai_conversation": "AI Conversation",
   "ai_conversation_hint": "Converse with AI models through preset prompts",
