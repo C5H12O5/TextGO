@@ -85,6 +85,7 @@ impl_from_error!(
     std::sync::mpsc::RecvError,
     serde_json::error::Error,
     tauri::Error,
+    tauri_plugin_store::Error,
     tauri_plugin_global_shortcut::Error,
     enigo::InputError,
     &enigo::NewConError,

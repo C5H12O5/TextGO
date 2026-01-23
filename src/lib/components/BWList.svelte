@@ -75,7 +75,7 @@
    * Add website to the list.
    */
   function addWebsite() {
-    list = [...list, 'https://'];
+    list = [...list, 'https://*'];
   }
 </script>
 
@@ -94,7 +94,7 @@
             {/if}
             <input
               type="search"
-              class="grow"
+              class="grow truncate"
               spellcheck="false"
               value={item}
               oninput={(event) => handleInput(index, event.currentTarget.value)}

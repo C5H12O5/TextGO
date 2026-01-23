@@ -199,9 +199,9 @@ fn get_application_element(pid: i32) -> Result<CFType, AppError> {
     }
 }
 
-/// Get the PID of the frontmost application using NSWorkspace.
-/// This works even when AXAPI is not enabled for the application.
-fn get_frontmost_app_pid() -> Option<i32> {
+/// Get the frontmost NSRunningApplication object using NSWorkspace.
+/// Returns a raw pointer to the NSRunningApplication object.
+fn get_frontmost_application() -> Option<*const c_void> {
     unsafe {
         // get NSWorkspace class
         let ns_workspace_class = objc_getClass(c"NSWorkspace".as_ptr());
@@ -232,6 +232,16 @@ fn get_frontmost_app_pid() -> Option<i32> {
         if frontmost_app.is_null() {
             return None;
         }
+
+        Some(frontmost_app)
+    }
+}
+
+/// Get the PID of the frontmost application using NSWorkspace.
+/// This works even when AXAPI is not enabled for the application.
+fn get_frontmost_app_pid() -> Option<i32> {
+    unsafe {
+        let frontmost_app = get_frontmost_application()?;
 
         // get processIdentifier selector
         let pid_sel = sel_registerName(c"processIdentifier".as_ptr());
@@ -348,12 +358,12 @@ pub fn get_selection() -> Result<String, AppError> {
         }
     };
 
-    // 1. try to get selected text directly from focused element
+    // Strategy 1: try to get selected text directly from focused element
     if let Some(text) = get_selected_text(&focused_element) {
         return Ok(text);
     }
 
-    // 2. if focused element has no selected text, try traversing child elements
+    // Strategy 2: if focused element has no selected text, try traversing child elements
     if let Ok(ax_children) = get_element_attribute(&focused_element, "AXChildren") {
         if let Some(children) = ax_children.downcast::<CFArray>() {
             // traverse child element array
@@ -363,8 +373,8 @@ pub fn get_selection() -> Result<String, AppError> {
                     if let Some(child_ptr) = children.get(i).map(|item| *item as CFTypeRef) {
                         if !child_ptr.is_null() {
                             // wrap pointer as CFType
-                            let child_element = CFType::wrap_under_get_rule(child_ptr);
-                            if let Some(text) = get_selected_text(&child_element) {
+                            let child = CFType::wrap_under_get_rule(child_ptr);
+                            if let Some(text) = get_selected_text(&child) {
                                 return Ok(text);
                             }
                         }
@@ -542,7 +552,7 @@ pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
 }
 
 /// Get application identifier from an application path.
-pub fn get_app_identifier(app_path: &Path) -> Result<String, AppError> {
+pub fn get_app_id(app_path: &Path) -> Result<String, AppError> {
     // construct path to Info.plist
     let info_plist_path = app_path.join("Contents").join("Info.plist");
     if !info_plist_path.exists() {
@@ -567,4 +577,98 @@ pub fn get_app_identifier(app_path: &Path) -> Result<String, AppError> {
     }
 
     Err("Failed to get application identifier".into())
+}
+
+/// Get the Bundle ID of the frontmost application.
+pub fn get_frontmost_app_id() -> Option<String> {
+    unsafe {
+        let frontmost_app = get_frontmost_application()?;
+
+        // get bundleIdentifier selector
+        let bundle_id_sel = sel_registerName(c"bundleIdentifier".as_ptr());
+        if bundle_id_sel.is_null() {
+            return None;
+        }
+
+        // call [frontmostApplication bundleIdentifier]
+        let bundle_id = objc_call_ptr(frontmost_app, bundle_id_sel);
+        if bundle_id.is_null() {
+            return None;
+        }
+
+        // convert to string
+        Some(CFString::wrap_under_get_rule(bundle_id as _).to_string())
+    }
+}
+
+/// Get the current website URL from the frontmost browser.
+pub fn get_frontmost_url() -> Option<String> {
+    unsafe {
+        // check accessibility permission
+        if !AXIsProcessTrusted() {
+            return None;
+        }
+
+        // get focused window
+        let pid = get_frontmost_app_pid()?;
+        let app_ptr = AXUIElementCreateApplication(pid);
+        if app_ptr.is_null() {
+            return None;
+        }
+        let app = CFType::wrap_under_create_rule(app_ptr);
+        let focused_window = get_element_attribute(&app, "AXFocusedWindow").ok()?;
+
+        // Strategy 1: try to get URL from AXDocument attribute (works for most browsers)
+        if let Ok(ax_document) = get_element_attribute(&focused_window, "AXDocument") {
+            if let Some(document) = ax_document.downcast::<CFString>() {
+                let url = document.to_string();
+                // validate URL format
+                if !url.is_empty() && (url.starts_with("http://") || url.starts_with("https://")) {
+                    return Some(url);
+                }
+            }
+        }
+
+        // Strategy 2: recursively search for text fields containing URLs
+        find_url_in_element(&focused_window, 0, 10)
+    }
+}
+
+/// Recursively search for an element containing a URL within an element tree.
+/// This is a generic approach that works across different browsers regardless of their UI structure.
+fn find_url_in_element(element: &CFType, depth: usize, max_depth: usize) -> Option<String> {
+    if depth > max_depth {
+        return None;
+    }
+
+    unsafe {
+        // try to get URL from AXValue attribute of current element
+        if let Ok(ax_value) = get_element_attribute(element, "AXValue") {
+            if let Some(value) = ax_value.downcast::<CFString>() {
+                let url = value.to_string();
+                // validate URL format
+                if !url.is_empty() && (url.starts_with("http://") || url.starts_with("https://")) {
+                    return Some(url);
+                }
+            }
+        }
+
+        // recursively search children elements
+        if let Ok(ax_children) = get_element_attribute(element, "AXChildren") {
+            if let Some(children) = ax_children.downcast::<CFArray>() {
+                for i in 0..children.len() {
+                    if let Some(child_ptr) = children.get(i).map(|item| *item as CFTypeRef) {
+                        if !child_ptr.is_null() {
+                            let child = CFType::wrap_under_get_rule(child_ptr);
+                            if let Some(url) = find_url_in_element(&child, depth + 1, max_depth) {
+                                return Some(url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        None
+    }
 }

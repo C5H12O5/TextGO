@@ -1,18 +1,24 @@
 use crate::error::AppError;
 use std::fs;
 use std::path::Path;
-use windows::core::Interface;
+use windows::core::{Interface, PWSTR};
+use windows::Win32::Foundation::MAX_PATH;
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
+};
+use windows::Win32::System::Threading::{
+    OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows::Win32::UI::Accessibility::{
     CUIAutomation, IUIAutomation, IUIAutomationElement, IUIAutomationLegacyIAccessiblePattern,
     IUIAutomationTextPattern, IUIAutomationTextRange, IUIAutomationValuePattern,
-    TextPatternRangeEndpoint_Start, TextUnit_Character, UIA_DocumentControlTypeId,
-    UIA_EditControlTypeId, UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
+    TextPatternRangeEndpoint_Start, TextUnit_Character, TreeScope_Descendants,
+    UIA_ControlTypePropertyId, UIA_DocumentControlTypeId, UIA_EditControlTypeId,
+    UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetCursorInfo, LoadCursorW, CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
+    GetCursorInfo, GetForegroundWindow, GetWindowThreadProcessId, LoadCursorW, CURSORINFO,
+    CURSOR_SHOWING, IDC_IBEAM,
 };
 
 // bounds validation constants
@@ -228,7 +234,7 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
         // get focused element
         let focused_element = get_focused_element()?;
 
-        // 1. check if control type is editable
+        // Strategy 1: check if control type is editable
         if let Ok(control_type) = focused_element.CurrentControlType() {
             let is_edit_control = control_type.0 == UIA_EditControlTypeId.0;
             let is_document_control = control_type.0 == UIA_DocumentControlTypeId.0;
@@ -237,7 +243,7 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
             }
         }
 
-        // 2. check if value pattern is not read-only
+        // Strategy 2: check if value pattern is not read-only
         if let Ok(is_readonly) = focused_element
             .GetCurrentPattern(UIA_ValuePatternId)
             .and_then(|p| p.cast::<IUIAutomationValuePattern>())
@@ -248,7 +254,7 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
             }
         }
 
-        // 3. check if legacy control role is editable
+        // Strategy 3: check if legacy control role is editable
         if let Ok(role) = focused_element
             .GetCurrentPattern(UIA_LegacyIAccessiblePatternId)
             .and_then(|p| p.cast::<IUIAutomationLegacyIAccessiblePattern>())
@@ -324,19 +330,117 @@ pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
 }
 
 /// Get application identifier from an application path.
-pub fn get_app_identifier(app_path: &Path) -> Result<String, AppError> {
+pub fn get_app_id(app_path: &Path) -> Result<String, AppError> {
     // canonicalize the application path
     if let Ok(canonical_path) = fs::canonicalize(app_path) {
         if let Some(normalized_path) = canonical_path.to_str() {
             // remove the "\\?\" prefix that Windows adds for long paths
-            let normalized_path = if normalized_path.starts_with(r"\\?\") {
-                &normalized_path[4..]
-            } else {
-                normalized_path
-            };
-            return Ok(normalized_path.to_string());
+            return Ok(normalized_path.trim_start_matches(r"\\?\").to_string());
         }
     }
 
     Err("Failed to get application identifier".into())
+}
+
+/// Get the executable path of the frontmost application.
+pub fn get_frontmost_app_id() -> Option<String> {
+    unsafe {
+        // get foreground window
+        let hwnd = GetForegroundWindow();
+        if hwnd.is_invalid() {
+            return None;
+        }
+
+        // get process ID
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        if pid == 0 {
+            return None;
+        }
+
+        // open process with query information permission
+        let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+
+        // get process executable path
+        let mut buffer = vec![0u16; MAX_PATH as usize];
+        let mut size = buffer.len() as u32;
+        let result = QueryFullProcessImageNameW(
+            process_handle,
+            PROCESS_NAME_WIN32,
+            PWSTR(buffer.as_mut_ptr()),
+            &mut size,
+        );
+        if result.is_err() || size == 0 {
+            return None;
+        }
+
+        // convert to string
+        String::from_utf16(&buffer[..size as usize]).ok()
+    }
+}
+
+/// Get the current website URL from the frontmost browser.
+pub fn get_frontmost_url() -> Option<String> {
+    unsafe {
+        // initialize COM
+        let _com = ComGuard::new().ok()?;
+
+        // get foreground window
+        let hwnd = GetForegroundWindow();
+        if hwnd.is_invalid() {
+            return None;
+        }
+
+        // create UI Automation instance
+        let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_ALL).ok()?;
+
+        // get root UI element from window handle
+        let element = automation.ElementFromHandle(hwnd).ok()?;
+
+        // Strategy 1: try to find first edit control
+        if let Some(url) = find_url_in_element(&element, &automation, UIA_EditControlTypeId.0) {
+            return Some(url);
+        }
+
+        // Strategy 2: try to find first document control
+        if let Some(url) = find_url_in_element(&element, &automation, UIA_DocumentControlTypeId.0) {
+            return Some(url);
+        }
+
+        None
+    }
+}
+
+/// Try to extract URL from element with specified control type.
+unsafe fn find_url_in_element(
+    root_element: &IUIAutomationElement,
+    automation: &IUIAutomation,
+    control_type_id: i32,
+) -> Option<String> {
+    // create property condition for specified control type
+    let condition = automation
+        .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id.into())
+        .ok()?;
+
+    // find element with specified control type
+    let element = root_element
+        .FindFirst(TreeScope_Descendants, &condition)
+        .ok()?;
+
+    // get value pattern from element
+    let value_pattern = element
+        .GetCurrentPattern(UIA_ValuePatternId)
+        .and_then(|p| p.cast::<IUIAutomationValuePattern>())
+        .ok()?;
+
+    // extract value
+    let value = value_pattern.CurrentValue().ok()?;
+
+    // validate URL format
+    let url = value.to_string();
+    if !url.is_empty() && (url.starts_with("http://") || url.starts_with("https://")) {
+        Some(url)
+    } else {
+        None
+    }
 }

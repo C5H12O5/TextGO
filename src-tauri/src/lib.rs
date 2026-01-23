@@ -19,7 +19,7 @@ use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
 // settings store filename
-const SETTINGS_STORE: &str = ".settings.dat";
+pub const SETTINGS_STORE: &str = ".settings.dat";
 
 // global app handle storage
 pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mutex::new(None));
@@ -165,7 +165,8 @@ pub fn run() {
             open_accessibility,
             check_input_monitoring,
             open_input_monitoring,
-            get_app_id
+            get_app_id,
+            is_blocked
         ])
         .build(tauri::generate_context!())
         .expect("error while running tauri application")

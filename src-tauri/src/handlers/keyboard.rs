@@ -1,4 +1,4 @@
-use crate::commands::get_selection;
+use crate::commands::{get_selection, is_blocked};
 use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Emitter};
@@ -11,16 +11,19 @@ pub fn handle_keyboard_event(app: &AppHandle, hotkey: &Shortcut, event: Shortcut
         return;
     }
 
+    // check if current frontmost application/website is in blacklist
+    if let Ok(true) = is_blocked(app.clone()) {
+        return;
+    }
+
     // only handle key release events
     if event.state() == ShortcutState::Released {
         // get shortcut string from registered shortcuts
-        let shortcut = {
-            let registered = REGISTERED_SHORTCUTS.lock().unwrap();
-            registered
-                .get(&hotkey.id)
-                .cloned()
-                .unwrap_or_else(|| "Unknown".to_string())
-        };
+        let shortcut = REGISTERED_SHORTCUTS
+            .lock()
+            .ok()
+            .and_then(|r| r.get(&hotkey.id).cloned())
+            .unwrap_or_else(|| "Unknown".to_string());
 
         // emit shortcut event with selection
         let app_handle = app.clone();

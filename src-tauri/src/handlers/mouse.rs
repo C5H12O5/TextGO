@@ -1,4 +1,4 @@
-use crate::commands::get_selection;
+use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
 use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
@@ -142,8 +142,13 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
 
 /// Emit mouse event to frontend with current selection.
 fn emit_event(shortcut: &str) -> Result<(), AppError> {
-    // get selection asynchronously and emit event
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
+        // check if current frontmost application/website is in blacklist
+        if let Ok(true) = is_blocked(app.clone()) {
+            return Ok(());
+        }
+
+        // get selection asynchronously and emit event
         let app_handle = app.clone();
         let shortcut = shortcut.to_string();
         tauri::async_runtime::spawn(async move {
