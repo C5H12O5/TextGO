@@ -44,6 +44,7 @@ rdev = { git = "https://github.com/C5H12O5/rdev", rev = "5a5596d" }
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10.1"
 tauri-nspanel = { git = "https://github.com/ahkohd/tauri-nspanel", rev = "da9c9a8" }
+plist = "1.8.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = ">=0.59.0, <=0.62.2", features = [

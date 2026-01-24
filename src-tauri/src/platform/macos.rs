@@ -2,8 +2,8 @@ use crate::error::AppError;
 use core_foundation::array::CFArray;
 use core_foundation::base::{CFRange, CFType, CFTypeRef, TCFType};
 use core_foundation::string::{CFString, CFStringRef};
+use plist::Value;
 use std::collections::HashMap;
-use std::fs;
 use std::os::raw::c_void;
 use std::path::Path;
 use std::sync::Mutex;
@@ -559,18 +559,16 @@ pub fn get_app_id(app_path: &Path) -> Result<String, AppError> {
         return Err("Invalid application bundle path".into());
     }
 
-    // read Info.plist content
-    let plist_content = fs::read_to_string(&info_plist_path)?;
+    // read and parse Info.plist
+    let plist_value = Value::from_file(&info_plist_path)
+        .map_err(|e| format!("Failed to parse Info.plist: {}", e))?;
 
-    // simple parsing to find CFBundleIdentifier
-    if let Some(key_pos) = plist_content.find("<key>CFBundleIdentifier</key>") {
-        let remaining_content = &plist_content[key_pos + 29..];
-        if let Some(string_start) = remaining_content.find("<string>") {
-            let remaining_content = &remaining_content[string_start + 8..];
-            if let Some(string_end) = remaining_content.find("</string>") {
-                let bundle_id = remaining_content[..string_end].trim().to_string();
+    // extract CFBundleIdentifier from plist dictionary
+    if let Some(dict) = plist_value.as_dictionary() {
+        if let Some(cf_bundle_id) = dict.get("CFBundleIdentifier") {
+            if let Some(bundle_id) = cf_bundle_id.as_string() {
                 if !bundle_id.is_empty() {
-                    return Ok(bundle_id);
+                    return Ok(bundle_id.to_string());
                 }
             }
         }
