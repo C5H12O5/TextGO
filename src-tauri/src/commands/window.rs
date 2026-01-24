@@ -184,6 +184,9 @@ pub fn show_toolbar_regardless(app: AppHandle) -> Result<(), AppError> {
     {
         if let Some(window) = app.get_webview_window("toolbar") {
             window.show()?;
+            // refresh z-order to ensure toolbar stays on top
+            window.set_always_on_top(false)?;
+            window.set_always_on_top(true)?;
         }
     }
 
