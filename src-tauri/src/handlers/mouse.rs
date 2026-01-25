@@ -4,7 +4,7 @@ use crate::platform;
 use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
 use enigo::Mouse;
 use log::debug;
-use rdev::{Button, Event, EventType};
+use rdev::{Button, Event, EventType, Key};
 use std::cell::Cell;
 use std::sync::atomic::Ordering;
 use std::time::{Duration, Instant};
@@ -19,6 +19,7 @@ thread_local! {
     static LAST_CLICK: Cell<Option<Click>> = const { Cell::new(None) };
     static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
+    static SHIFT_PRESSED: Cell<bool> = const { Cell::new(false) };
 }
 
 // thresholds for drag and double click detection
@@ -43,8 +44,19 @@ pub fn handle_mouse_event(event: Event) {
         EventType::ButtonRelease(Button::Left) => {
             let _ = handle_mouse_release();
         }
-        EventType::Wheel { .. } | EventType::KeyPress(_) => {
-            // hide toolbar on wheel scroll or key press
+        EventType::KeyPress(key) => {
+            // track shift key state
+            if matches!(key, Key::ShiftLeft | Key::ShiftRight) {
+                SHIFT_PRESSED.set(true);
+            }
+            // hide toolbar on key press
+            let _ = hide_toolbar(false);
+        }
+        EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
+            SHIFT_PRESSED.set(false);
+        }
+        EventType::Wheel { .. } => {
+            // hide toolbar on wheel scroll
             let _ = hide_toolbar(false);
         }
         _ => (),
@@ -96,6 +108,17 @@ fn handle_mouse_release() -> Result<(), AppError> {
             emit_event("MouseClick+MouseMove")?;
         }
         IS_DRAGGING.set(false);
+        return Ok(());
+    }
+
+    // check for shift+click
+    if SHIFT_PRESSED.get() {
+        debug!("checking for shift+click (cursor: {})", is_valid_cursor);
+        if is_valid_cursor {
+            // emit shift+click event
+            emit_event("Shift+MouseClick")?;
+        }
+        SHIFT_PRESSED.set(false);
         return Ok(());
     }
 

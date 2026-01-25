@@ -1,6 +1,6 @@
 <script lang="ts">
   import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut } from '$lib/components';
-  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT } from '$lib/constants';
+  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
@@ -9,6 +9,7 @@
     ArrowArcRight,
     ArrowCircleRight,
     ArrowFatLineRight,
+    ArrowFatUp,
     ArrowsClockwise,
     Browser,
     GearSix,
@@ -80,10 +81,12 @@
    * @param b - second shortcut string
    */
   function compareShortcut(a: string, b: string) {
-    if (a === DBCLICK_SHORTCUT) return -1;
-    if (b === DBCLICK_SHORTCUT) return 1;
     if (a === DRAG_SHORTCUT) return -1;
     if (b === DRAG_SHORTCUT) return 1;
+    if (a === DBCLICK_SHORTCUT) return -1;
+    if (b === DBCLICK_SHORTCUT) return 1;
+    if (a === SHIFT_CLICK_SHORTCUT) return -1;
+    if (b === SHIFT_CLICK_SHORTCUT) return 1;
     return a.localeCompare(b);
   }
 
@@ -93,8 +96,9 @@
    * @param shortcut - shortcut string
    */
   function shortcutHint(shortcut: string) {
-    if (shortcut === DBCLICK_SHORTCUT) return m.mouse_dbclick_hint();
     if (shortcut === DRAG_SHORTCUT) return m.mouse_drag_hint();
+    if (shortcut === DBCLICK_SHORTCUT) return m.mouse_dbclick_hint();
+    if (shortcut === SHIFT_CLICK_SHORTCUT) return m.mouse_shift_click_hint();
     return m.keyboard_shortcut_hint();
   }
 
@@ -132,8 +136,12 @@
       <summary
         class="btn text-sm btn-sm btn-submit"
         onclick={(event) => {
-          if (shortcuts.current[DBCLICK_SHORTCUT] && shortcuts.current[DRAG_SHORTCUT]) {
-            // both mouse shortcuts are registered, open recorder directly
+          if (
+            shortcuts.current[DRAG_SHORTCUT] &&
+            shortcuts.current[DBCLICK_SHORTCUT] &&
+            shortcuts.current[SHIFT_CLICK_SHORTCUT]
+          ) {
+            // all mouse shortcuts are registered, open recorder directly
             event.preventDefault();
             recorder.showModal();
           }
@@ -142,6 +150,22 @@
         <StackPlus class="size-5" />{m.register_shortcut()}
       </summary>
       <ul class="dropdown-content menu z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
+        <!-- mouse drag-select option -->
+        <li class={shortcuts.current[DRAG_SHORTCUT] ? 'hidden' : ''}>
+          <button
+            class="btn px-1 btn-sm"
+            onclick={() => {
+              register(DRAG_SHORTCUT);
+              dropdownOpen = false;
+            }}
+          >
+            <span class="flex">
+              <MouseLeftClick class="size-4" />
+              <WaveSine class="size-4" />
+            </span>
+            <span class="mx-auto tracking-wider">{m.mouse_drag()}</span>
+          </button>
+        </li>
         <!-- mouse double-click option -->
         <li class={shortcuts.current[DBCLICK_SHORTCUT] ? 'hidden' : ''}>
           <button
@@ -158,20 +182,20 @@
             <span class="mx-auto tracking-wider">{m.mouse_dbclick()}</span>
           </button>
         </li>
-        <!-- mouse drag option -->
-        <li class={shortcuts.current[DRAG_SHORTCUT] ? 'hidden' : ''}>
+        <!-- mouse shift-click option -->
+        <li class={shortcuts.current[SHIFT_CLICK_SHORTCUT] ? 'hidden' : ''}>
           <button
             class="btn px-1 btn-sm"
             onclick={() => {
-              register(DRAG_SHORTCUT);
+              register(SHIFT_CLICK_SHORTCUT);
               dropdownOpen = false;
             }}
           >
             <span class="flex">
+              <ArrowFatUp class="size-4" />
               <MouseLeftClick class="size-4" />
-              <WaveSine class="size-4" />
             </span>
-            <span class="mx-auto tracking-wider">{m.mouse_drag()}</span>
+            <span class="mx-auto tracking-wider">{m.mouse_shift_click()}</span>
           </button>
         </li>
         <!-- keyboard shortcut option -->

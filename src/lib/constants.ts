@@ -1,12 +1,17 @@
 /**
+ * Mouse drag shortcut.
+ */
+export const DRAG_SHORTCUT = 'MouseClick+MouseMove';
+
+/**
  * Mouse double-click shortcut.
  */
 export const DBCLICK_SHORTCUT = 'MouseClick+MouseClick';
 
 /**
- * Mouse drag shortcut.
+ * Shift + Mouse click shortcut.
  */
-export const DRAG_SHORTCUT = 'MouseClick+MouseMove';
+export const SHIFT_CLICK_SHORTCUT = 'Shift+MouseClick';
 
 /**
  * Classification model prefix.
