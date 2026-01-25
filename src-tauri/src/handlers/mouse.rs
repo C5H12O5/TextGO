@@ -47,6 +47,12 @@ pub fn handle_mouse_event(event: Event) {
         EventType::KeyPress(key) => {
             // track shift key state
             if matches!(key, Key::ShiftLeft | Key::ShiftRight) {
+                #[cfg(target_os = "windows")]
+                if SHIFT_PRESSED.get() {
+                    // ignore repeated key press on Windows
+                    return;
+                }
+
                 SHIFT_PRESSED.set(true);
             }
             // hide toolbar on key press
@@ -118,7 +124,11 @@ fn handle_mouse_release() -> Result<(), AppError> {
             // emit shift+click event
             emit_event("Shift+MouseClick")?;
         }
+
+        // avoid sticky shift state on macOS
+        #[cfg(target_os = "macos")]
         SHIFT_PRESSED.set(false);
+
         return Ok(());
     }
 
