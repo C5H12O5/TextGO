@@ -78,7 +78,6 @@
   "built_in_icons_tip": "基于 Phosphor Icons",
   "upload_svg": "上传自定义 SVG",
   "upload_svg_btn": "选择 SVG 文件",
-  "invalid_svg_format": "请上传 SVG 格式的文件！",
   "svg_convert_failed": "SVG 文件转换为 base64 失败！",
   "experimental": "实验性功能",
   "model": "分类模型",

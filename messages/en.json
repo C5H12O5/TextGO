@@ -78,7 +78,6 @@
   "built_in_icons_tip": "Based on Phosphor Icons",
   "upload_svg": "Upload Custom SVG",
   "upload_svg_btn": "Select SVG File",
-  "invalid_svg_format": "Please upload SVG format file!",
   "svg_convert_failed": "Failed to convert SVG to base64!",
   "experimental": "Experimental Feature",
   "model": "Classification Model",

@@ -3,6 +3,8 @@
   import { alert, Icon, Label, Modal } from '$lib/components';
   import { phosphorIcons } from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { readTextFile } from '@tauri-apps/plugin-fs';
   import { ArrowsLeftRightIcon, UploadIcon } from 'phosphor-svelte';
   import { scale } from 'svelte/transition';
 
@@ -49,32 +51,29 @@
 
   /**
    * Handle SVG file upload.
-   *
-   * @param event - file input change event
    */
-  async function handleSVGUpload(event: Event) {
-    // get uploaded file
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (!file) {
-      return;
-    }
-
-    // check if file is SVG
-    if (!file.name.endsWith('.svg') && file.type !== 'image/svg+xml') {
-      alert({ level: 'error', message: m.invalid_svg_format() });
-      input.value = '';
-      return;
-    }
-
+  async function handleSVGUpload() {
     try {
-      // convert SVG file to base64 data URL
-      const data = new TextEncoder().encode(await file.text());
+      // open file dialog to select SVG file
+      const path = await open({
+        multiple: false,
+        directory: false,
+        filters: [{ name: 'SVG', extensions: ['svg'] }]
+      });
+
+      if (!path) {
+        return;
+      }
+
+      // read SVG file contents
+      const contents = await readTextFile(path);
+
+      // convert SVG to base64 data URL
+      const data = new TextEncoder().encode(contents);
       const base64 = `data:image/svg+xml;base64,${btoa(String.fromCharCode(...data))}`;
 
       // set as selected icon
       icon = base64;
-      input.value = '';
     } catch (error) {
       console.error(`Failed to convert SVG to base64: ${error}`);
       alert({ level: 'error', message: m.svg_convert_failed() });
@@ -137,11 +136,10 @@
 
       <!-- SVG upload -->
       <Label class="mt-2">{m.upload_svg()}</Label>
-      <label class="btn w-full btn-sm">
+      <button type="button" class="btn w-full btn-sm" onclick={handleSVGUpload}>
         <UploadIcon class="size-5" />
         {m.upload_svg_btn()}
-        <input type="file" accept=".svg,image/svg+xml" class="hidden" onchange={handleSVGUpload} />
-      </label>
+      </button>
 
       <!-- preview -->
       <Label class="mt-6">{m.preview()}</Label>
