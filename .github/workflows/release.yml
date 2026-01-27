@@ -21,6 +21,8 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
     steps:
       - uses: actions/checkout@v4
         with:
