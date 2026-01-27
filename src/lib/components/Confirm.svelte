@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { m } from '$lib/paraglide/messages';
   import { escape } from 'es-toolkit/string';
-  import { Warning, X, type IconComponentProps } from 'phosphor-svelte';
+  import { WarningIcon, XIcon, type IconComponentProps } from 'phosphor-svelte';
   import { tick, type Component } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { fade } from 'svelte/transition';
@@ -71,14 +71,14 @@
 </script>
 
 {#each messages.entries() as [id, msg] (id)}
-  {@const Icon = msg.icon || Warning}
+  {@const Icon = msg.icon || WarningIcon}
   <dialog {id} class="modal transition-none" transition:fade={{ duration: 200 }}>
     <form method="dialog" class="modal-backdrop">
       <button onclick={(event) => close(id, msg.oncancel, event)} aria-label="Close"></button>
     </form>
     <div class="modal-box max-w-xl">
       <form method="dialog" class="modal-corner">
-        <button onclick={(event) => close(id, msg.oncancel, event)}><X /></button>
+        <button onclick={(event) => close(id, msg.oncancel, event)}><XIcon /></button>
       </form>
       <!-- message title -->
       <h3 class="modal-title">

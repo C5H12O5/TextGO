@@ -3,7 +3,7 @@
   import { alert, Icon, Label, Modal } from '$lib/components';
   import { phosphorIcons } from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
-  import { ArrowsLeftRight, Upload } from 'phosphor-svelte';
+  import { ArrowsLeftRightIcon, UploadIcon } from 'phosphor-svelte';
   import { scale } from 'svelte/transition';
 
   let { icon: _icon = $bindable() }: { icon: string } = $props();
@@ -96,7 +96,7 @@
   <Icon icon={_icon} class="size-6 opacity-80" />
 </button>
 
-<Modal maxWidth="28rem" icon={ArrowsLeftRight} title={m.change_icon()} bind:this={modal}>
+<Modal maxWidth="28rem" icon={ArrowsLeftRightIcon} title={m.change_icon()} bind:this={modal}>
   <form
     method="post"
     use:enhance={({ cancel }) => {
@@ -138,7 +138,7 @@
       <!-- SVG upload -->
       <Label class="mt-2">{m.upload_svg()}</Label>
       <label class="btn w-full btn-sm">
-        <Upload class="size-5" />
+        <UploadIcon class="size-5" />
         {m.upload_svg_btn()}
         <input type="file" accept=".svg,image/svg+xml" class="hidden" onchange={handleSVGUpload} />
       </label>

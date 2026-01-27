@@ -22,7 +22,7 @@
   import { Button } from '$lib/components';
   import { tooltip } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
-  import { Question, SlidersHorizontal } from 'phosphor-svelte';
+  import { QuestionIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
 
   let { children, icon, title, tip, class: _class, moreOptions }: SettingProps = $props();
 </script>
@@ -40,11 +40,11 @@
     </span>
     {#if tip}
       <span class="cursor-help" use:tooltip={{ content: tip, placement: 'left' }}>
-        <Question class="size-5 opacity-70" />
+        <QuestionIcon class="size-5 opacity-70" />
       </span>
     {/if}
     {#if moreOptions}
-      <Button size="md" icon={SlidersHorizontal} text={m.more_options()} onclick={() => moreOptions?.()} />
+      <Button size="md" icon={SlidersHorizontalIcon} text={m.more_options()} onclick={() => moreOptions?.()} />
     {/if}
   </div>
   <div class="divider my-1"></div>

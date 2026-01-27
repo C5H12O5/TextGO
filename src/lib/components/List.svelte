@@ -2,15 +2,15 @@
   import { Button, confirm } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
   import {
-    ArrowCircleDown,
-    ArrowCircleUp,
-    CaretDown,
-    CaretRight,
-    Download,
-    Lightbulb,
-    PlusCircle,
-    Share,
-    XCircle,
+    ArrowCircleDownIcon,
+    ArrowCircleUpIcon,
+    CaretDownIcon,
+    CaretRightIcon,
+    DownloadIcon,
+    LightbulbIcon,
+    PlusCircleIcon,
+    ShareIcon,
+    XCircleIcon,
     type IconComponentProps
   } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
@@ -96,8 +96,8 @@
       <!-- collapse/expand button -->
       {#if collapsible}
         <Button class="swap swap-rotate {collapsed ? '' : 'swap-active'}" onclick={() => (collapsed = !collapsed)}>
-          <CaretDown class="swap-on size-4.5" />
-          <CaretRight class="swap-off size-4.5" />
+          <CaretDownIcon class="swap-on size-4.5" />
+          <CaretRightIcon class="swap-off size-4.5" />
         </Button>
       {/if}
       <!-- icon and title -->
@@ -114,14 +114,14 @@
     <!-- action buttons -->
     <span class="flex items-center gap-1">
       <Button
-        icon={PlusCircle}
+        icon={PlusCircleIcon}
         iconWeight="bold"
         text="{m.add()}{name}"
         class="text-green-800"
         onclick={() => oncreate?.()}
       />
       <Button
-        icon={XCircle}
+        icon={XCircleIcon}
         iconWeight="bold"
         text="{m.delete()}{name}"
         class={selectedId ? 'text-red-800' : 'btn-disabled'}
@@ -148,7 +148,7 @@
         }}
       />
       <Button
-        icon={ArrowCircleUp}
+        icon={ArrowCircleUpIcon}
         iconWeight="bold"
         text={m.move_up()}
         class={selectedId ? 'text-surface' : 'btn-disabled'}
@@ -166,7 +166,7 @@
         }}
       />
       <Button
-        icon={ArrowCircleDown}
+        icon={ArrowCircleDownIcon}
         iconWeight="bold"
         text={m.move_down()}
         class={selectedId ? 'text-surface' : 'btn-disabled'}
@@ -186,11 +186,11 @@
       {#if onimport || onexport}
         <div class="divider mx-0 my-auto divider-horizontal h-5 w-2 opacity-50"></div>
         {#if onimport}
-          <Button icon={Download} text="{m.import()}{name}" class="text-emphasis" onclick={() => onimport()} />
+          <Button icon={DownloadIcon} text="{m.import()}{name}" class="text-emphasis" onclick={() => onimport()} />
         {/if}
         {#if onexport}
           <Button
-            icon={Share}
+            icon={ShareIcon}
             text="{m.export()}{name}"
             class={selectedId ? 'text-emphasis' : 'btn-disabled'}
             onclick={() => {
@@ -215,7 +215,7 @@
     >
       {#if data.length === 0 && hint}
         <li class="list-row mx-auto items-center gap-1 text-surface/35">
-          <Lightbulb class="size-3.5" />{hint}
+          <LightbulbIcon class="size-3.5" />{hint}
         </li>
       {/if}
       {#each data as item, index (item.id)}

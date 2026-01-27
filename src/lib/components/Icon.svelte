@@ -12,7 +12,9 @@
 
   // mapping of phosphor icons
   export const phosphorIcons = Object.fromEntries(
-    Object.entries(phosphor).filter(([name]) => name !== 'IconContext')
+    Object.entries(phosphor)
+      .filter(([name]) => name.endsWith('Icon'))
+      .map(([name, icon]) => [name.replace(/Icon$/, ''), icon])
   ) as Record<string, Component<IconComponentProps>>;
 
   /**

@@ -37,7 +37,7 @@ ${m.prompt_variables_tip()}
   import { Loading } from '$lib/states.svelte';
   import { anthropicApiKey, geminiApiKey, openaiApiKey, openrouterApiKey, xaiApiKey } from '$lib/stores.svelte';
   import { markdown } from '@codemirror/lang-markdown';
-  import { Cube, SlidersHorizontal } from 'phosphor-svelte';
+  import { CubeIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
 
   const { prompts }: { prompts: Prompt[] } = $props();
   const loading = new Loading();
@@ -198,7 +198,7 @@ ${m.prompt_variables_tip()}
         <span>
           <Label required>{m.model_name()}</Label>
           <label class="input input-sm w-full">
-            <Cube class="size-5 opacity-50" />
+            <CubeIcon class="size-5 opacity-50" />
             <input class="grow" {...schema.modelName} bind:value={modelName} />
           </label>
         </span>
@@ -213,7 +213,7 @@ ${m.prompt_variables_tip()}
       <div class="collapse-arrow collapse mt-2 border">
         <input type="checkbox" class="peer" />
         <div class="collapse-title border-b-transparent transition-all duration-200 peer-checked:border-b">
-          <SlidersHorizontal class="size-5" />
+          <SlidersHorizontalIcon class="size-5" />
           {m.more_options()}
         </div>
         <div class="collapse-content space-y-1.5">

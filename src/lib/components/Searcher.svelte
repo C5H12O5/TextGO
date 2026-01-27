@@ -44,7 +44,7 @@
   import { SEARCHER_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
-  import { Globe } from 'phosphor-svelte';
+  import { GlobeIcon } from 'phosphor-svelte';
 
   const { searchers }: { searchers: Searcher[] } = $props();
   const loading = new Loading();
@@ -176,7 +176,7 @@
       <Label>{m.browser()}</Label>
       <div class="relative">
         <label class="input input-sm w-full">
-          <Globe class="size-5 opacity-50" />
+          <GlobeIcon class="size-5 opacity-50" />
           <input
             class="grow"
             {...schema.browser}

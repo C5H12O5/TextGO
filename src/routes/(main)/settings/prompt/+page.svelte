@@ -21,7 +21,7 @@
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { PencilSimpleLine, Robot, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
+  import { PencilSimpleLineIcon, RobotIcon, SlidersHorizontalIcon, SparkleIcon } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
   // mapping of provider icons
@@ -60,9 +60,9 @@
   });
 </script>
 
-<Setting icon={Robot} title={m.ai_conversation()} moreOptions={() => promptOptions.show()} class="min-h-(--app-h)">
+<Setting icon={RobotIcon} title={m.ai_conversation()} moreOptions={() => promptOptions.show()} class="min-h-(--app-h)">
   <List
-    icon={Sparkle}
+    icon={SparkleIcon}
     title={m.prompt_template_count({ count: prompts.current.length })}
     name={m.prompt_template()}
     hint={m.ai_conversation_hint()}
@@ -114,7 +114,7 @@
         </span>
       </div>
       <Button
-        icon={PencilSimpleLine}
+        icon={PencilSimpleLineIcon}
         onclick={(event) => {
           event.stopPropagation();
           promptUpdater.showModal(item.id);
@@ -127,7 +127,7 @@
 <Prompt bind:this={promptCreator} prompts={prompts.current} />
 <Prompt bind:this={promptUpdater} prompts={prompts.current} />
 
-<Modal icon={SlidersHorizontal} title={m.ai_options()} bind:this={promptOptions}>
+<Modal icon={SlidersHorizontalIcon} title={m.ai_options()} bind:this={promptOptions}>
   <form>
     <fieldset class="fieldset">
       <!-- Local LLM Providers -->

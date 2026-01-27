@@ -9,11 +9,11 @@
   import { listen } from '@tauri-apps/api/event';
   import { Image } from '@tauri-apps/api/image';
   import { IconMenuItem, Menu } from '@tauri-apps/api/menu';
-  import { getCurrentWindow, currentMonitor } from '@tauri-apps/api/window';
+  import { currentMonitor, getCurrentWindow } from '@tauri-apps/api/window';
   import { type } from '@tauri-apps/plugin-os';
   import { memoize } from 'es-toolkit/function';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { Code, DotsThreeVertical, LineVertical, MagnifyingGlass, Robot } from 'phosphor-svelte';
+  import { CodeIcon, DotsThreeVerticalIcon, LineVerticalIcon, MagnifyingGlassIcon, RobotIcon } from 'phosphor-svelte';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -57,17 +57,17 @@
     {
       mark: SCRIPT_MARK,
       collection: scripts.current,
-      defaultIcon: Code
+      defaultIcon: CodeIcon
     },
     {
       mark: PROMPT_MARK,
       collection: prompts.current,
-      defaultIcon: Robot
+      defaultIcon: RobotIcon
     },
     {
       mark: SEARCHER_MARK,
       collection: searchers.current,
-      defaultIcon: MagnifyingGlass
+      defaultIcon: MagnifyingGlassIcon
     }
   ]);
 
@@ -394,7 +394,7 @@
           class:hover:opacity-90={mouseEntered}
           data-tauri-drag-region
         >
-          <LineVertical class="pointer-events-none size-4" />
+          <LineVerticalIcon class="pointer-events-none size-4" />
         </span>
         {#each visibleActions as action (action.id)}
           {@const showIcon = action.rule.displayMode !== 'label'}
@@ -421,7 +421,7 @@
             class:hover:opacity-100={mouseEntered}
             onclick={showMoreActions}
           >
-            <DotsThreeVertical weight="bold" class="size-5" />
+            <DotsThreeVerticalIcon weight="bold" class="size-5" />
           </button>
         {/if}
       </div>

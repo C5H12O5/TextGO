@@ -209,7 +209,13 @@
     rectangularSelection
   } from '@codemirror/view';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { ArrowCounterClockwise, Code, CopySimple, FrameCorners, TextIndent } from 'phosphor-svelte';
+  import {
+    ArrowCounterClockwiseIcon,
+    CodeIcon,
+    CopySimpleIcon,
+    FrameCornersIcon,
+    TextIndentIcon
+  } from 'phosphor-svelte';
   import { onMount } from 'svelte';
   import CodeMirror from './CodeMirror.svelte';
 
@@ -447,7 +453,7 @@
     <span class="flex items-center gap-2">
       {#if enlarger}
         <Button
-          icon={FrameCorners}
+          icon={FrameCornersIcon}
           class="border-0 bg-transparent shadow-none {enlarger ? '' : 'pointer-events-none'}"
           onclick={() => enlarger && largerView?.show()}
         />
@@ -456,20 +462,20 @@
     </span>
     <span class="flex items-center gap-2">
       {#if !readOnly && resetter}
-        <Button icon={ArrowCounterClockwise} class="border-0 bg-transparent shadow-none" onclick={reset} />
+        <Button icon={ArrowCounterClockwiseIcon} class="border-0 bg-transparent shadow-none" onclick={reset} />
       {/if}
       {#if !readOnly && formatter && languageName.toLowerCase() in formatOptions}
-        <Button icon={TextIndent} class="border-0 bg-transparent shadow-none" onclick={format} />
+        <Button icon={TextIndentIcon} class="border-0 bg-transparent shadow-none" onclick={format} />
       {/if}
       {#if copier}
-        <Button icon={CopySimple} class="border-0 bg-transparent shadow-none" onclick={copy} />
+        <Button icon={CopySimpleIcon} class="border-0 bg-transparent shadow-none" onclick={copy} />
       {/if}
     </span>
   </div>
 </div>
 
 {#if enlarger}
-  <Modal icon={Code} title={title || languageName} maxWidth="80rem" bind:this={largerView}>
+  <Modal icon={CodeIcon} title={title || languageName} maxWidth="80rem" bind:this={largerView}>
     <CodeMirror
       {language}
       bind:document

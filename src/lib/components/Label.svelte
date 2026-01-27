@@ -21,7 +21,7 @@
 
 <script lang="ts">
   import { tooltip } from '$lib/helpers';
-  import { Question } from 'phosphor-svelte';
+  import { QuestionIcon } from 'phosphor-svelte';
 
   let { children, icon, tip, tipPlacement = 'left', required = false, class: _class }: LabelProps = $props();
 </script>
@@ -46,7 +46,7 @@
   <!-- hover tip -->
   {#if tip && tipPlacement != 'duplex'}
     <span class="cursor-help" use:tooltip={{ content: tip, placement: tipPlacement }}>
-      <Question class="size-5 opacity-70" />
+      <QuestionIcon class="size-5 opacity-70" />
     </span>
   {/if}
 </div>

@@ -9,7 +9,14 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { ArrowClockwise, Package, PencilSimpleLine, Sparkle, Sphere, Warning } from 'phosphor-svelte';
+  import {
+    ArrowClockwiseIcon,
+    PackageIcon,
+    PencilSimpleLineIcon,
+    SparkleIcon,
+    SphereIcon,
+    WarningIcon
+  } from 'phosphor-svelte';
 
   // classification model components
   let modelCreator: Model;
@@ -24,9 +31,9 @@
   });
 </script>
 
-<Setting icon={Sphere} title={m.model()} tip={m.experimental()} class="min-h-(--app-h)">
+<Setting icon={SphereIcon} title={m.model()} tip={m.experimental()} class="min-h-(--app-h)">
   <List
-    icon={Sparkle}
+    icon={SparkleIcon}
     title={m.model_count({ count: models.current.length })}
     name={m.model()}
     hint={m.model_hint()}
@@ -74,7 +81,7 @@
         {#if item.modelTrained === true}
           {@const { sizeKB } = Classifier.getModelInfo(item.id)}
           <span class="badge badge-ghost badge-sm">
-            <Package class="size-4 shrink-0 opacity-80" />
+            <PackageIcon class="size-4 shrink-0 opacity-80" />
             <span class="opacity-80">{sizeKB} KB</span>
           </span>
         {/if}
@@ -88,13 +95,13 @@
       {:else if item.modelTrained === false}
         <!-- model training failed -->
         <div class="flex h-8 items-center gap-2 opacity-50">
-          <Warning class="size-4 shrink-0" />
+          <WarningIcon class="size-4 shrink-0" />
           {m.training_failed()}
         </div>
       {:else if Classifier.getModelInfo(item.id).sizeKB === 0}
         <!-- model not trained -->
         <Button
-          icon={ArrowClockwise}
+          icon={ArrowClockwiseIcon}
           onclick={(event) => {
             event.stopPropagation();
             modelUpdater.train(item.id);
@@ -103,7 +110,7 @@
       {:else}
         <!-- model trained -->
         <Button
-          icon={PencilSimpleLine}
+          icon={PencilSimpleLineIcon}
           onclick={(event) => {
             event.stopPropagation();
             modelUpdater.showModal(item.id);

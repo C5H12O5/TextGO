@@ -7,20 +7,20 @@ import { ModelOperations, type ModelResult } from '@vscode/vscode-languagedetect
 import { memoize } from 'es-toolkit/function';
 import { francAll, type TrigramTuple } from 'franc-min';
 import {
-  CalendarDots,
-  Clock,
-  Code,
-  Envelope,
-  Folder,
-  Globe,
-  GlobeSimple,
-  Key,
-  Link,
-  Magnet,
-  NumberCircleNine,
-  TextAa,
-  TextT,
-  Translate
+  CalendarDotsIcon,
+  ClockIcon,
+  CodeIcon,
+  EnvelopeIcon,
+  FolderIcon,
+  GlobeIcon,
+  GlobeSimpleIcon,
+  KeyIcon,
+  LinkIcon,
+  MagnetIcon,
+  NumberCircleNineIcon,
+  TextAaIcon,
+  TextTIcon,
+  TranslateIcon
 } from 'phosphor-svelte';
 
 /**
@@ -50,83 +50,83 @@ export const GENERAL_CASES: Option[] = [
   {
     value: 'url',
     label: m.url(),
-    icon: Link,
+    icon: LinkIcon,
     pattern: /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*$/
   },
   {
     value: 'path',
     label: m.path(),
-    icon: Folder,
+    icon: FolderIcon,
     pattern: /^(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)$/
   },
   {
     value: 'email',
     label: m.email(),
-    icon: Envelope,
+    icon: EnvelopeIcon,
     pattern:
       /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i
   },
   {
     value: 'numbers',
     label: m.numbers(),
-    icon: NumberCircleNine,
+    icon: NumberCircleNineIcon,
     pattern: /^[0-9]+$/
   },
   {
     value: 'small_letters',
     label: m.small_letters(),
-    icon: TextT,
+    icon: TextTIcon,
     pattern: /^(?=.*[a-z])[a-z0-9_\W]+$/
   },
   {
     value: 'capital_letters',
     label: m.capital_letters(),
-    icon: TextT,
+    icon: TextTIcon,
     pattern: /^(?=.*[A-Z])[A-Z0-9_\W]+$/
   },
   {
     value: 'uuid',
     label: m.uuid(),
-    icon: Key,
+    icon: KeyIcon,
     pattern: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/i
   },
   {
     value: 'guid',
     label: m.guid(),
-    icon: Key,
+    icon: KeyIcon,
     pattern: /^\{?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\}?$/i
   },
   {
     value: 'ipv4',
     label: m.ipv4(),
-    icon: GlobeSimple,
+    icon: GlobeSimpleIcon,
     pattern:
       /^(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/
   },
   {
     value: 'ipv6',
     label: m.ipv6(),
-    icon: Globe,
+    icon: GlobeIcon,
     pattern:
       /^(?:(?:[0-9a-f]{1,4}:){7}[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,7}:|(?:[0-9a-f]{1,4}:){1,6}:[0-9a-f]{1,4}|(?:[0-9a-f]{1,4}:){1,5}(?::[0-9a-f]{1,4}){1,2}|(?:[0-9a-f]{1,4}:){1,4}(?::[0-9a-f]{1,4}){1,3}|(?:[0-9a-f]{1,4}:){1,3}(?::[0-9a-f]{1,4}){1,4}|(?:[0-9a-f]{1,4}:){1,2}(?::[0-9a-f]{1,4}){1,5}|[0-9a-f]{1,4}:(?::[0-9a-f]{1,4}){1,6}|:(?:(?::[0-9a-f]{1,4}){1,7}|:)|fe80:(?::[0-9a-f]{0,4}){0,4}%[0-9a-z]+|::(?:ffff(?::0{1,4})?:)?(?:(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\.){3}(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])|(?:[0-9a-f]{1,4}:){1,4}:(?:(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9])\.){3}(?:25[0-5]|(?:2[0-4]|1?[0-9])?[0-9]))$/i
   },
   {
     value: 'info_hash',
     label: m.info_hash(),
-    icon: Magnet,
+    icon: MagnetIcon,
     pattern: /^(?:[0-9a-zA-Z]{32}|[0-9a-fA-F]{40}|1220[0-9a-fA-F]{64})$/
   },
   {
     value: 'iso8601',
     label: m.iso8601(),
-    icon: CalendarDots,
+    icon: CalendarDotsIcon,
     pattern:
       /^(?:(?:\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\d|30)|02-(?:0[1-9]|1\d|2[0-8])))T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:[+-](?:[01]\d|2[0-3]):[0-5]\d|Z)?$/
   },
   {
     value: 'timestamp',
     label: m.timestamp(),
-    icon: Clock,
+    icon: ClockIcon,
     // 10-digit second-level or 13-digit millisecond-level Unix timestamp between 2001 and 2286
     pattern: /^(?:[1-9]\d{9}|[1-9]\d{12})$/
   }
@@ -176,7 +176,7 @@ export const TEXT_CASES: Option[] = [
     label: m.constant_case(),
     pattern: /^[A-Z0-9]+(?:_[A-Z0-9]+)+$/
   }
-].map((c) => ({ ...c, icon: TextAa }));
+].map((c) => ({ ...c, icon: TextAaIcon }));
 
 /**
  * Natural language recognition options.
@@ -192,7 +192,7 @@ export const NATURAL_CASES: Option[] = [
   { value: 'spa', label: m.lang_spa() },
   { value: 'por', label: m.lang_por() },
   { value: 'arb', label: m.lang_arb() }
-].map((c) => ({ ...c, icon: Translate }));
+].map((c) => ({ ...c, icon: TranslateIcon }));
 
 /**
  * Programming language recognition options.
@@ -252,7 +252,7 @@ export const PROGRAMMING_CASES: Option[] = [
   { value: 'vba', label: 'Visual Basic' },
   { value: 'xml', label: 'XML' },
   { value: 'yaml', label: 'YAML' }
-].map((c) => ({ ...c, icon: Code }));
+].map((c) => ({ ...c, icon: CodeIcon }));
 
 // natural language detection options for franc
 const FRANC_OPTIONS = { minLength: 2, only: NATURAL_CASES.map((c) => c.value as string) };

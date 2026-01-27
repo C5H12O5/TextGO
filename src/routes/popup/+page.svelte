@@ -10,15 +10,15 @@
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { marked } from 'marked';
   import {
-    ArrowCircleRight,
-    ArrowClockwise,
-    ArrowCounterClockwise,
-    ChatTeardropDots,
-    CopySimple,
-    PushPin,
-    StopCircle,
-    TextIndent,
-    X
+    ArrowCircleRightIcon,
+    ArrowClockwiseIcon,
+    ArrowCounterClockwiseIcon,
+    ChatTeardropDotsIcon,
+    CopySimpleIcon,
+    PushPinIcon,
+    StopCircleIcon,
+    TextIndentIcon,
+    XIcon
   } from 'phosphor-svelte';
   import { onMount, tick } from 'svelte';
   import { fade, fly } from 'svelte/transition';
@@ -291,7 +291,7 @@
       <!-- popup window title -->
       <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
         <Button
-          icon={PushPin}
+          icon={PushPinIcon}
           iconWeight="fill"
           iconClass={popupPinned.current ? '-rotate-90' : '-rotate-45 text-base-content/30'}
           onclick={() => (popupPinned.current = !popupPinned.current)}
@@ -305,26 +305,26 @@
         <div class="ml-auto flex items-center gap-1">
           {#if promptMode}
             <Button
-              icon={StopCircle}
+              icon={StopCircleIcon}
               iconWeight="bold"
               iconClass="opacity-80"
               disabled={!(streaming && entry?.response)}
               onclick={() => abort()}
             />
             <Button
-              icon={ArrowClockwise}
+              icon={ArrowClockwiseIcon}
               iconWeight="bold"
               iconClass="opacity-80"
               disabled={streaming || !entry?.response}
               onclick={() => chat()}
             />
           {:else}
-            <Button icon={ArrowCounterClockwise} onclick={() => codeMirror?.reset()} />
-            <Button icon={TextIndent} onclick={() => codeMirror?.format()} />
-            <Button icon={CopySimple} onclick={() => codeMirror?.copy()} />
+            <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
+            <Button icon={TextIndentIcon} onclick={() => codeMirror?.format()} />
+            <Button icon={CopySimpleIcon} onclick={() => codeMirror?.copy()} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
-          <Button icon={X} onclick={() => currentWindow.hide()} />
+          <Button icon={XIcon} onclick={() => currentWindow.hide()} />
         </div>
       </div>
       <!-- popup window body -->
@@ -354,7 +354,7 @@
               }}
               transition:fade={{ duration: 150 }}
             >
-              <ChatTeardropDots class="size-4.5 -scale-x-100 opacity-70" />
+              <ChatTeardropDotsIcon class="size-4.5 -scale-x-100 opacity-70" />
             </button>
           {/if}
           <!-- continue chat input -->
@@ -377,7 +377,7 @@
                   onblur={() => setTimeout(() => (replyBox = false), 200)}
                   onkeydown={(event) => event.key === 'Enter' && reply()}
                 />
-                <Button size="sm" icon={ArrowCircleRight} onclick={reply} disabled={!userMessage.trim()} />
+                <Button size="sm" icon={ArrowCircleRightIcon} onclick={reply} disabled={!userMessage.trim()} />
               </label>
             </div>
           {/if}

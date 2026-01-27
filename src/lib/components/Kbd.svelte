@@ -1,40 +1,40 @@
 <script lang="ts" module>
   import { getKbdLabel } from '$lib/helpers';
   import {
-    ArrowBendDownLeft,
-    ArrowDown,
-    ArrowFatUp,
-    ArrowLeft,
-    ArrowLineRight,
-    ArrowRight,
-    ArrowUp,
-    Backspace,
-    Command,
-    Control,
-    MouseLeftClick,
-    Option,
-    WaveSine,
-    WindowsLogo,
+    ArrowBendDownLeftIcon,
+    ArrowDownIcon,
+    ArrowFatUpIcon,
+    ArrowLeftIcon,
+    ArrowLineRightIcon,
+    ArrowRightIcon,
+    ArrowUpIcon,
+    BackspaceIcon,
+    CommandIcon,
+    ControlIcon,
+    MouseLeftClickIcon,
+    OptionIcon,
+    WaveSineIcon,
+    WindowsLogoIcon,
     type IconComponentProps
   } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
   // mapping of key labels to icon components
   const ICON_MAP: Record<string, Component<IconComponentProps>> = {
-    MouseClick: MouseLeftClick,
-    MouseMove: WaveSine,
-    Win: WindowsLogo,
-    '⌘': Command,
-    '⌃': Control,
-    '⌥': Option,
-    '⇧': ArrowFatUp,
-    '↵': ArrowBendDownLeft,
-    '⇥': ArrowLineRight,
-    '↑': ArrowUp,
-    '↓': ArrowDown,
-    '←': ArrowLeft,
-    '→': ArrowRight,
-    '⌫': Backspace
+    MouseClick: MouseLeftClickIcon,
+    MouseMove: WaveSineIcon,
+    Win: WindowsLogoIcon,
+    '⌘': CommandIcon,
+    '⌃': ControlIcon,
+    '⌥': OptionIcon,
+    '⇧': ArrowFatUpIcon,
+    '↵': ArrowBendDownLeftIcon,
+    '⇥': ArrowLineRightIcon,
+    '↑': ArrowUpIcon,
+    '↓': ArrowDownIcon,
+    '←': ArrowLeftIcon,
+    '→': ArrowRightIcon,
+    '⌫': BackspaceIcon
   };
 
   /**

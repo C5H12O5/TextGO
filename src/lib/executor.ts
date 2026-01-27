@@ -25,7 +25,7 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import { ArrowsClockwise, Browsers, CopySimple, FolderOpen, Function } from 'phosphor-svelte';
+import { ArrowsClockwiseIcon, BrowsersIcon, CopySimpleIcon, FolderOpenIcon, FunctionIcon } from 'phosphor-svelte';
 
 /**
  * Executor function type.
@@ -56,7 +56,7 @@ export const DEFAULT_ACTIONS: Processor[] = [
   {
     value: 'copy',
     label: m.copy(),
-    icon: CopySimple,
+    icon: CopySimpleIcon,
     process: (text: string) => {
       if (text) {
         invoke('set_clipboard_text', { text });
@@ -75,7 +75,7 @@ export const GENERAL_ACTIONS: Processor[] = [
   {
     value: 'open_urls',
     label: m.open_urls(),
-    icon: Browsers,
+    icon: BrowsersIcon,
     process: (text: string) => {
       // extract all URLs in text
       const urls = text.match(URL_REGEX) || [];
@@ -93,7 +93,7 @@ export const GENERAL_ACTIONS: Processor[] = [
   {
     value: 'open_paths',
     label: m.open_paths(),
-    icon: FolderOpen,
+    icon: FolderOpenIcon,
     process: (text: string) => {
       // extract all file paths in text
       const paths = text.match(PATH_REGEX) || [];
@@ -154,7 +154,7 @@ export const CONVERT_ACTIONS: Processor[] = [
     label: m.constant_case(),
     process: constantCase
   }
-].map((a) => ({ ...a, icon: ArrowsClockwise, builtIn: true }));
+].map((a) => ({ ...a, icon: ArrowsClockwiseIcon, builtIn: true }));
 
 /**
  * Text processing actions.
@@ -200,7 +200,7 @@ export const PROCESS_ACTIONS: Processor[] = [
     label: m.unescape(),
     process: unescape
   }
-].map((a) => ({ ...a, icon: Function, builtIn: true }));
+].map((a) => ({ ...a, icon: FunctionIcon, builtIn: true }));
 
 // memoized lookup function
 const findBuiltinAction = memoize((action: string) =>

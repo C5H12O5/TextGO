@@ -1,6 +1,6 @@
 <script lang="ts" module>
   import { type as os } from '@tauri-apps/plugin-os';
-  import { CheckFat, Globe, MinusCircle, Prohibit, SquaresFour } from 'phosphor-svelte';
+  import { CheckFatIcon, GlobeIcon, MinusCircleIcon, ProhibitIcon, SquaresFourIcon } from 'phosphor-svelte';
 
   export type BWListProps = {
     /** Type of the list: black or white. */
@@ -21,7 +21,7 @@
   import { debounce } from 'es-toolkit/function';
 
   let { type = 'black', list = $bindable([]) }: BWListProps = $props();
-  const icon = $derived(type === 'black' ? Prohibit : CheckFat);
+  const icon = $derived(type === 'black' ? ProhibitIcon : CheckFatIcon);
   const title = $derived(type === 'black' ? m.blacklist() : m.whitelist());
 
   // show modal dialog
@@ -88,9 +88,9 @@
         <div class="flex items-center gap-2">
           <label class="input input-sm w-full">
             {#if website}
-              <Globe class="size-5 opacity-30" />
+              <GlobeIcon class="size-5 opacity-30" />
             {:else}
-              <SquaresFour class="size-5 opacity-30" />
+              <SquaresFourIcon class="size-5 opacity-30" />
             {/if}
             <input
               type="search"
@@ -101,7 +101,7 @@
               placeholder={m.bwlist_placeholder()}
             />
           </label>
-          <Button icon={MinusCircle} size="sm" class="text-error" onclick={() => handleRemove(index)} />
+          <Button icon={MinusCircleIcon} size="sm" class="text-error" onclick={() => handleRemove(index)} />
         </div>
       {/each}
       {#if list.length === 0}
@@ -111,7 +111,7 @@
     <!-- action buttons -->
     <div class="flex justify-end gap-2 border-t pt-4">
       <Button
-        icon={SquaresFour}
+        icon={SquaresFourIcon}
         onclick={addApplication}
         text={type === 'black' ? m.block_app() : m.allow_app()}
         square={false}
@@ -119,7 +119,7 @@
         textClass="font-normal"
       />
       <Button
-        icon={Globe}
+        icon={GlobeIcon}
         onclick={addWebsite}
         text={type === 'black' ? m.block_website() : m.allow_website()}
         square={false}

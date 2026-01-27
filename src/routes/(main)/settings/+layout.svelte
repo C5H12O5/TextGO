@@ -24,18 +24,18 @@
   import { relaunch } from '@tauri-apps/plugin-process';
   import { check } from '@tauri-apps/plugin-updater';
   import {
-    ArrowLeft,
-    CheckCircle,
-    Code,
-    Download,
-    Gear,
-    GearSix,
-    MagnifyingGlass,
-    Robot,
-    Scroll,
-    Sparkle,
-    Sphere,
-    Warning
+    ArrowLeftIcon,
+    CheckCircleIcon,
+    CodeIcon,
+    DownloadIcon,
+    GearIcon,
+    GearSixIcon,
+    MagnifyingGlassIcon,
+    RobotIcon,
+    ScrollIcon,
+    SparkleIcon,
+    SphereIcon,
+    WarningIcon
   } from 'phosphor-svelte';
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
@@ -73,7 +73,7 @@
       updateChecking = false;
       updateStatus = '';
       confirm({
-        icon: Sparkle,
+        icon: SparkleIcon,
         title: m.new_version_available({ version: update.version }),
         message: m.download_and_install(),
         onconfirm: () => downloadAndInstall(update)
@@ -150,12 +150,12 @@
 <Title>
   <Button
     size="md"
-    icon={ArrowLeft}
+    icon={ArrowLeftIcon}
     class="border-none gradient bg-base-300"
     onclick={() => goto(resolve('/shortcuts'))}
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1 pl-8">
-    <GearSix class="size-5 opacity-80" />
+    <GearSixIcon class="size-5 opacity-80" />
     <span class="tracking-wider">{m.settings()}</span>
   </div>
   <div class="flex items-center gap-2">
@@ -193,15 +193,15 @@
   <div class="fixed top-10.5 bottom-2 flex flex-col overflow-y-auto rounded-container p-0" style:width={SIDEBAR_WIDTH}>
     <ul class="menu w-full gap-1">
       <li class="menu-title pl-1 text-xs">{m.custom_recognitions()}</li>
-      {@render menu(Sphere, m.model(), resolve('/settings/model'))}
-      {@render menu(Scroll, m.regexp(), resolve('/settings/regexp'))}
+      {@render menu(SphereIcon, m.model(), resolve('/settings/model'))}
+      {@render menu(ScrollIcon, m.regexp(), resolve('/settings/regexp'))}
       <div class="divider my-0 opacity-50"></div>
       <li class="menu-title pl-1 text-xs">{m.custom_actions()}</li>
-      {@render menu(Robot, m.ai_conversation(), resolve('/settings/prompt'))}
-      {@render menu(Code, m.script_execution(), resolve('/settings/script'))}
-      {@render menu(MagnifyingGlass, m.web_search(), resolve('/settings/searcher'))}
+      {@render menu(RobotIcon, m.ai_conversation(), resolve('/settings/prompt'))}
+      {@render menu(CodeIcon, m.script_execution(), resolve('/settings/script'))}
+      {@render menu(MagnifyingGlassIcon, m.web_search(), resolve('/settings/searcher'))}
       <div class="divider my-0 opacity-50"></div>
-      {@render menu(Gear, m.general_settings(), resolve('/settings/general'))}
+      {@render menu(GearIcon, m.general_settings(), resolve('/settings/general'))}
     </ul>
     {#if version}
       <button
@@ -214,9 +214,9 @@
         {#if updateStatus}
           <div class="flex gap-1">
             {#if latestFlag}
-              <CheckCircle class="size-3.5 text-success" />
+              <CheckCircleIcon class="size-3.5 text-success" />
             {:else if failedFlag}
-              <Warning class="size-3.5 text-error" />
+              <WarningIcon class="size-3.5 text-error" />
             {:else}
               <span class="loading size-3.5 loading-spinner"></span>
             {/if}
@@ -224,7 +224,7 @@
           </div>
         {:else if versionHovering}
           <div class="flex cursor-pointer gap-1" in:fade={{ duration: 200 }}>
-            <Download class="size-3.5" />{m.check_for_updates()}
+            <DownloadIcon class="size-3.5" />{m.check_for_updates()}
           </div>
         {:else}
           <div class="tracking-wider" in:fade={{ duration: 200 }}>v{version}</div>

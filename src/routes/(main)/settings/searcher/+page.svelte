@@ -8,7 +8,7 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { Globe, MagnifyingGlass, PencilSimpleLine, Sparkle } from 'phosphor-svelte';
+  import { GlobeIcon, MagnifyingGlassIcon, PencilSimpleLineIcon, SparkleIcon } from 'phosphor-svelte';
 
   // searcher components
   let searcherCreator: Searcher;
@@ -23,9 +23,9 @@
   });
 </script>
 
-<Setting icon={MagnifyingGlass} title={m.web_search()} class="min-h-(--app-h)">
+<Setting icon={MagnifyingGlassIcon} title={m.web_search()} class="min-h-(--app-h)">
   <List
-    icon={Sparkle}
+    icon={SparkleIcon}
     title={m.search_action_count({ count: searchers.current.length })}
     name={m.search_action()}
     hint={m.web_search_hint()}
@@ -70,13 +70,13 @@
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
         {#if item.browser}
           <span class="badge min-w-14 truncate badge-ghost badge-sm" title={item.browser}>
-            <Globe class="size-4 shrink-0 opacity-80" />
+            <GlobeIcon class="size-4 shrink-0 opacity-80" />
             <span class="truncate opacity-80">{item.browser}</span>
           </span>
         {/if}
       </div>
       <Button
-        icon={PencilSimpleLine}
+        icon={PencilSimpleLineIcon}
         onclick={(event) => {
           event.stopPropagation();
           searcherUpdater.showModal(item.id);

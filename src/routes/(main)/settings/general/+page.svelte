@@ -7,7 +7,13 @@
   import { invoke } from '@tauri-apps/api/core';
   import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { type } from '@tauri-apps/plugin-os';
-  import { CheckCircle, ClockCounterClockwise, Monitor, ShieldCheck, WarningCircle } from 'phosphor-svelte';
+  import {
+    CheckCircleIcon,
+    ClockCounterClockwiseIcon,
+    MonitorIcon,
+    ShieldCheckIcon,
+    WarningCircleIcon
+  } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
   // operating system type
@@ -48,7 +54,7 @@
 </script>
 
 <div class="flex flex-col gap-2">
-  <Setting icon={Monitor} title={m.appearance_settings()}>
+  <Setting icon={MonitorIcon} title={m.appearance_settings()}>
     <fieldset class="flex items-center justify-between">
       <Label>{m.language_settings()}</Label>
       <Select
@@ -80,7 +86,7 @@
       />
     </fieldset>
   </Setting>
-  <Setting icon={ClockCounterClockwise} title={m.history_records()}>
+  <Setting icon={ClockCounterClockwiseIcon} title={m.history_records()}>
     <fieldset class="flex items-center justify-between">
       <Label>{m.history_records_retention()}</Label>
       <Select
@@ -96,18 +102,18 @@
       />
     </fieldset>
   </Setting>
-  <Setting icon={ShieldCheck} title={m.behavior_settings()}>
+  <Setting icon={ShieldCheckIcon} title={m.behavior_settings()}>
     {#if osType === 'macos'}
       <fieldset class="flex items-center justify-between">
         <Label tip={m.accessibility_explain()} tipPlacement="duplex">{m.accessibility()}</Label>
         {#if accessibility.current}
           <div class="badge bg-base-200 text-emphasis">
-            <CheckCircle class="size-4" />
+            <CheckCircleIcon class="size-4" />
             <span class="text-sm">{m.permission_granted()}</span>
           </div>
         {:else}
           <Button
-            icon={WarningCircle}
+            icon={WarningCircleIcon}
             square={false}
             class="border-emphasis/30 bg-base-200 text-emphasis"
             text={m.request_permission()}

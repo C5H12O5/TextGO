@@ -6,21 +6,21 @@
   import { m } from '$lib/paraglide/messages';
   import { blacklist, shortcuts } from '$lib/stores.svelte';
   import {
-    ArrowArcRight,
-    ArrowCircleRight,
-    ArrowFatLineRight,
-    ArrowFatUp,
-    ArrowsClockwise,
-    Browser,
-    GearSix,
-    Keyboard,
-    MouseLeftClick,
-    Prohibit,
-    Sparkle,
-    StackPlus,
-    Trash,
-    Warning,
-    WaveSine
+    ArrowArcRightIcon,
+    ArrowCircleRightIcon,
+    ArrowFatLineRightIcon,
+    ArrowFatUpIcon,
+    ArrowsClockwiseIcon,
+    BrowserIcon,
+    GearSixIcon,
+    KeyboardIcon,
+    MouseLeftClickIcon,
+    ProhibitIcon,
+    SparkleIcon,
+    StackPlusIcon,
+    TrashIcon,
+    WarningIcon,
+    WaveSineIcon
   } from 'phosphor-svelte';
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
@@ -129,7 +129,7 @@
       {/if}
     </span>
     <button class="btn ml-auto btn-soft btn-sm" onclick={() => blacklistManager.showModal()}>
-      <Prohibit class="size-5" />
+      <ProhibitIcon class="size-5" />
       <span class="text-sm font-normal">{m.blacklist()}</span>
     </button>
     <details class="dropdown dropdown-end" bind:this={dropdown} bind:open={dropdownOpen}>
@@ -147,7 +147,7 @@
           }
         }}
       >
-        <StackPlus class="size-5" />{m.register_shortcut()}
+        <StackPlusIcon class="size-5" />{m.register_shortcut()}
       </summary>
       <ul class="dropdown-content menu z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
         <!-- mouse drag-select option -->
@@ -160,8 +160,8 @@
             }}
           >
             <span class="flex">
-              <MouseLeftClick class="size-4" />
-              <WaveSine class="size-4" />
+              <MouseLeftClickIcon class="size-4" />
+              <WaveSineIcon class="size-4" />
             </span>
             <span class="mx-auto tracking-wider">{m.mouse_drag()}</span>
           </button>
@@ -176,8 +176,8 @@
             }}
           >
             <span class="flex">
-              <MouseLeftClick class="size-4" />
-              <MouseLeftClick class="size-4" />
+              <MouseLeftClickIcon class="size-4" />
+              <MouseLeftClickIcon class="size-4" />
             </span>
             <span class="mx-auto tracking-wider">{m.mouse_dbclick()}</span>
           </button>
@@ -192,8 +192,8 @@
             }}
           >
             <span class="flex">
-              <ArrowFatUp class="size-4" />
-              <MouseLeftClick class="size-4" />
+              <ArrowFatUpIcon class="size-4" />
+              <MouseLeftClickIcon class="size-4" />
             </span>
             <span class="mx-auto tracking-wider">{m.mouse_shift_click()}</span>
           </button>
@@ -207,7 +207,7 @@
               dropdownOpen = false;
             }}
           >
-            <Keyboard class="mx-1.75 size-4.5" />
+            <KeyboardIcon class="mx-1.75 size-4.5" />
             <span class="mx-auto tracking-wider">{m.keyboard_keys()}</span>
           </button>
         </li>
@@ -238,8 +238,8 @@
           }}
         >
           <label class="swap swap-rotate group-hover:swap-active">
-            <ArrowsClockwise weight="bold" class="swap-on size-4" />
-            <ArrowCircleRight weight="bold" class="swap-off size-4" />
+            <ArrowsClockwiseIcon weight="bold" class="swap-on size-4" />
+            <ArrowCircleRightIcon weight="bold" class="swap-off size-4" />
           </label>
           <span class="text-sm">
             {#if mode === 'toolbar'}
@@ -250,7 +250,7 @@
           </span>
         </button>
         <Button
-          icon={Trash}
+          icon={TrashIcon}
           size="sm"
           class="ml-auto text-emphasis"
           text={m.delete_shortcut()}
@@ -279,7 +279,7 @@
         ondelete={(item) => ruleBinder?.unbind(item)}
       >
         {#snippet title()}
-          <Sparkle class="mx-1 size-4 opacity-60" />
+          <SparkleIcon class="mx-1 size-4 opacity-60" />
           <span class="text-sm tracking-wide opacity-60">
             {#if rules.length > 0}
               {m.rule_count({ count: rules.length })}
@@ -295,11 +295,11 @@
             <div class="col-span-5 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->
-                <ArrowArcRight class="size-5 shrink-0 opacity-30" />
+                <ArrowArcRightIcon class="size-5 shrink-0 opacity-30" />
                 <span class="truncate opacity-30">{caseLabel}</span>
               {:else if !caseLabel}
                 <!-- invalid type -->
-                <Warning class="size-5 shrink-0 opacity-50" />
+                <WarningIcon class="size-5 shrink-0 opacity-50" />
                 <span class="truncate line-through opacity-50">
                   {item.case.substring(item.case.indexOf('-') + 1)}
                 </span>
@@ -312,16 +312,16 @@
               {/if}
             </div>
             <div class="col-span-1 flex items-center justify-center">
-              <ArrowFatLineRight class="size-5 shrink-0 opacity-15" />
+              <ArrowFatLineRightIcon class="size-5 shrink-0 opacity-15" />
             </div>
             <div class="col-span-6 flex items-center gap-1.5" title={actionLabel}>
               {#if item.action === ''}
                 <!-- default action -->
-                <Browser class="size-5 shrink-0 opacity-30" />
+                <BrowserIcon class="size-5 shrink-0 opacity-30" />
                 <span class="truncate opacity-30">{actionLabel}</span>
               {:else if !actionLabel}
                 <!-- invalid action -->
-                <Warning class="size-5 shrink-0 opacity-50" />
+                <WarningIcon class="size-5 shrink-0 opacity-50" />
                 <span class="truncate line-through opacity-50">
                   {item.action.substring(item.action.indexOf('-') + 1)}
                 </span>
@@ -335,7 +335,7 @@
             </div>
           </div>
           <Button
-            icon={GearSix}
+            icon={GearSixIcon}
             iconWeight="fill"
             onclick={(event) => {
               event.stopPropagation();

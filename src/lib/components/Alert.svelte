@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { CheckCircle, Info, Warning, XCircle, type IconComponentProps } from 'phosphor-svelte';
+  import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, type IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
   export type Message = {
@@ -42,10 +42,10 @@
 
   // mapping of alert levels to colors and icons
   const mappings: Record<string, { color: string; icon: Component<IconComponentProps> }> = {
-    info: { color: 'var(--color-info)', icon: Info },
-    success: { color: 'var(--color-success)', icon: CheckCircle },
-    warning: { color: 'var(--color-warning)', icon: Warning },
-    error: { color: 'var(--color-error)', icon: XCircle }
+    info: { color: 'var(--color-info)', icon: InfoIcon },
+    success: { color: 'var(--color-success)', icon: CheckCircleIcon },
+    warning: { color: 'var(--color-warning)', icon: WarningIcon },
+    error: { color: 'var(--color-error)', icon: XCircleIcon }
   };
 </script>
 

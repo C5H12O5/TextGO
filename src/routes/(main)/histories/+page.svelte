@@ -8,20 +8,20 @@
   import { entries } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import {
-    ArrowFatLineRight,
-    ArrowLeft,
-    Broom,
-    ClockCounterClockwise,
-    CopySimple,
-    Cube,
-    FileJs,
-    FilePy,
-    FingerprintSimple,
-    MagnifyingGlass,
-    Robot,
-    TerminalWindow,
-    Textbox,
-    Trash
+    ArrowFatLineRightIcon,
+    ArrowLeftIcon,
+    BroomIcon,
+    ClockCounterClockwiseIcon,
+    CopySimpleIcon,
+    CubeIcon,
+    FileJsIcon,
+    FilePyIcon,
+    FingerprintSimpleIcon,
+    MagnifyingGlassIcon,
+    RobotIcon,
+    TerminalWindowIcon,
+    TextboxIcon,
+    TrashIcon
   } from 'phosphor-svelte';
   import { flip } from 'svelte/animate';
 
@@ -40,11 +40,11 @@
    * @param entry - history entry
    */
   function getActionIcon(entry: Entry) {
-    if (entry.actionType === 'prompt') return Robot;
-    if (entry.actionType === 'searcher') return MagnifyingGlass;
-    if (entry.scriptLang === 'javascript') return FileJs;
-    if (entry.scriptLang === 'python') return FilePy;
-    if (entry.scriptLang?.endsWith('shell')) return TerminalWindow;
+    if (entry.actionType === 'prompt') return RobotIcon;
+    if (entry.actionType === 'searcher') return MagnifyingGlassIcon;
+    if (entry.scriptLang === 'javascript') return FileJsIcon;
+    if (entry.scriptLang === 'python') return FilePyIcon;
+    if (entry.scriptLang?.endsWith('shell')) return TerminalWindowIcon;
     return null;
   }
 </script>
@@ -52,17 +52,17 @@
 <Title>
   <Button
     size="md"
-    icon={ArrowLeft}
+    icon={ArrowLeftIcon}
     class="border-none gradient bg-base-300"
     onclick={() => goto(resolve('/shortcuts'))}
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1">
-    <ClockCounterClockwise class="size-5 opacity-80" />
+    <ClockCounterClockwiseIcon class="size-5 opacity-80" />
     <span class="tracking-wider">{m.histories()}</span>
   </div>
   <Button
     size="sm"
-    icon={Broom}
+    icon={BroomIcon}
     iconWeight="duotone"
     onclick={() => {
       if (entries.current.length === 0) {
@@ -94,7 +94,7 @@
           <Shortcut small shortcut={entry.shortcut} class="ml-3 text-shortcut" />
           <time class="ml-3 text-sm text-emphasis/50">{formatISO8601(entry.datetime)}</time>
           <Button
-            icon={Trash}
+            icon={TrashIcon}
             size="sm"
             class="ml-auto text-emphasis"
             onclick={() => entries.current.splice(index, 1)}
@@ -104,11 +104,11 @@
         <div class="grid grid-cols-[1fr_auto_1fr] gap-4">
           <div class="min-w-0 space-y-2">
             <div class="flex h-6 items-center gap-2">
-              <Textbox class="size-4.5 shrink-0 opacity-80" />
+              <TextboxIcon class="size-4.5 shrink-0 opacity-80" />
               <span class="truncate text-sm opacity-60">{m.selected_text()}</span>
               {#if entry.caseLabel}
                 <span class="badge min-w-14 gap-1 truncate border badge-xs opacity-80" title={entry.caseLabel}>
-                  <FingerprintSimple class="size-3 shrink-0" />
+                  <FingerprintSimpleIcon class="size-3 shrink-0" />
                   <span class="truncate">{entry.caseLabel}</span>
                 </span>
               {/if}
@@ -117,7 +117,7 @@
               {entry.selection}
             </div>
           </div>
-          <ArrowFatLineRight class="size-6 shrink-0 self-center opacity-20" />
+          <ArrowFatLineRightIcon class="size-6 shrink-0 self-center opacity-20" />
           <div class="min-w-0 space-y-2">
             <div class="flex h-6 items-center justify-between gap-2">
               <div class="flex min-w-0 items-center gap-2">
@@ -128,12 +128,12 @@
                 <span class="truncate text-sm font-medium" title={entry.actionLabel}>{entry.actionLabel}</span>
                 {#if promptMode}
                   <span class="badge min-w-14 gap-1 truncate border badge-xs" title={entry.model}>
-                    <Cube class="size-3 shrink-0" />
+                    <CubeIcon class="size-3 shrink-0" />
                     <span class="truncate">{entry.model}</span>
                   </span>
                 {/if}
               </div>
-              <Button icon={CopySimple} onclick={() => copy(entry.result)} />
+              <Button icon={CopySimpleIcon} onclick={() => copy(entry.result)} />
             </div>
             <div class="h-14 overflow-auto overscroll-none rounded-box border bg-base-200 px-2 py-1 text-xs opacity-70">
               {entry.result}

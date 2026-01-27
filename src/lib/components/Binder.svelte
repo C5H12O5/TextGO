@@ -26,15 +26,15 @@
   import { Loading } from '$lib/states.svelte';
   import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
   import {
-    AppWindow,
-    ArrowArcRight,
-    ArrowFatLineRight,
-    ArrowSquareIn,
-    ClipboardText,
-    ClockCounterClockwise,
-    SlidersHorizontal,
-    Sparkle,
-    TextItalic
+    AppWindowIcon,
+    ArrowArcRightIcon,
+    ArrowFatLineRightIcon,
+    ArrowSquareInIcon,
+    ClipboardTextIcon,
+    ClockCounterClockwiseIcon,
+    SlidersHorizontalIcon,
+    SparkleIcon,
+    TextItalicIcon
   } from 'phosphor-svelte';
   import { untrack } from 'svelte';
 
@@ -356,7 +356,7 @@
   }
 </script>
 
-<Modal maxWidth="36.5rem" icon={Sparkle} title="{ruleId ? m.update() : m.add()}{m.rule()}" bind:this={modal}>
+<Modal maxWidth="36.5rem" icon={SparkleIcon} title="{ruleId ? m.update() : m.add()}{m.rule()}" bind:this={modal}>
   <form
     method="post"
     use:enhance={({ cancel }) => {
@@ -374,7 +374,7 @@
               {#if selectedCase?.icon}
                 <Icon icon={selectedCase.icon} class="m-auto size-5" />
               {:else if caseId == ''}
-                <Icon icon={ArrowArcRight} class="m-auto size-6 opacity-50" />
+                <Icon icon={ArrowArcRightIcon} class="m-auto size-6 opacity-50" />
               {/if}
             </span>
             <Select bind:value={caseId} options={unusedCases} class="select-sm shadow-sm" disabled={!!ruleId} />
@@ -382,7 +382,7 @@
         </div>
         <!-- arrow separator -->
         <div class="col-span-1 flex items-center justify-center">
-          <ArrowFatLineRight class="size-6 opacity-15" />
+          <ArrowFatLineRightIcon class="size-6 opacity-15" />
         </div>
         <!-- action selection -->
         <div class="col-span-5">
@@ -400,7 +400,7 @@
     </fieldset>
     <fieldset class="fieldset rounded-box border p-4 pt-2">
       <legend class="fieldset-legend px-1 text-sm font-medium">
-        <SlidersHorizontal class="size-5" />
+        <SlidersHorizontalIcon class="size-5" />
         {m.more_options()}
       </legend>
       <!-- toolbar options -->
@@ -434,7 +434,7 @@
           </div>
           <Toggle
             bind:value={preview}
-            icon={ArrowSquareIn}
+            icon={ArrowSquareInIcon}
             iconClass="size-4"
             label={m.result_as_label()}
             labelClass="text-sm"
@@ -455,7 +455,7 @@
             <Radio
               bind:group={outputMode}
               value="replace"
-              icon={TextItalic}
+              icon={TextItalicIcon}
               iconClass="size-5"
               label={m.replace_selection()}
               labelClass="text-sm"
@@ -465,7 +465,7 @@
             <Radio
               bind:group={outputMode}
               value="popup"
-              icon={AppWindow}
+              icon={AppWindowIcon}
               iconClass="size-5"
               label={m.show_in_popup()}
               labelClass="text-sm"
@@ -475,7 +475,7 @@
           </div>
           <Toggle
             bind:value={history}
-            icon={ClockCounterClockwise}
+            icon={ClockCounterClockwiseIcon}
             iconClass="size-4"
             label={m.save_to_history()}
             labelClass="text-sm"
@@ -484,7 +484,7 @@
           />
           <Toggle
             bind:value={clipboard}
-            icon={ClipboardText}
+            icon={ClipboardTextIcon}
             iconClass="size-4"
             label={m.copy_to_clipboard()}
             labelClass="text-sm"

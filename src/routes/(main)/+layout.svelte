@@ -9,7 +9,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { ClockCounterClockwise, GearSix, Stack } from 'phosphor-svelte';
+  import { ClockCounterClockwiseIcon, GearSixIcon, StackIcon } from 'phosphor-svelte';
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -112,7 +112,7 @@
     {#snippet fallback()}
       <!-- shortcuts -->
       <div class="pointer-events-none flex items-center gap-1 rounded-field gradient bg-base-300 px-2 py-0.5">
-        <Stack class="size-5 opacity-80" weight="duotone" />
+        <StackIcon class="size-5 opacity-80" weight="duotone" />
         <span class="tracking-wider">{m.shortcuts()}</span>
       </div>
       <div class="ml-auto flex items-center gap-2">
@@ -137,14 +137,14 @@
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
           onclick={() => goto(resolve('/histories'))}
         >
-          <ClockCounterClockwise class="size-5" />
+          <ClockCounterClockwiseIcon class="size-5" />
         </button>
         <!-- settings -->
         <button
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
           onclick={() => goto(resolve('/settings'))}
         >
-          <GearSix class="size-5" />
+          <GearSixIcon class="size-5" />
         </button>
       </div>
     {/snippet}

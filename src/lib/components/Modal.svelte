@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { X, type IconComponentProps } from 'phosphor-svelte';
+  import { XIcon, type IconComponentProps } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
 
@@ -108,7 +108,7 @@
     </form>
     <div class="modal-box {boxClass}" style:max-width={maxWidth}>
       <form method="dialog" class="modal-corner {cornerClass}">
-        <button onclick={close}><X /></button>
+        <button onclick={close}><XIcon /></button>
       </form>
       {#if title}
         <h3 class="modal-title">

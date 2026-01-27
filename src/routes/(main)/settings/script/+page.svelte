@@ -10,7 +10,7 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { Code, PencilSimpleLine, SlidersHorizontal, Sparkle } from 'phosphor-svelte';
+  import { CodeIcon, PencilSimpleLineIcon, SlidersHorizontalIcon, SparkleIcon } from 'phosphor-svelte';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({
@@ -33,9 +33,9 @@
   });
 </script>
 
-<Setting icon={Code} title={m.script_execution()} moreOptions={() => scriptOptions.show()} class="min-h-(--app-h)">
+<Setting icon={CodeIcon} title={m.script_execution()} moreOptions={() => scriptOptions.show()} class="min-h-(--app-h)">
   <List
-    icon={Sparkle}
+    icon={SparkleIcon}
     title={m.script_count({ count: scripts.current.length })}
     name={m.script()}
     hint={m.script_execution_hint()}
@@ -95,7 +95,7 @@
         </span>
       </div>
       <Button
-        icon={PencilSimpleLine}
+        icon={PencilSimpleLineIcon}
         onclick={(event) => {
           event.stopPropagation();
           scriptUpdater.showModal(item.id);
@@ -108,7 +108,7 @@
 <ScriptModal bind:this={scriptCreator} scripts={scripts.current} />
 <ScriptModal bind:this={scriptUpdater} scripts={scripts.current} />
 
-<Modal icon={SlidersHorizontal} title={m.script_options()} bind:this={scriptOptions}>
+<Modal icon={SlidersHorizontalIcon} title={m.script_options()} bind:this={scriptOptions}>
   <form>
     <fieldset class="fieldset">
       <Label icon={NodeJS}>{m.nodejs_path()}</Label>

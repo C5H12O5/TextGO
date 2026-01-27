@@ -8,7 +8,7 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { PencilSimpleLine, Scroll, Sparkle } from 'phosphor-svelte';
+  import { PencilSimpleLineIcon, ScrollIcon, SparkleIcon } from 'phosphor-svelte';
 
   // regular expression components
   let regexpCreator: Regexp;
@@ -23,9 +23,9 @@
   });
 </script>
 
-<Setting icon={Scroll} title={m.regexp()} class="min-h-(--app-h)">
+<Setting icon={ScrollIcon} title={m.regexp()} class="min-h-(--app-h)">
   <List
-    icon={Sparkle}
+    icon={SparkleIcon}
     title={m.regexp_count({ count: regexps.current.length })}
     name={m.regexp()}
     hint={m.regexp_hint()}
@@ -70,7 +70,7 @@
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
       </div>
       <Button
-        icon={PencilSimpleLine}
+        icon={PencilSimpleLineIcon}
         onclick={(event) => {
           event.stopPropagation();
           regexpUpdater.showModal(item.id);

@@ -2,7 +2,7 @@
   import { Kbd, Modal } from '$lib/components';
   import { Keyboard } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { Lightbulb, StackPlus } from 'phosphor-svelte';
+  import { LightbulbIcon, StackPlusIcon } from 'phosphor-svelte';
   import { onMount } from 'svelte';
 
   const { onrecord }: { onrecord?: (value: string) => void } = $props();
@@ -156,7 +156,7 @@
   });
 </script>
 
-<Modal maxWidth="28rem" icon={StackPlus} title={m.keyboard_shortcut()} bind:this={modal} onclose={stopRecording}>
+<Modal maxWidth="28rem" icon={StackPlusIcon} title={m.keyboard_shortcut()} bind:this={modal} onclose={stopRecording}>
   <fieldset class="fieldset gap-4 py-4">
     <div class="flex items-center justify-center">
       <div class="flex min-h-10 min-w-40 items-center gap-1 rounded-box border-2 border-primary px-3">
@@ -178,7 +178,7 @@
       </div>
     </div>
     <div class="flex items-center justify-center gap-1 opacity-30">
-      <Lightbulb class="size-3.5" />
+      <LightbulbIcon class="size-3.5" />
       <span class="text-xs tracking-wider">{m.recording_keys_hint()}</span>
     </div>
   </fieldset>
