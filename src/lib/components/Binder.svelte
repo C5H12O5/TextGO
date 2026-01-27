@@ -478,7 +478,7 @@
               radioClass="radio-sm"
               disabled={selectedAction?.noResult}
               onclick={(event) => {
-                if (outputMode === 'popup') {
+                if (!actionId.startsWith(PROMPT_MARK) && outputMode === 'popup') {
                   event.preventDefault();
                   outputMode = undefined;
                 }

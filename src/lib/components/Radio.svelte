@@ -52,7 +52,7 @@
     {name}
     {value}
     {disabled}
-    class="radio checked:border-emphasis checked:text-emphasis disabled:opacity-100 {radioClass}"
+    class="pointer-events-none radio checked:border-emphasis checked:text-emphasis disabled:opacity-100 {radioClass}"
   />
   {#if icon}
     {@const Icon = icon}
