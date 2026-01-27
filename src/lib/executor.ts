@@ -25,7 +25,15 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import { ArrowsClockwiseIcon, BrowsersIcon, CopySimpleIcon, FolderOpenIcon, FunctionIcon } from 'phosphor-svelte';
+import {
+  ArrowsClockwiseIcon,
+  BrowsersIcon,
+  CopySimpleIcon,
+  FolderOpenIcon,
+  FunctionIcon,
+  ScissorsIcon,
+  SelectionBackgroundIcon
+} from 'phosphor-svelte';
 
 /**
  * Executor function type.
@@ -61,6 +69,28 @@ export const DEFAULT_ACTIONS: Processor[] = [
       if (text) {
         invoke('set_clipboard_text', { text });
       }
+      return '';
+    },
+    builtIn: true,
+    noResult: true
+  },
+  {
+    value: 'cut',
+    label: m.cut(),
+    icon: ScissorsIcon,
+    process: () => {
+      invoke('send_cut_keys');
+      return '';
+    },
+    builtIn: true,
+    noResult: true
+  },
+  {
+    value: 'paste',
+    label: m.paste(),
+    icon: SelectionBackgroundIcon,
+    process: () => {
+      invoke('send_paste_keys');
       return '';
     },
     builtIn: true,

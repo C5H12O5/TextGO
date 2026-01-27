@@ -1,9 +1,8 @@
 use crate::commands::clipboard::{clear_clipboard, get_clipboard_text, with_clipboard_backup};
+use crate::commands::keyboard::send_copy_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
-use crate::ENIGO;
-use enigo::{Direction, Key, Keyboard};
 use log::warn;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -85,28 +84,4 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
         Ok(selected_text)
     })
     .await
-}
-
-/// Send copy shortcut key.
-fn send_copy_keys() -> Result<(), AppError> {
-    let mut enigo_guard = ENIGO.lock()?;
-    let enigo = enigo_guard.as_mut()?;
-
-    // release modifier keys to avoid interference
-    enigo.key(Key::Meta, Direction::Release)?;
-    enigo.key(Key::Control, Direction::Release)?;
-    enigo.key(Key::Alt, Direction::Release)?;
-    enigo.key(Key::Shift, Direction::Release)?;
-
-    // send Cmd+C or Ctrl+C
-    #[cfg(target_os = "macos")]
-    let modifier = Key::Meta;
-    #[cfg(not(target_os = "macos"))]
-    let modifier = Key::Control;
-
-    enigo.key(modifier, Direction::Press)?;
-    enigo.key(Key::Unicode('c'), Direction::Click)?;
-    enigo.key(modifier, Direction::Release)?;
-
-    Ok(())
 }

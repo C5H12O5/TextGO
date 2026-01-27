@@ -1,4 +1,5 @@
 use crate::commands::clipboard::{set_clipboard_text, with_clipboard_backup};
+use crate::commands::keyboard::send_paste_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
@@ -68,28 +69,4 @@ pub async fn enter_text(
     } else {
         with_clipboard_backup(do_enter_text).await
     }
-}
-
-/// Send paste shortcut key.
-fn send_paste_keys() -> Result<(), AppError> {
-    let mut enigo_guard = ENIGO.lock()?;
-    let enigo = enigo_guard.as_mut()?;
-
-    // release modifier keys to avoid interference
-    enigo.key(Key::Meta, Direction::Release)?;
-    enigo.key(Key::Control, Direction::Release)?;
-    enigo.key(Key::Alt, Direction::Release)?;
-    enigo.key(Key::Shift, Direction::Release)?;
-
-    // send Cmd+V or Ctrl+V
-    #[cfg(target_os = "macos")]
-    let modifier = Key::Meta;
-    #[cfg(not(target_os = "macos"))]
-    let modifier = Key::Control;
-
-    enigo.key(modifier, Direction::Press)?;
-    enigo.key(Key::Unicode('v'), Direction::Click)?;
-    enigo.key(modifier, Direction::Release)?;
-
-    Ok(())
 }

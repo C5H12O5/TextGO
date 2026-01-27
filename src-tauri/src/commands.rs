@@ -1,6 +1,7 @@
 mod clipboard;
 mod executor;
 mod identifier;
+mod keyboard;
 mod permission;
 mod selection;
 mod shortcut;
@@ -12,6 +13,7 @@ mod window;
 pub use clipboard::*;
 pub use executor::*;
 pub use identifier::*;
+pub use keyboard::*;
 pub use permission::*;
 pub use selection::*;
 pub use shortcut::*;
