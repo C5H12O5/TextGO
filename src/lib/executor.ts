@@ -228,36 +228,40 @@ const scriptExecutor: Executor = async (rule, entry, placement) => {
 
   const scriptId = rule.action.substring(SCRIPT_MARK.length);
   const script = scripts.current.find((s) => s.id === scriptId);
-  if (script) {
-    console.debug(`Executing script: ${scriptId}`);
-    const result = await executeScript(script, entry);
-    // save history record
-    entry.actionType = 'script';
-    entry.actionLabel = scriptId;
-    entry.result = result.text;
-    entry.scriptLang = script.lang;
-    if (rule.history) {
-      saveHistory(entry);
-    }
-    if (!result.error) {
-      // return result text in preview mode
-      if (rule.preview) {
-        return result.text;
-      }
-      if (rule.outputMode === 'replace') {
-        // directly replace selected text
-        await invoke('enter_text', {
-          text: result.text,
-          clipboard: rule.clipboard
-        });
-      } else if (rule.outputMode === 'popup') {
-        // show popup window
-        entry.copyOnPopup = rule.clipboard;
-        await showPopup(entry, placement);
-      }
-    }
+  if (!script) {
+    return false;
   }
 
+  console.debug(`Executing script: ${scriptId}`);
+  const result = await executeScript(script, entry);
+  // save history record
+  entry.actionType = 'script';
+  entry.actionLabel = scriptId;
+  entry.result = result.text;
+  entry.scriptLang = script.lang;
+  if (rule.history) {
+    saveHistory(entry);
+  }
+  if (!result.error) {
+    // return result text in preview mode
+    if (rule.preview) {
+      return result.text;
+    }
+    if (rule.outputMode === 'replace') {
+      // directly replace selected text
+      await invoke('enter_text', {
+        text: result.text,
+        clipboard: rule.clipboard
+      });
+    } else if (rule.outputMode === 'popup') {
+      // show popup window
+      entry.copyOnPopup = rule.clipboard;
+      await showPopup(entry, placement);
+    } else if (rule.outputMode === undefined && rule.clipboard) {
+      // copy result to clipboard
+      await invoke('set_clipboard_text', { text: result.text });
+    }
+  }
   return true;
 };
 
@@ -271,26 +275,27 @@ const promptExecutor: Executor = async (rule, entry, placement) => {
 
   const promptId = rule.action.substring(PROMPT_MARK.length);
   const prompt = prompts.current.find((p) => p.id === promptId);
-  if (prompt) {
-    console.debug(`Generating prompt: ${promptId}`);
-    const result = renderPrompt(prompt, entry);
-    // save history record
-    entry.actionType = 'prompt';
-    entry.actionLabel = promptId;
-    entry.result = result;
-    entry.systemPrompt = prompt.systemPrompt;
-    entry.provider = prompt.provider;
-    entry.model = prompt.model;
-    entry.maxTokens = prompt.maxTokens;
-    entry.temperature = prompt.temperature;
-    entry.topP = prompt.topP;
-    if (rule.history) {
-      saveHistory(entry);
-    }
-    // show popup window
-    await showPopup(entry, placement);
+  if (!prompt) {
+    return false;
   }
 
+  console.debug(`Generating prompt: ${promptId}`);
+  const result = renderPrompt(prompt, entry);
+  // save history record
+  entry.actionType = 'prompt';
+  entry.actionLabel = promptId;
+  entry.result = result;
+  entry.systemPrompt = prompt.systemPrompt;
+  entry.provider = prompt.provider;
+  entry.model = prompt.model;
+  entry.maxTokens = prompt.maxTokens;
+  entry.temperature = prompt.temperature;
+  entry.topP = prompt.topP;
+  if (rule.history) {
+    saveHistory(entry);
+  }
+  // show popup window
+  await showPopup(entry, placement);
   return true;
 };
 
@@ -304,21 +309,22 @@ const searcherExecutor: Executor = async (rule, entry) => {
 
   const searcherId = rule.action.substring(SEARCHER_MARK.length);
   const searcher = searchers.current.find((s) => s.id === searcherId);
-  if (searcher) {
-    console.debug(`Opening URL for searcher: ${searcherId}`);
-    // replace {{selection}} in URL template with trimmed selection
-    const result = searcher.url.replace(/\{\{selection\}\}/g, entry.selection.trim());
-    // save history record
-    entry.actionType = 'searcher';
-    entry.actionLabel = searcherId;
-    entry.result = result;
-    if (rule.history) {
-      saveHistory(entry);
-    }
-    // open URL
-    await openUrl(result, searcher.browser);
+  if (!searcher) {
+    return false;
   }
 
+  console.debug(`Opening URL for searcher: ${searcherId}`);
+  // replace {{selection}} in URL template with trimmed selection
+  const result = searcher.url.replace(/\{\{selection\}\}/g, entry.selection.trim());
+  // save history record
+  entry.actionType = 'searcher';
+  entry.actionLabel = searcherId;
+  entry.result = result;
+  if (rule.history) {
+    saveHistory(entry);
+  }
+  // open URL
+  await openUrl(result, searcher.browser);
   return true;
 };
 
@@ -354,8 +360,10 @@ const builtinExecutor: Executor = async (rule, entry, placement) => {
     // show popup window
     entry.copyOnPopup = rule.clipboard;
     await showPopup(entry, placement);
+  } else if (rule.outputMode === undefined && rule.clipboard) {
+    // copy result to clipboard
+    await invoke('set_clipboard_text', { text: result });
   }
-
   return true;
 };
 

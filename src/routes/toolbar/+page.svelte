@@ -336,6 +336,9 @@
             }),
             placement: placement
           });
+        } else if (action.rule.outputMode === undefined && action.rule.clipboard) {
+          // copy preview text to clipboard
+          await invoke('set_clipboard_text', { text: action.label });
         }
       } else {
         // execute the action normally

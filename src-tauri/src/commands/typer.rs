@@ -62,7 +62,7 @@ pub async fn enter_text(
         Ok(())
     };
 
-    // if clipboard is true, keep text in clipboard; otherwise backup and restore
+    // keep text in clipboard if clipboard is true, otherwise backup and restore
     if clipboard.unwrap_or(false) {
         do_enter_text().await
     } else {

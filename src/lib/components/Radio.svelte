@@ -1,6 +1,7 @@
 <script lang="ts" generics="T">
   import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
+  import type { MouseEventHandler } from 'svelte/elements';
 
   type RadioProps = {
     /** Radio group. */
@@ -20,6 +21,8 @@
     iconClass?: string;
     labelClass?: string;
     radioClass?: string;
+    /** Callback function when clicking the radio. */
+    onclick?: MouseEventHandler<HTMLLabelElement>;
   };
 
   let {
@@ -32,14 +35,17 @@
     class: _class,
     iconClass,
     labelClass,
-    radioClass
+    radioClass,
+    onclick
   }: RadioProps = $props();
 
   let checkedClass = $derived(group === value ? 'gradient bg-base-200 text-base-content shadow-sm' : 'outline-dashed');
   let disabledClass = $derived(disabled ? 'opacity-50 cursor-not-allowed' : '');
 </script>
 
-<label class="label rounded-box px-2 py-1 outline transition-all {checkedClass} {disabledClass} {_class}">
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<label class="label rounded-box px-2 py-1 outline transition-all {checkedClass} {disabledClass} {_class}" {onclick}>
   <input
     type="radio"
     bind:group

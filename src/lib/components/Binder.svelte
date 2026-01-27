@@ -461,6 +461,12 @@
               labelClass="text-sm"
               radioClass="radio-sm"
               disabled={selectedAction?.noResult || selectedAction?.promptMode}
+              onclick={(event) => {
+                if (outputMode === 'replace') {
+                  event.preventDefault();
+                  outputMode = undefined;
+                }
+              }}
             />
             <Radio
               bind:group={outputMode}
@@ -471,6 +477,12 @@
               labelClass="text-sm"
               radioClass="radio-sm"
               disabled={selectedAction?.noResult}
+              onclick={(event) => {
+                if (outputMode === 'popup') {
+                  event.preventDefault();
+                  outputMode = undefined;
+                }
+              }}
             />
           </div>
           <Toggle
