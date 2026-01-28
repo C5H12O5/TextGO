@@ -393,7 +393,7 @@
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
       <div class="flex h-7.5 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
-          class="flex cursor-move items-center opacity-20 transition-opacity"
+          class="flex cursor-grabbing items-center opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
           data-tauri-drag-region
         >
