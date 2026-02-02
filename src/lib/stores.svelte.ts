@@ -9,6 +9,9 @@ import { tick, untrack } from 'svelte';
 // create a global LazyStore instance
 const store = new LazyStore('.settings.dat');
 
+// the type of snapshot of a state
+type Snapshot<T> = ReturnType<typeof $state.snapshot<T>>;
+
 /**
  * Options for creating persisted state.
  */
@@ -17,8 +20,8 @@ type Options<T> = {
   onload?: (value: T) => void;
   decrypt?: (value: T) => T;
   /** Callback function when the stored value changes. */
-  onchange?: (value: T | $state.Snapshot<T>) => void;
-  encrypt?: (value: T | $state.Snapshot<T>) => T;
+  onchange?: (value: T | Snapshot<T>) => void;
+  encrypt?: (value: T | Snapshot<T>) => T;
 };
 
 /**
