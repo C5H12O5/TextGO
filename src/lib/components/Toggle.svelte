@@ -39,7 +39,7 @@
   let disabledClass = $derived(disabled ? 'opacity-50 cursor-not-allowed' : '');
 </script>
 
-<label class="label w-fit px-2 {checkedClass} {disabledClass} {_class}">
+<label class="label w-fit {checkedClass} {disabledClass} {_class}">
   <input
     type="checkbox"
     bind:checked={value}

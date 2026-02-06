@@ -439,7 +439,7 @@
             label={m.result_as_label()}
             labelClass="text-sm"
             toggleClass="toggle-xs"
-            class="mt-2"
+            class="mt-2 px-2"
             disabled={selectedAction?.noResult || selectedAction?.promptMode}
           />
         </div>
@@ -492,7 +492,7 @@
             label={m.save_to_history()}
             labelClass="text-sm"
             toggleClass="toggle-xs"
-            class="mt-2"
+            class="mt-2 px-2"
           />
           <Toggle
             bind:value={clipboard}
@@ -501,6 +501,7 @@
             label={m.copy_to_clipboard()}
             labelClass="text-sm"
             toggleClass="toggle-xs"
+            class="px-2"
             disabled={selectedAction?.noResult || selectedAction?.promptMode}
           />
         </div>
