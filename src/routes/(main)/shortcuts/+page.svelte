@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut } from '$lib/components';
+  import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut, Toggle } from '$lib/components';
   import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { blacklist, shortcuts } from '$lib/stores.svelte';
+  import { blacklist, longPress, shortcuts } from '$lib/stores.svelte';
   import {
     ArrowArcRightIcon,
     ArrowCircleRightIcon,
@@ -12,6 +12,7 @@
     ArrowFatUpIcon,
     ArrowsClockwiseIcon,
     BrowserIcon,
+    CursorClickIcon,
     GearSixIcon,
     KeyboardIcon,
     MouseLeftClickIcon,
@@ -24,9 +25,6 @@
   } from 'phosphor-svelte';
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
-
-  // total number of rules
-  let totalRules = $derived(Object.values(shortcuts.current).reduce((sum, s) => sum + s.rules.length, 0));
 
   // shortcut recorder
   let recorder: Recorder;
@@ -122,17 +120,22 @@
 
 <div class="relative min-h-(--app-h) rounded-container">
   <div class="flex items-center gap-2">
-    <span class="pl-1 text-sm opacity-60">
-      {m.shortcuts_count()}: {Object.keys(shortcuts.current).length}
-      {#if totalRules > 0}
-        <span class="text-xs tracking-wider opacity-50">({m.rule_count({ count: totalRules })})</span>
-      {/if}
-    </span>
+    <div class="flex flex-col gap-0.5">
+      <Toggle
+        bind:value={longPress.current}
+        icon={CursorClickIcon}
+        iconClass="size-4.5"
+        label={m.long_press_enabled()}
+        labelClass="text-sm"
+        toggleClass="toggle-xs"
+      />
+      <span class="text-xs opacity-50">{m.long_press_explain()}</span>
+    </div>
     <button class="btn ml-auto btn-soft btn-sm" onclick={() => blacklistManager.showModal()}>
       <ProhibitIcon class="size-5" />
       <span class="text-sm font-normal">{m.blacklist()}</span>
     </button>
-    <details class="dropdown dropdown-end" bind:this={dropdown} bind:open={dropdownOpen}>
+    <details class="dropdown dropdown-end text-nowrap" bind:this={dropdown} bind:open={dropdownOpen}>
       <summary
         class="btn text-sm btn-sm btn-submit"
         onclick={(event) => {
@@ -223,7 +226,7 @@
     {@const mode = shortcuts.current[shortcut].mode}
     {@const rules = shortcuts.current[shortcut].rules}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
-      <div class="flex items-center gap-4 pt-8 pb-2">
+      <div class="mt-4 flex items-center gap-4 border-t border-dashed pt-4 pb-2">
         <Shortcut {shortcut} class="text-shortcut" />
         <button
           class="group badge cursor-pointer bg-base-200 opacity-80 transition-all hover:opacity-100"

@@ -95,6 +95,18 @@ export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google' | 'xai';
 
 /**
+ * Custom LLM provider.
+ */
+export type CustomLLMProvider = {
+  /** Provider name. */
+  name: string;
+  /** Base URL. */
+  baseUrl: string;
+  /** API key. */
+  apiKey: string;
+};
+
+/**
  * Chat options for AI conversation.
  */
 export type ChatOptions = {

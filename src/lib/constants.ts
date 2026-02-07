@@ -14,6 +14,11 @@ export const DBCLICK_SHORTCUT = 'MouseClick+MouseClick';
 export const SHIFT_CLICK_SHORTCUT = 'Shift+MouseClick';
 
 /**
+ * Long press shortcut.
+ */
+export const LONG_PRESS_SHORTCUT = 'LongPress';
+
+/**
  * Classification model prefix.
  */
 export const MODEL_MARK = 'model-';

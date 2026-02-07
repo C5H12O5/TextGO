@@ -1,6 +1,7 @@
 import { manager } from '$lib/shortcut';
-import type { Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$lib/types';
+import type { CustomLLMProvider, Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$lib/types';
 import { decrypt, encrypt } from '$lib/utils';
+import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { debounce } from 'es-toolkit/function';
@@ -159,6 +160,20 @@ export const popupPinned = persisted<boolean>('popupPinned', false);
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);
 
+// whether to enable long press trigger
+export const longPress = persisted<boolean>('longPress', false, {
+  onchange: (enabled) => {
+    invoke('set_long_press_enabled', { enabled });
+  }
+});
+
+// duration threshold for long press trigger
+export const longPressDuration = persisted<number>('longPressDuration', 1000, {
+  onchange: (duration) => {
+    invoke('set_long_press_duration', { duration });
+  }
+});
+
 // trigger record
 export const entries = persisted<Entry[]>('entries', []);
 
@@ -192,9 +207,12 @@ export const ollamaHost = persisted<string>('ollamaHost', '');
 // LM Studio service address
 export const lmstudioHost = persisted<string>('lmstudioHost', '');
 
-// API keys
+// API keys for Cloud LLM providers
 export const openrouterApiKey = persisted<string>('openrouterApiKey', '', { encrypt, decrypt });
 export const openaiApiKey = persisted<string>('openaiApiKey', '', { encrypt, decrypt });
 export const anthropicApiKey = persisted<string>('anthropicApiKey', '', { encrypt, decrypt });
 export const geminiApiKey = persisted<string>('geminiApiKey', '', { encrypt, decrypt });
 export const xaiApiKey = persisted<string>('xaiApiKey', '', { encrypt, decrypt });
+
+// Custom LLM providers
+export const providers = persisted<CustomLLMProvider[]>('providers', []);

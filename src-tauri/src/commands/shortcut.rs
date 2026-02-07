@@ -1,5 +1,7 @@
 use crate::error::AppError;
-use crate::{REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
+use crate::{
+    LONG_PRESS, LONG_PRESS_DURATION, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+};
 use std::sync::atomic::Ordering;
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
@@ -137,6 +139,20 @@ pub fn is_shortcut_registered(shortcut: String) -> Result<bool, AppError> {
     let registered = REGISTERED_SHORTCUTS.lock()?;
     let is_registered = registered.values().any(|v| v == &shortcut);
     Ok(is_registered)
+}
+
+/// Set the long press enabled state.
+#[tauri::command]
+pub fn set_long_press_enabled(enabled: bool) -> Result<(), AppError> {
+    LONG_PRESS.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set the long press duration threshold.
+#[tauri::command]
+pub fn set_long_press_duration(duration: u64) -> Result<(), AppError> {
+    LONG_PRESS_DURATION.store(duration, Ordering::Relaxed);
+    Ok(())
 }
 
 /// Parse a shortcut string and create a Shortcut object.

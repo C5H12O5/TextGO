@@ -1,17 +1,23 @@
 use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
-use crate::{APP_HANDLE, ENIGO, SHORTCUT_PAUSED, SHORTCUT_SUSPEND};
+use crate::{
+    APP_HANDLE, ENIGO, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+};
 use enigo::Mouse;
 use log::debug;
 use rdev::{Button, Event, EventType, Key};
 use std::cell::Cell;
-use std::sync::atomic::Ordering;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
 type Click = (Instant, (f64, f64), bool);
+
+// long press tracking states
+static LONG_PRESS_EPOCH: AtomicU64 = AtomicU64::new(0);
+static LONG_PRESS_TRIGGERED: AtomicBool = AtomicBool::new(false);
 
 // mouse event tracking states
 thread_local! {
@@ -79,6 +85,28 @@ fn handle_mouse_press() -> Result<(), AppError> {
     // record if cursor is I-Beam
     IS_VALID_CURSOR.set(platform::is_ibeam_cursor());
 
+    // reset long press trigger state
+    LONG_PRESS_TRIGGERED.store(false, Ordering::Relaxed);
+
+    // start long press detection if enabled
+    if LONG_PRESS.load(Ordering::Relaxed) {
+        let duration = LONG_PRESS_DURATION.load(Ordering::Relaxed);
+        let epoch = LONG_PRESS_EPOCH
+            .fetch_add(1, Ordering::Relaxed)
+            .wrapping_add(1);
+
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(duration));
+
+            // check if long press is still valid
+            if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {
+                debug!("long press triggered after {}ms", duration);
+                LONG_PRESS_TRIGGERED.store(true, Ordering::Relaxed);
+                let _ = emit_event("LongPress", Some(true));
+            }
+        });
+    }
+
     // hide toolbar on mouse press
     hide_toolbar(true)?;
 
@@ -91,6 +119,8 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
         // check if moved enough to be considered a drag
         if distance((x, y), (start_x, start_y)) >= MIN_DRAG_DISTANCE {
             IS_DRAGGING.set(true);
+            // invalidate long press if dragging starts
+            LONG_PRESS_EPOCH.fetch_add(1, Ordering::Relaxed);
         }
     }
 
@@ -99,8 +129,18 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
 
 /// Handle mouse release event (detect drag end or double click).
 fn handle_mouse_release() -> Result<(), AppError> {
+    // invalidate long press if mouse is released
+    LONG_PRESS_EPOCH.fetch_add(1, Ordering::Relaxed);
+
     // reset drag start position
     DRAG_START_POS.set(None);
+
+    // skip other events if long press was triggered
+    if LONG_PRESS_TRIGGERED.load(Ordering::Relaxed) {
+        LONG_PRESS_TRIGGERED.store(false, Ordering::Relaxed);
+        IS_DRAGGING.set(false);
+        return Ok(());
+    }
 
     // only process text selection if cursor was valid
     // inspired by https://github.com/0xfullex/selection-hook
@@ -111,7 +151,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("checking for drag end (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit drag end event
-            emit_event("MouseClick+MouseMove")?;
+            emit_event("MouseClick+MouseMove", None)?;
         }
         IS_DRAGGING.set(false);
         return Ok(());
@@ -122,7 +162,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("checking for shift+click (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit shift+click event
-            emit_event("Shift+MouseClick")?;
+            emit_event("Shift+MouseClick", None)?;
         }
 
         // avoid sticky shift state on macOS
@@ -145,7 +185,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         );
         if valid_cursor && valid_interval && valid_distance {
             // emit double click event
-            emit_event("MouseClick+MouseClick")?;
+            emit_event("MouseClick+MouseClick", None)?;
             // reset last click state
             LAST_CLICK.set(None);
         } else {
@@ -174,10 +214,20 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
 }
 
 /// Emit mouse event to frontend with current selection.
-fn emit_event(shortcut: &str) -> Result<(), AppError> {
+fn emit_event(shortcut: &str, skip_selection: Option<bool>) -> Result<(), AppError> {
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         // check if current frontmost application/website is in blacklist
         if let Ok(true) = is_blocked(app.clone()) {
+            return Ok(());
+        }
+
+        // emit event directly without fetching selection
+        if skip_selection.unwrap_or(false) {
+            let event_data = serde_json::json!({
+                "shortcut": shortcut,
+                "selection": ""
+            });
+            let _ = app.emit("shortcut", event_data);
             return Ok(());
         }
 

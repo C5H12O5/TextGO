@@ -112,19 +112,17 @@
     <div class="flex justify-end gap-2 border-t pt-4">
       <Button
         icon={SquaresFourIcon}
-        onclick={addApplication}
         text={type === 'black' ? m.block_app() : m.allow_app()}
         square={false}
-        class="btn-soft"
-        textClass="font-normal"
+        class="font-normal btn-soft"
+        onclick={addApplication}
       />
       <Button
         icon={GlobeIcon}
-        onclick={addWebsite}
         text={type === 'black' ? m.block_website() : m.allow_website()}
         square={false}
-        class="btn-soft"
-        textClass="font-normal"
+        class="font-normal btn-soft"
+        onclick={addWebsite}
       />
     </div>
   </div>

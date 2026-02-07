@@ -11,7 +11,7 @@ use handlers::{handle_keyboard_event, handle_mouse_event};
 use log::LevelFilter;
 use rdev::listen;
 use std::collections::HashMap;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{LazyLock, Mutex};
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
@@ -29,6 +29,12 @@ pub static SHORTCUT_PAUSED: AtomicBool = AtomicBool::new(false);
 
 // global shortcut suspend state
 pub static SHORTCUT_SUSPEND: AtomicBool = AtomicBool::new(false);
+
+// global long press enabled state
+pub static LONG_PRESS: AtomicBool = AtomicBool::new(false);
+
+// global long press duration threshold
+pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
 
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
@@ -150,6 +156,8 @@ pub fn run() {
             is_shortcut_registered,
             pause_shortcut_handling,
             resume_shortcut_handling,
+            set_long_press_enabled,
+            set_long_press_duration,
             get_selection,
             get_clipboard_text,
             set_clipboard_text,

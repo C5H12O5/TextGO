@@ -5,6 +5,7 @@ import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import { LONG_PRESS_SHORTCUT } from './constants';
 import { isMouseShortcut } from './helpers';
 
 /**
@@ -80,6 +81,13 @@ export class Manager {
    */
   private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
     try {
+      // handle long press shortcut
+      if (LONG_PRESS_SHORTCUT === shortcut) {
+        const payload = JSON.stringify({ rules: [{ action: 'paste', shortcut }], selection });
+        await invoke('show_toolbar', { payload, mouse: true });
+        return;
+      }
+
       // get all rules bound to this shortcut
       const s = shortcuts.current[shortcut];
       if (!s || !s.rules || s.rules.length === 0) {
