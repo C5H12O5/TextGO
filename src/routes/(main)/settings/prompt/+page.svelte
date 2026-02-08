@@ -2,6 +2,7 @@
   import { enhance } from '$app/forms';
   import { afterNavigate } from '$app/navigation';
   import { Button, Icon, Label, List, Modal, Prompt, Setting, alert, confirm } from '$lib/components';
+  import { LLM_PROVIDERS } from '$lib/constants';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
   import { Anthropic, Gemini, LMStudio, Ollama, OpenAI, OpenRouter, XAI } from '$lib/icons';
@@ -101,15 +102,19 @@
     customProvider.name = customProvider.name.trim();
     customProvider.baseUrl = customProvider.baseUrl.trim();
     customProvider.apiKey = customProvider.apiKey.trim();
+    if (!customProvider.name || !customProvider.baseUrl || !customProvider.apiKey) {
+      return;
+    }
 
-    const existingProvider = providers.current.find((p) => p.name === customProvider.name);
-    if (existingProvider && existingProvider.name !== editingProvider) {
+    // check if name conflicts with system providers or existing custom providers
+    const isSystemProvider = LLM_PROVIDERS.includes(customProvider.name as LLMProvider);
+    const isDuplicateCustom = providers.current.some(
+      (p) => p.name === customProvider.name && p.name !== editingProvider
+    );
+    if (isSystemProvider || isDuplicateCustom) {
       alert({ level: 'error', message: m.name_already_used() });
       const nameInput = form.querySelector('input[name="name"]');
       (nameInput as HTMLInputElement | null)?.focus();
-      return;
-    }
-    if (!customProvider.name || !customProvider.baseUrl || !customProvider.apiKey) {
       return;
     }
 

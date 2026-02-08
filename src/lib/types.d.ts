@@ -1,3 +1,4 @@
+import { LLM_PROVIDERS } from '$lib/constants';
 import type { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
 import type { IconComponentProps } from 'phosphor-svelte';
 import type { Component } from 'svelte';
@@ -92,7 +93,7 @@ export type ScriptLang = 'javascript' | 'python' | 'shell' | 'powershell';
 /**
  * Large Language Model provider.
  */
-export type LLMProvider = 'ollama' | 'lmstudio' | 'openrouter' | 'openai' | 'anthropic' | 'google' | 'xai';
+export type LLMProvider = (typeof LLM_PROVIDERS)[number];
 
 /**
  * Custom LLM provider.
