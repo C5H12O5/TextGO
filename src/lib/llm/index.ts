@@ -1,12 +1,24 @@
-import type { LLMProvider } from '../types';
-import { AnthropicClient } from './anthropic';
+import type { LLMProvider } from '$lib/types';
 import type { LLMClient } from './base';
+
+import { providers } from '$lib/stores.svelte';
+import { AnthropicClient } from './anthropic';
+import { OpenAICompatibleClient } from './base';
 import { GeminiClient } from './google';
 import { LMStudioClient } from './lmstudio';
 import { OllamaClient } from './ollama';
 import { OpenAIClient } from './openai';
-import { XAIClient } from './xai';
 import { OpenRouterClient } from './openrouter';
+import { XAIClient } from './xai';
+
+/**
+ * Custom LLM client for user-defined providers.
+ */
+class CustomLLMClient extends OpenAICompatibleClient {
+  constructor(baseUrl: string, apiKey: string) {
+    super(baseUrl, apiKey);
+  }
+}
 
 /**
  * Create LLM client based on provider type.
@@ -14,7 +26,7 @@ import { OpenRouterClient } from './openrouter';
  * @param provider - LLM provider type
  * @returns LLM client instance
  */
-export function createLLMClient(provider: LLMProvider): LLMClient {
+export function createLLMClient(provider: LLMProvider | string): LLMClient {
   switch (provider) {
     case 'ollama':
       return new OllamaClient();
@@ -30,8 +42,14 @@ export function createLLMClient(provider: LLMProvider): LLMClient {
       return new GeminiClient();
     case 'xai':
       return new XAIClient();
-    default:
+    default: {
+      // check if it's a custom provider
+      const customProvider = providers.current.find((p) => p.name === provider);
+      if (customProvider) {
+        return new CustomLLMClient(customProvider.baseUrl, customProvider.apiKey);
+      }
       throw new Error(`Unsupported LLM provider: ${provider}`);
+    }
   }
 }
 

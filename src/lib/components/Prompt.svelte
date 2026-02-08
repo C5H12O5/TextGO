@@ -1,7 +1,7 @@
 <script lang="ts" module>
   import { buildFormSchema } from '$lib/constraint';
   import { m } from '$lib/paraglide/messages';
-  import type { LLMProvider, Prompt } from '$lib/types';
+  import type { Prompt } from '$lib/types';
 
   /**
    * Prompt template variable explanation.
@@ -35,7 +35,14 @@ ${m.prompt_variables_tip()}
   import { PROMPT_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
-  import { anthropicApiKey, geminiApiKey, openaiApiKey, openrouterApiKey, xaiApiKey } from '$lib/stores.svelte';
+  import {
+    anthropicApiKey,
+    geminiApiKey,
+    openaiApiKey,
+    openrouterApiKey,
+    providers,
+    xaiApiKey
+  } from '$lib/stores.svelte';
   import { markdown } from '@codemirror/lang-markdown';
   import { CubeIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
 
@@ -47,7 +54,7 @@ ${m.prompt_variables_tip()}
   let promptIcon: string = $state(DEFAULT_ICON);
   let promptText: string = $state('');
   let systemPrompt: string = $state('');
-  let modelProvider: LLMProvider = $state(DEFAULT_PROVIDER);
+  let modelProvider: string = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
   let maxTokens: number | undefined = $state(undefined);
   let temperature: number | undefined = $state(DEFAULT_TEMPERATURE);
@@ -183,7 +190,8 @@ ${m.prompt_variables_tip()}
               { value: 'openai', label: 'OpenAI', disabled: !openaiApiKey.current },
               { value: 'anthropic', label: 'Anthropic', disabled: !anthropicApiKey.current },
               { value: 'google', label: 'Google', disabled: !geminiApiKey.current },
-              { value: 'xai', label: 'xAI', disabled: !xaiApiKey.current }
+              { value: 'xai', label: 'xAI', disabled: !xaiApiKey.current },
+              ...providers.current.map((p) => ({ value: p.name, label: p.name }))
             ]}
             onchange={(event) => {
               const target = event.currentTarget;

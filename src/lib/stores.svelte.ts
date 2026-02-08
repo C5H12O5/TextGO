@@ -215,4 +215,7 @@ export const geminiApiKey = persisted<string>('geminiApiKey', '', { encrypt, dec
 export const xaiApiKey = persisted<string>('xaiApiKey', '', { encrypt, decrypt });
 
 // Custom LLM providers
-export const providers = persisted<CustomLLMProvider[]>('providers', []);
+export const providers = persisted<CustomLLMProvider[]>('providers', [], {
+  encrypt: (providers) => providers.map((p) => ({ ...p, apiKey: encrypt(p.apiKey) })),
+  decrypt: (providers) => providers.map((p) => ({ ...p, apiKey: decrypt(p.apiKey) }))
+});

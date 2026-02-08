@@ -110,6 +110,6 @@ export abstract class OpenAICompatibleClient implements LLMClient {
       // ignore JSON parse errors
     }
     // fallback to raw response text
-    return `${httpStatus}${responseText ? ` - ${responseText}` : ''}`;
+    return `${httpStatus}${!responseText || /<html/i.test(responseText) ? '' : ` - ${responseText}`}`;
   }
 }

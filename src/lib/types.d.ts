@@ -147,7 +147,7 @@ export type Entry = {
   /** Script language. */
   scriptLang?: ScriptLang;
   /** Model provider. */
-  provider?: LLMProvider;
+  provider?: string;
   /** Model name. */
   model?: string;
   /** Response content. */
@@ -249,7 +249,7 @@ export type Prompt = {
   /** Action icon. */
   icon?: string;
   /** Model provider. */
-  provider: LLMProvider;
+  provider: string;
   /** Model name. */
   model: string;
   /** Prompt content. */
