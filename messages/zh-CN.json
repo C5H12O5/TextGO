@@ -149,7 +149,7 @@
   "provider_added_success": "提供商添加成功！",
   "provider_updated_success": "提供商更新成功！",
   "web_search": "网页搜索",
-  "web_search_hint": "使用自定义的搜索引擎搜索选中文本",
+  "web_search_hint": "使用自定义的网站搜索选中文本",
   "search": "搜索",
   "search_action": "搜索动作",
   "search_action_count": "{count}个搜索动作",

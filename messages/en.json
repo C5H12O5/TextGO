@@ -149,7 +149,7 @@
   "provider_added_success": "Provider added successfully!",
   "provider_updated_success": "Provider updated successfully!",
   "web_search": "Web Search",
-  "web_search_hint": "Search selected text using custom search engines",
+  "web_search_hint": "Search selected text using custom websites",
   "search": "Search",
   "search_action": "Search Action",
   "search_action_count": "{count} search actions",
