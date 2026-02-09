@@ -7,7 +7,6 @@ use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 use std::time::Duration;
 use tauri::AppHandle;
-use tokio::time::sleep;
 
 /// Enter text and try to select it.
 #[tauri::command]
@@ -37,7 +36,7 @@ pub async fn enter_text(
         });
 
         // delay 100 ms to ensure paste operation completes
-        sleep(Duration::from_millis(100)).await;
+        tokio::time::sleep(Duration::from_millis(100)).await;
 
         // if cursor position is editable, try to select entered text
         if platform::is_cursor_editable()? {

@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Position, WebviewWindow};
-use tokio::time::sleep;
 
 // structure to hold window placement information
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -214,7 +213,7 @@ fn wait_and_emit(flag: &'static AtomicBool, window: WebviewWindow, payload: Stri
         const CHECK_INTERVAL_MS: u64 = 10;
         const MAX_CHECKS: u64 = INITIALIZATION_TIMEOUT_MS / CHECK_INTERVAL_MS;
         for _ in 0..MAX_CHECKS {
-            sleep(Duration::from_millis(CHECK_INTERVAL_MS)).await;
+            tokio::time::sleep(Duration::from_millis(CHECK_INTERVAL_MS)).await;
             if flag.load(Ordering::Relaxed) {
                 break;
             }

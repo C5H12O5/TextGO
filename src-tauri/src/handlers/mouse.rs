@@ -95,8 +95,8 @@ fn handle_mouse_press() -> Result<(), AppError> {
             .fetch_add(1, Ordering::Relaxed)
             .wrapping_add(1);
 
-        std::thread::spawn(move || {
-            std::thread::sleep(Duration::from_millis(duration));
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(duration)).await;
 
             // check if long press is still valid
             if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {

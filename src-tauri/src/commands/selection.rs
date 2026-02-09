@@ -7,7 +7,6 @@ use log::warn;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
-use tokio::time::sleep;
 
 // maximum wait time in milliseconds for clipboard to update
 static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);
@@ -51,7 +50,7 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
         let mut selected_text = String::new();
 
         for _attempt in 0..max_attempts {
-            sleep(check_interval).await;
+            tokio::time::sleep(check_interval).await;
 
             // read current clipboard text
             if let Ok(current_text) = get_clipboard_text() {
