@@ -83,13 +83,14 @@ fn handle_mouse_press() -> Result<(), AppError> {
     IS_DRAGGING.set(false);
 
     // record if cursor is I-Beam
-    IS_VALID_CURSOR.set(platform::is_ibeam_cursor());
+    let is_valid_cursor = platform::is_ibeam_cursor();
+    IS_VALID_CURSOR.set(is_valid_cursor);
 
     // reset long press trigger state
     LONG_PRESS_TRIGGERED.store(false, Ordering::Relaxed);
 
     // start long press detection if enabled
-    if LONG_PRESS.load(Ordering::Relaxed) {
+    if is_valid_cursor && LONG_PRESS.load(Ordering::Relaxed) {
         let duration = LONG_PRESS_DURATION.load(Ordering::Relaxed);
         let epoch = LONG_PRESS_EPOCH
             .fetch_add(1, Ordering::Relaxed)
