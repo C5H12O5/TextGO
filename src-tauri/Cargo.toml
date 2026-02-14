@@ -1,5 +1,5 @@
 [package]
-name = "text-go"
+name = "TextGO"
 version = "0.9.1"
 description = "A customizable text selection popup tool"
 authors = ["Xylitol <jam.xylitol@gmail.com>"]

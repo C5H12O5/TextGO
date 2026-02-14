@@ -118,7 +118,7 @@ function parseBackendJson(): Package[] {
 function generateTable(packages: Package[], title: string): string[] {
   const table: string[] = [];
   // filter out the project itself
-  const pkgs = packages.filter((pkg) => pkg.name !== 'text-go');
+  const pkgs = packages.filter((pkg) => pkg.name !== 'text-go' && pkg.name !== 'TextGO');
   // add title
   table.push(`## ${title}\n`);
   table.push(`> **${pkgs.length}** packages included\n`);
