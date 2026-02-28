@@ -797,7 +797,7 @@ export class Classifier {
 
   // validate training data format
   static validateTrainingData(data: string[] | string): string[] | null {
-    let processedData: string[] = [];
+    let processedData: string[];
 
     // process input data type
     if (typeof data === 'string') {

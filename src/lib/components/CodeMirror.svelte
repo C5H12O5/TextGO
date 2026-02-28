@@ -81,12 +81,10 @@
    * @param language - language support object
    */
   function getLanguageName(language: LanguageSupport | Language | null | undefined): string {
-    let name = null;
+    // default to plain text
+    let name = 'text';
     if (language) {
       name = 'name' in language ? language.name : language.language.name;
-    } else {
-      // default to plain text
-      name = 'text';
     }
     // mapping of language names not capitalized
     const mappings: Record<string, string> = {
@@ -371,8 +369,6 @@
 
   /**
    * Extension for handling tab key.
-   *
-   * https://codemirror.net/examples/tab/
    */
   const tabKeyHandler: Extension = $derived([keymap.of([indentWithTab]), indentUnit.of(' '.repeat(tabSize))]);
 

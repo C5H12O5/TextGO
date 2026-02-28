@@ -78,7 +78,7 @@ export abstract class OpenAICompatibleClient implements LLMClient {
         if (error.name === 'AbortError') {
           throw error;
         }
-        throw new Error(`request failed: ${error.message}`);
+        throw new Error(`request failed: ${error.message}`, { cause: error });
       }
       throw error;
     } finally {
