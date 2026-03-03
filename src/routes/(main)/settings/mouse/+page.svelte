@@ -1,11 +1,17 @@
 <script lang="ts">
   import { Label, Setting, Toggle } from '$lib/components';
   import { m } from '$lib/paraglide/messages';
-  import { longPress, longPressDuration } from '$lib/stores.svelte';
-  import { CursorClickIcon } from 'phosphor-svelte';
+  import { iBeamCursor, longPress, longPressDuration } from '$lib/stores.svelte';
+  import { CursorClickIcon, CursorTextIcon } from 'phosphor-svelte';
 </script>
 
 <div class="flex flex-col gap-2">
+  <Setting icon={CursorTextIcon} title={m.cursor_settings()}>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.ibeam_cursor_explain()} tipPlacement="duplex">{m.ibeam_cursor_enabled()}</Label>
+      <Toggle bind:value={iBeamCursor.current} />
+    </fieldset>
+  </Setting>
   <Setting icon={CursorClickIcon} title={m.long_press_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
       <Label tip={m.long_press_explain()} tipPlacement="duplex">{m.long_press_enabled()}</Label>

@@ -178,7 +178,11 @@ export const longPressDuration = persisted<number>('longPressDuration', 1000, {
 });
 
 // whether to check the mouse pointer shape during text selection
-export const iBeamCursor = persisted<boolean>('iBeamCursor', true);
+export const iBeamCursor = persisted<boolean>('iBeamCursor', true, {
+  onchange: (enabled) => {
+    invoke('set_ibeam_cursor_enabled', { enabled });
+  }
+});
 
 // shortcut trigger records
 export const entries = persisted<Entry[]>('entries', []);

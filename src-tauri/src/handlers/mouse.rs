@@ -2,7 +2,8 @@ use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, ENIGO, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
+    SHORTCUT_SUSPEND,
 };
 use enigo::Mouse;
 use log::debug;
@@ -83,7 +84,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
     IS_DRAGGING.set(false);
 
     // record if cursor is I-Beam
-    let is_valid_cursor = platform::is_ibeam_cursor();
+    let is_valid_cursor = is_ibeam_cursor();
     IS_VALID_CURSOR.set(is_valid_cursor);
 
     // reset long press trigger state
@@ -145,7 +146,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
 
     // only process text selection if cursor was valid
     // inspired by https://github.com/0xfullex/selection-hook
-    let is_valid_cursor = IS_VALID_CURSOR.get() || platform::is_ibeam_cursor();
+    let is_valid_cursor = IS_VALID_CURSOR.get() || is_ibeam_cursor();
 
     // check for drag end
     if IS_DRAGGING.get() {
@@ -212,6 +213,16 @@ fn mouse_pos() -> Result<(f64, f64), AppError> {
         .as_ref()?
         .location()
         .map(|(x, y)| (x as f64, y as f64))?)
+}
+
+/// Check if current cursor is I-beam.
+fn is_ibeam_cursor() -> bool {
+    if IBEAM_CURSOR.load(Ordering::Relaxed) {
+        platform::is_ibeam_cursor()
+    } else {
+        // if I-beam cursor check is disabled, consider all cursors as valid
+        true
+    }
 }
 
 /// Emit mouse event to frontend with current selection.

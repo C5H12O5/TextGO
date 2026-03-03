@@ -36,6 +36,9 @@ pub static LONG_PRESS: AtomicBool = AtomicBool::new(false);
 // global long press duration threshold
 pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
 
+// global I-beam cursor check state
+pub static IBEAM_CURSOR: AtomicBool = AtomicBool::new(true);
+
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -158,6 +161,7 @@ pub fn run() {
             resume_shortcut_handling,
             set_long_press_enabled,
             set_long_press_duration,
+            set_ibeam_cursor_enabled,
             get_selection,
             get_clipboard_text,
             set_clipboard_text,

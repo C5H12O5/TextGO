@@ -1,6 +1,7 @@
 use crate::error::AppError;
 use crate::{
-    LONG_PRESS, LONG_PRESS_DURATION, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+    IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED,
+    SHORTCUT_SUSPEND,
 };
 use std::sync::atomic::Ordering;
 use tauri::AppHandle;
@@ -152,6 +153,13 @@ pub fn set_long_press_enabled(enabled: bool) -> Result<(), AppError> {
 #[tauri::command]
 pub fn set_long_press_duration(duration: u64) -> Result<(), AppError> {
     LONG_PRESS_DURATION.store(duration, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set the I-beam cursor check state.
+#[tauri::command]
+pub fn set_ibeam_cursor_enabled(enabled: bool) -> Result<(), AppError> {
+    IBEAM_CURSOR.store(enabled, Ordering::Relaxed);
     Ok(())
 }
 
