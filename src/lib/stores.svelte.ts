@@ -142,7 +142,7 @@ export const shortcuts = persisted<Record<string, Shortcut>>(
   }
 );
 
-// blacklist of applications
+// blacklist of applications/websites
 export const blacklist = persisted<string[]>('blacklist', []);
 
 // auto start setting
@@ -177,22 +177,25 @@ export const longPressDuration = persisted<number>('longPressDuration', 1000, {
   }
 });
 
-// trigger record
+// whether to check the mouse pointer shape during text selection
+export const iBeamCursor = persisted<boolean>('iBeamCursor', true);
+
+// shortcut trigger records
 export const entries = persisted<Entry[]>('entries', []);
 
-// classification model
+// classification models
 export const models = persisted<Model[]>('models', []);
 
-// regular expression
+// regular expressions
 export const regexps = persisted<Regexp[]>('regexps', []);
 
-// script
+// scripts
 export const scripts = persisted<Script[]>('scripts', []);
 
-// prompt
+// prompts
 export const prompts = persisted<Prompt[]>('prompts', []);
 
-// searcher
+// searchers
 export const searchers = persisted<Searcher[]>('searchers', []);
 
 // Node.js path
