@@ -149,15 +149,17 @@
   background-image: linear-gradient(135deg, oklch(100% 0 0 / 20%) 0%, oklch(0% 0 0 / 0%) 100%);
 }
 
-@utility btn-submit {
-  --btn-color: var(--color-emphasis);
-  --btn-fg: var(--color-neutral-content);
-}
-
 @utility btn-subtle {
   @apply btn-ghost hover:bg-base-content/10;
   &:is(:disabled, [disabled], .btn-disabled) {
     background-color: transparent !important;
+  }
+}
+
+@utility btn-submit {
+  --btn-color: var(--color-emphasis);
+  &:not(:disabled, [disabled], .btn-disabled) {
+    --btn-fg: var(--color-neutral-content);
   }
 }
 
