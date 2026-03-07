@@ -1,10 +1,17 @@
+use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 
 /// Send cut shortcut keys.
 #[tauri::command]
-pub fn send_cut_keys() -> Result<(), AppError> {
+pub fn send_cut_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+    let _guard = if suspend_shortcuts.unwrap_or(false) {
+        Some(ShortcutHandlerGuard::suspend())
+    } else {
+        None
+    };
+
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 
@@ -25,7 +32,13 @@ pub fn send_cut_keys() -> Result<(), AppError> {
 
 /// Send copy shortcut keys.
 #[tauri::command]
-pub fn send_copy_keys() -> Result<(), AppError> {
+pub fn send_copy_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+    let _guard = if suspend_shortcuts.unwrap_or(false) {
+        Some(ShortcutHandlerGuard::suspend())
+    } else {
+        None
+    };
+
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 
@@ -46,7 +59,13 @@ pub fn send_copy_keys() -> Result<(), AppError> {
 
 /// Send paste shortcut keys.
 #[tauri::command]
-pub fn send_paste_keys() -> Result<(), AppError> {
+pub fn send_paste_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+    let _guard = if suspend_shortcuts.unwrap_or(false) {
+        Some(ShortcutHandlerGuard::suspend())
+    } else {
+        None
+    };
+
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 

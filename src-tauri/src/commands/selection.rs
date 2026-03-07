@@ -39,7 +39,7 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
         // send copy shortcut
         // https://github.com/enigo-rs/enigo/issues/153
         let _ = app.run_on_main_thread(|| {
-            let _ = send_copy_keys();
+            let _ = send_copy_keys(Some(false));
         });
 
         // wait for clipboard content to change in a loop

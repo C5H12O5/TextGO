@@ -79,7 +79,7 @@ export const DEFAULT_ACTIONS: Processor[] = [
     label: m.cut(),
     icon: ScissorsIcon,
     process: () => {
-      invoke('send_cut_keys');
+      invoke('send_cut_keys', { suspendShortcuts: true });
       return '';
     },
     builtIn: true,
@@ -90,7 +90,7 @@ export const DEFAULT_ACTIONS: Processor[] = [
     label: m.paste(),
     icon: SelectionBackgroundIcon,
     process: () => {
-      invoke('send_paste_keys');
+      invoke('send_paste_keys', { suspendShortcuts: true });
       return '';
     },
     builtIn: true,
