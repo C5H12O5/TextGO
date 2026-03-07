@@ -391,7 +391,7 @@
 <main class="bg-transparent p-1 select-none">
   {#if initialized && actions.length > 0}
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
-      <div class="flex h-7.5 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+      <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
           class="flex cursor-grabbing items-center opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
@@ -403,7 +403,7 @@
           {@const showIcon = action.rule.displayMode !== 'label'}
           {@const showLabel = action.rule.displayMode !== 'icon'}
           <button
-            class="flex cursor-pointer items-center gap-1 px-1.5 transition-colors"
+            class="flex cursor-pointer items-center gap-0.5 px-1.75 transition-colors"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:text-primary={mouseEntered}
             onclick={() => executeAction(action)}
@@ -419,7 +419,7 @@
         {/each}
         {#if overflowActions.length > 0}
           <button
-            class="h-7.5 cursor-pointer opacity-60 transition-all"
+            class="h-8 cursor-pointer opacity-60 transition-all"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:opacity-100={mouseEntered}
             onclick={showMoreActions}

@@ -45,6 +45,8 @@
   "shortcut_already_registered": "该快捷键已被注册！",
   "delete_shortcut": "删除快捷键",
   "delete_shortcut_title": "删除快捷键 [{shortcut}]",
+  "disable_shortcut": "禁用快捷键",
+  "enable_shortcut": "启用快捷键",
   "blacklist": "黑名单",
   "whitelist": "白名单",
   "block_app": "屏蔽应用",

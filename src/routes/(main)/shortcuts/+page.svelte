@@ -8,6 +8,7 @@
   import {
     ArrowArcRightIcon,
     ArrowCircleRightIcon,
+    ArrowClockwiseIcon,
     ArrowFatLineRightIcon,
     ArrowFatUpIcon,
     ArrowsClockwiseIcon,
@@ -17,6 +18,7 @@
     KeyboardIcon,
     MouseLeftClickIcon,
     ProhibitIcon,
+    ProhibitInsetIcon,
     SparkleIcon,
     StackPlusIcon,
     TrashIcon,
@@ -132,7 +134,7 @@
       <span class="text-xs opacity-50">{m.long_press_explain()}</span>
     </div>
     <button class="btn ml-auto btn-soft btn-sm" onclick={() => blacklistManager.showModal()}>
-      <ProhibitIcon class="size-5" />
+      <ProhibitIcon class="size-5 rotate-90" />
       <span class="text-sm font-normal">{m.blacklist()}</span>
     </button>
     <details class="dropdown dropdown-end text-nowrap" bind:this={dropdown} bind:open={dropdownOpen}>
@@ -225,11 +227,14 @@
   {#each Object.keys(shortcuts.current).sort(compareShortcut) as shortcut (shortcut)}
     {@const mode = shortcuts.current[shortcut].mode}
     {@const rules = shortcuts.current[shortcut].rules}
+    {@const disabled = shortcuts.current[shortcut].disabled}
     <div data-shortcut={shortcut} in:fly={{ x: -15, duration: 150 }} out:fly={{ x: 15, duration: 150 }}>
-      <div class="mt-4 flex items-center gap-4 border-t border-dashed pt-4 pb-2">
-        <Shortcut {shortcut} class="text-shortcut" />
+      <div class="mt-4 flex items-center border-t border-dashed pt-4 pb-2">
+        <Shortcut {shortcut} class={disabled ? 'text-inactive/50' : 'text-shortcut'} />
         <button
-          class="group badge cursor-pointer bg-base-200 opacity-80 transition-all hover:opacity-100"
+          class="group ml-4 badge cursor-pointer bg-base-200 transition-all hover:opacity-100"
+          class:opacity-50={disabled}
+          class:opacity-80={!disabled}
           class:border={mode === 'toolbar'}
           class:gradient={mode === 'toolbar'}
           class:shadow-sm={mode === 'toolbar'}
@@ -253,9 +258,18 @@
           </span>
         </button>
         <Button
+          icon={disabled ? ArrowClockwiseIcon : ProhibitInsetIcon}
+          size="sm"
+          class="ml-auto {disabled ? 'text-emphasis' : 'text-inactive'}"
+          text={disabled ? m.enable_shortcut() : m.disable_shortcut()}
+          onclick={() => {
+            shortcuts.current[shortcut].disabled = !shortcuts.current[shortcut].disabled;
+          }}
+        />
+        <Button
           icon={TrashIcon}
           size="sm"
-          class="ml-auto text-emphasis"
+          class="ml-1 text-emphasis"
           text={m.delete_shortcut()}
           onclick={() => {
             const clear = () => ruleBinder?.clear(shortcut);

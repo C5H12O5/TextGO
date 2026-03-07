@@ -90,7 +90,7 @@ export class Manager {
 
       // get all rules bound to this shortcut
       const s = shortcuts.current[shortcut];
-      if (!s || !s.rules || s.rules.length === 0) {
+      if (!s || s.disabled || !s.rules || s.rules.length === 0) {
         return;
       }
 

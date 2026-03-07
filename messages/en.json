@@ -45,6 +45,8 @@
   "shortcut_already_registered": "This shortcut is already registered!",
   "delete_shortcut": "Delete Shortcut",
   "delete_shortcut_title": "Delete Shortcut [{shortcut}]",
+  "disable_shortcut": "Disable Shortcut",
+  "enable_shortcut": "Enable Shortcut",
   "blacklist": "Blacklist",
   "whitelist": "Whitelist",
   "block_app": "Block Application",
