@@ -21,7 +21,7 @@
   import { debounce } from 'es-toolkit/function';
 
   let { type = 'black', list = $bindable([]) }: BWListProps = $props();
-  const icon = $derived(type === 'black' ? ProhibitIcon : CheckFatIcon);
+  const icon = $derived(type === 'black' ? { icon: ProhibitIcon, iconClass: 'rotate-90' } : { icon: CheckFatIcon });
   const title = $derived(type === 'black' ? m.blacklist() : m.whitelist());
 
   // show modal dialog
@@ -79,7 +79,7 @@
   }
 </script>
 
-<Modal {icon} {title} bind:this={modal}>
+<Modal {...icon} {title} bind:this={modal}>
   <div class="flex flex-col gap-3">
     <!-- list items -->
     <div class="flex max-h-96 min-h-18 flex-col justify-center gap-2 overflow-y-auto">

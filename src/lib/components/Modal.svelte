@@ -15,6 +15,7 @@
     /** Custom style class name. */
     class: string;
     boxClass: string;
+    iconClass: string;
     cornerClass: string;
     /** Callback function when dialog closes. */
     onclose: () => void;
@@ -30,7 +31,17 @@
   import { tick } from 'svelte';
   import { fade } from 'svelte/transition';
 
-  let { icon, title, children, maxWidth, class: _class, boxClass, cornerClass, onclose }: ModalProps = $props();
+  let {
+    icon,
+    title,
+    children,
+    maxWidth,
+    class: _class,
+    boxClass,
+    iconClass,
+    cornerClass,
+    onclose
+  }: ModalProps = $props();
 
   // unique modal dialog ID
   const id: string = `modal-${crypto.randomUUID()}`;
@@ -114,7 +125,7 @@
         <h3 class="modal-title">
           {#if icon}
             {@const Icon = icon}
-            <Icon class="size-6" />
+            <Icon class="size-6 {iconClass}" />
           {/if}
           {title}
         </h3>
