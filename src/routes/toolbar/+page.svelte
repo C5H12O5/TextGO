@@ -410,10 +410,10 @@
             title={action.label}
           >
             {#if showIcon && action.icon}
-              <Icon icon={action.icon} class="size-4 shrink-0" />
+              <Icon icon={action.icon} class="size-4.5 shrink-0" />
             {/if}
             {#if showLabel}
-              <span class="max-w-30 truncate text-xs font-normal opacity-75">{action.label}</span>
+              <span class="max-w-30 truncate text-xs font-[450]">{action.label}</span>
             {/if}
           </button>
         {/each}
