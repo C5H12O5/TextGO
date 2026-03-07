@@ -31,14 +31,14 @@ pub fn send_copy_keys() -> Result<(), AppError> {
 
     release_modifier_keys(enigo)?;
 
-    // send Cmd+C or Ctrl+C
+    // send Cmd+C or Ctrl+Insert
     #[cfg(target_os = "macos")]
-    let modifier = Key::Meta;
+    let (modifier, key) = (Key::Meta, Key::Unicode('c'));
     #[cfg(not(target_os = "macos"))]
-    let modifier = Key::Control;
+    let (modifier, key) = (Key::Control, Key::Insert);
 
     enigo.key(modifier, Direction::Press)?;
-    enigo.key(Key::Unicode('c'), Direction::Click)?;
+    enigo.key(key, Direction::Click)?;
     enigo.key(modifier, Direction::Release)?;
 
     Ok(())
