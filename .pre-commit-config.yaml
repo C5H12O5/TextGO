@@ -23,7 +23,7 @@ repos:
       - id: prettier
         additional_dependencies:
           - prettier@3.8.1
-          - prettier-plugin-svelte@3.5.0
+          - prettier-plugin-svelte@3.5.1
           - prettier-plugin-tailwindcss@0.7.2
         args: [--config, ./.prettierrc, --ignore-path, ./.prettierignore, --write, ./src]
   - repo: local
