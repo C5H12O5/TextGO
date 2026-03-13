@@ -261,6 +261,7 @@
           icon={disabled ? ArrowClockwiseIcon : ProhibitInsetIcon}
           size="sm"
           class="ml-auto {disabled ? 'text-emphasis' : 'text-inactive'}"
+          iconClass={disabled ? '' : 'rotate-90'}
           text={disabled ? m.enable_shortcut() : m.disable_shortcut()}
           onclick={() => {
             shortcuts.current[shortcut].disabled = !shortcuts.current[shortcut].disabled;
