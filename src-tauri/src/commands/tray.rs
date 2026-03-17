@@ -42,11 +42,11 @@ pub fn setup_tray(
         tray.set_menu(Some(menu))?;
     } else {
         // create new tray menu if getting fails
-        let _tray = TrayIconBuilder::with_id("main-tray")
+        let builder = TrayIconBuilder::with_id("main-tray")
             .menu(&menu)
             .icon(app.default_window_icon().unwrap().clone())
             .icon_as_template(true)
-            .show_menu_on_left_click(true)
+            .show_menu_on_left_click(cfg!(not(target_os = "windows")))
             .on_menu_event(|app, event| match event.id.as_ref() {
                 "main_window" => {
                     crate::commands::show_main_window(app.clone());
@@ -67,8 +67,23 @@ pub fn setup_tray(
                     app.exit(0);
                 }
                 _ => {}
-            })
-            .build(&app)?;
+            });
+
+        // on Windows, left click shows main window instead of opening the menu
+        #[cfg(target_os = "windows")]
+        let builder = builder.on_tray_icon_event(|tray, event| {
+            use tauri::tray::{MouseButton, MouseButtonState, TrayIconEvent};
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                crate::commands::show_main_window(tray.app_handle().clone());
+            }
+        });
+
+        let _tray = builder.build(&app)?;
     }
 
     Ok(())
