@@ -13,7 +13,7 @@ static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);
 
 /// Get selected text.
 #[tauri::command]
-pub async fn get_selection(app: AppHandle) -> Result<String, AppError> {
+pub async fn get_selection(app: AppHandle, mouse: Option<bool>) -> Result<String, AppError> {
     // suspend shortcut handling to avoid interference
     let _guard = ShortcutHandlerGuard::suspend();
 
@@ -26,11 +26,11 @@ pub async fn get_selection(app: AppHandle) -> Result<String, AppError> {
 
     // if native API fails, fall back to clipboard method
     warn!("Failed to get selection natively, fallback to clipboard method");
-    get_selection_fallback(app).await
+    get_selection_fallback(app, mouse.unwrap_or(false)).await
 }
 
 /// Get selected text through clipboard.
-async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
+async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, AppError> {
     // use backup-operation-restore mode
     with_clipboard_backup(|| async move {
         // clear clipboard
@@ -38,8 +38,9 @@ async fn get_selection_fallback(app: AppHandle) -> Result<String, AppError> {
 
         // send copy shortcut
         // https://github.com/enigo-rs/enigo/issues/153
-        let _ = app.run_on_main_thread(|| {
-            let _ = send_copy_keys(Some(false));
+        let _ = app.run_on_main_thread(move || {
+            // mouse-triggered selections don't need to release modifier keys
+            let _ = send_copy_keys(Some(false), Some(!mouse));
         });
 
         // wait for clipboard content to change in a loop

@@ -247,7 +247,7 @@ fn emit_event(shortcut: &str, skip_selection: Option<bool>) -> Result<(), AppErr
         let app_handle = app.clone();
         let shortcut = shortcut.to_string();
         tauri::async_runtime::spawn(async move {
-            if let Ok(selection) = get_selection(app_handle.clone()).await {
+            if let Ok(selection) = get_selection(app_handle.clone(), Some(true)).await {
                 if !selection.trim().is_empty() {
                     // emit event if selection is not empty
                     let event_data = serde_json::json!({

@@ -32,7 +32,7 @@ pub async fn enter_text(
 
         // send paste shortcut
         let _ = app.run_on_main_thread(|| {
-            let _ = send_paste_keys(Some(false));
+            let _ = send_paste_keys(Some(false), Some(true));
         });
 
         // delay 100 ms to ensure paste operation completes

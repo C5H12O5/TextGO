@@ -28,7 +28,7 @@ pub fn handle_keyboard_event(app: &AppHandle, hotkey: &Shortcut, event: Shortcut
         // emit shortcut event with selection
         let app_handle = app.clone();
         tauri::async_runtime::spawn(async move {
-            if let Ok(selection) = get_selection(app_handle.clone()).await {
+            if let Ok(selection) = get_selection(app_handle.clone(), Some(false)).await {
                 let event_data = serde_json::json!({
                     "shortcut": shortcut,
                     "selection": selection

@@ -5,7 +5,10 @@ use enigo::{Direction, Key, Keyboard};
 
 /// Send cut shortcut keys.
 #[tauri::command]
-pub fn send_cut_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+pub fn send_cut_keys(
+    suspend_shortcuts: Option<bool>,
+    release_modifiers: Option<bool>,
+) -> Result<(), AppError> {
     let _guard = if suspend_shortcuts.unwrap_or(false) {
         Some(ShortcutHandlerGuard::suspend())
     } else {
@@ -15,7 +18,9 @@ pub fn send_cut_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 
-    release_modifier_keys(enigo)?;
+    if release_modifiers.unwrap_or(true) {
+        release_modifier_keys(enigo)?;
+    }
 
     // send Cmd+X or Ctrl+X
     #[cfg(target_os = "macos")]
@@ -32,7 +37,10 @@ pub fn send_cut_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
 
 /// Send copy shortcut keys.
 #[tauri::command]
-pub fn send_copy_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+pub fn send_copy_keys(
+    suspend_shortcuts: Option<bool>,
+    release_modifiers: Option<bool>,
+) -> Result<(), AppError> {
     let _guard = if suspend_shortcuts.unwrap_or(false) {
         Some(ShortcutHandlerGuard::suspend())
     } else {
@@ -42,7 +50,9 @@ pub fn send_copy_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 
-    release_modifier_keys(enigo)?;
+    if release_modifiers.unwrap_or(true) {
+        release_modifier_keys(enigo)?;
+    }
 
     // send Cmd+C or Ctrl+Insert
     #[cfg(target_os = "macos")]
@@ -59,7 +69,10 @@ pub fn send_copy_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
 
 /// Send paste shortcut keys.
 #[tauri::command]
-pub fn send_paste_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> {
+pub fn send_paste_keys(
+    suspend_shortcuts: Option<bool>,
+    release_modifiers: Option<bool>,
+) -> Result<(), AppError> {
     let _guard = if suspend_shortcuts.unwrap_or(false) {
         Some(ShortcutHandlerGuard::suspend())
     } else {
@@ -69,7 +82,9 @@ pub fn send_paste_keys(suspend_shortcuts: Option<bool>) -> Result<(), AppError> 
     let mut enigo_guard = ENIGO.lock()?;
     let enigo = enigo_guard.as_mut()?;
 
-    release_modifier_keys(enigo)?;
+    if release_modifiers.unwrap_or(true) {
+        release_modifier_keys(enigo)?;
+    }
 
     // send Cmd+V or Ctrl+V
     #[cfg(target_os = "macos")]
