@@ -3,9 +3,10 @@ use crate::commands::keyboard::send_copy_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
+use crate::SELECTION_TEXT_CACHE;
 use log::warn;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tauri::AppHandle;
 
 // maximum wait time in milliseconds for clipboard to update
@@ -69,6 +70,10 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
                 max_wait_time.as_millis()
             );
         } else {
+            // cache the selected text with current timestamp
+            if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
+                *cache = Some((selected_text.clone(), Instant::now()));
+            }
             // adjust max wait time for next time
             MAX_WAIT_TIME
                 .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {

@@ -13,6 +13,7 @@ use rdev::listen;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{LazyLock, Mutex};
+use std::time::Instant;
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -30,14 +31,14 @@ pub static SHORTCUT_PAUSED: AtomicBool = AtomicBool::new(false);
 // global shortcut suspend state
 pub static SHORTCUT_SUSPEND: AtomicBool = AtomicBool::new(false);
 
+// global I-beam cursor check state
+pub static IBEAM_CURSOR: AtomicBool = AtomicBool::new(true);
+
 // global long press enabled state
 pub static LONG_PRESS: AtomicBool = AtomicBool::new(false);
 
 // global long press duration threshold
 pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
-
-// global I-beam cursor check state
-pub static IBEAM_CURSOR: AtomicBool = AtomicBool::new(true);
 
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
@@ -50,6 +51,13 @@ pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
 // global ClipboardContext instance for clipboard access
 pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
     LazyLock::new(|| Mutex::new(ClipboardContext::new().map_err(|e| e.to_string())));
+
+// global clipboard interrupted state for backup-restore flow
+pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
+
+// global selected text cache with timestamp
+pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
+    LazyLock::new(|| Mutex::new(None));
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{

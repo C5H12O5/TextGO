@@ -1,9 +1,9 @@
-use crate::commands::{get_selection, is_blocked};
+use crate::commands::{get_clipboard_text, get_selection, is_blocked, set_clipboard_text};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND,
+    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
+    LONG_PRESS_DURATION, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
 };
 use enigo::Mouse;
 use log::debug;
@@ -27,6 +27,7 @@ thread_local! {
     static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
     static SHIFT_PRESSED: Cell<bool> = const { Cell::new(false) };
+    static CTRL_PRESSED: Cell<bool> = const { Cell::new(false) };
 }
 
 // thresholds for drag and double click detection
@@ -62,11 +63,54 @@ pub fn handle_mouse_event(event: Event) {
 
                 SHIFT_PRESSED.set(true);
             }
+
+            // track ctrl key state
+            if matches!(key, Key::ControlLeft | Key::ControlRight) {
+                CTRL_PRESSED.set(true);
+            }
+
+            // detect user Ctrl+C operation on Windows
+            #[cfg(target_os = "windows")]
+            if matches!(key, Key::KeyC) && CTRL_PRESSED.get() {
+                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
+                debug!("Ctrl+C detected, marking clipboard restore as interrupted");
+
+                let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
+                    cache.as_ref().and_then(|(text, cached_at)| {
+                        if cached_at.elapsed() < Duration::from_secs(1) {
+                            Some(text.clone())
+                        } else {
+                            None
+                        }
+                    })
+                });
+                if let Some(cached_text) = cached_text {
+                    tauri::async_runtime::spawn(async move {
+                        // wait briefly for OS to finish processing the Ctrl+C copy
+                        tokio::time::sleep(Duration::from_millis(100)).await;
+                        // check if clipboard content matches cached selection
+                        if let Ok(current) = get_clipboard_text() {
+                            if current.trim() != cached_text.trim() {
+                                // clipboard was overwritten by restore before interrupt fired
+                                // compensate by writing the cached selection back
+                                debug!(
+                                    "Ctrl+C compensation: restoring cached selection to clipboard"
+                                );
+                                let _ = set_clipboard_text(cached_text);
+                            }
+                        }
+                    });
+                }
+            }
+
             // hide toolbar on key press
             let _ = hide_toolbar(false);
         }
         EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
             SHIFT_PRESSED.set(false);
+        }
+        EventType::KeyRelease(Key::ControlLeft) | EventType::KeyRelease(Key::ControlRight) => {
+            CTRL_PRESSED.set(false);
         }
         EventType::Wheel { .. } => {
             // hide toolbar on wheel scroll
@@ -102,7 +146,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
 
             // check if long press is still valid
             if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {
-                debug!("long press triggered after {}ms", duration);
+                debug!("Long press triggered after {}ms", duration);
                 LONG_PRESS_TRIGGERED.store(true, Ordering::Relaxed);
                 let _ = emit_event("LongPress", Some(true));
             }
@@ -150,7 +194,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
 
     // check for drag end
     if IS_DRAGGING.get() {
-        debug!("checking for drag end (cursor: {})", is_valid_cursor);
+        debug!("Checking for drag end (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit drag end event
             emit_event("MouseClick+MouseMove", None)?;
@@ -161,7 +205,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
 
     // check for shift+click
     if SHIFT_PRESSED.get() {
-        debug!("checking for shift+click (cursor: {})", is_valid_cursor);
+        debug!("Checking for shift+click (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit shift+click event
             emit_event("Shift+MouseClick", None)?;
@@ -182,7 +226,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         let valid_interval = now.duration_since(last_time) < MAX_DBCLICK_INTERVAL;
         let valid_distance = distance(pos, last_pos) < MAX_DBCLICK_DISTANCE;
         debug!(
-            "checking for double click (cursor: {}, interval: {}, distance: {})",
+            "Checking for double click (cursor: {}, interval: {}, distance: {})",
             valid_cursor, valid_interval, valid_distance
         );
         if valid_cursor && valid_interval && valid_distance {

@@ -1,7 +1,9 @@
 use crate::error::AppError;
-use crate::CLIPBOARD;
+use crate::{CLIPBOARD, CLIPBOARD_RESTORE_INTERRUPTED};
 use clipboard_rs::Clipboard;
 use clipboard_rs::ContentFormat;
+use log::debug;
+use std::sync::atomic::Ordering;
 
 // all supported clipboard content formats
 const ALL_FORMATS: [ContentFormat; 5] = [
@@ -39,17 +41,27 @@ where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = Result<T, AppError>>,
 {
+    // reset interrupted state before operation
+    CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
+
     // backup all format contents
     let contents = run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get(&ALL_FORMATS)?))?;
+    debug!("Clipboard backup: saved original clipboard contents");
 
     // execute operation
     let result = operation().await?;
 
-    // restore original clipboard contents
-    if !contents.is_empty() {
-        run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))?;
+    // check if restore was interrupted by user Ctrl+C during the operation
+    if CLIPBOARD_RESTORE_INTERRUPTED.swap(false, Ordering::Relaxed) {
+        debug!("Clipboard restore skipped: interrupted by user Ctrl+C");
     } else {
-        clear_clipboard()?;
+        // restore original clipboard contents
+        debug!("Clipboard restore: restoring original clipboard contents");
+        if !contents.is_empty() {
+            run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))?;
+        } else {
+            clear_clipboard()?;
+        }
     }
 
     Ok(result)
