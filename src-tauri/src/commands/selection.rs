@@ -21,6 +21,12 @@ pub async fn get_selection(app: AppHandle, mouse: Option<bool>) -> Result<String
     // try using platform native API to get selected text first
     if let Ok(text) = platform::get_selection() {
         if !text.is_empty() {
+            // clear cache to avoid stale data
+            #[cfg(target_os = "windows")]
+            if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
+                *cache = None;
+            }
+
             return Ok(text);
         }
     }
@@ -71,9 +77,11 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
             );
         } else {
             // cache the selected text with current timestamp
+            #[cfg(target_os = "windows")]
             if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
                 *cache = Some((selected_text.clone(), Instant::now()));
             }
+
             // adjust max wait time for next time
             MAX_WAIT_TIME
                 .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
