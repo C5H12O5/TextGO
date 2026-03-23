@@ -96,16 +96,6 @@
   }
 
   .input,
-  .select {
-    &:has(> input[disabled]),
-    &:has(> select[disabled]),
-    &:is(:disabled, [disabled]),
-    fieldset:disabled & {
-      @apply border-base-content/10!;
-    }
-  }
-
-  .input,
   .select,
   .textarea,
   .file-input {
@@ -113,6 +103,12 @@
     &:focus,
     &:focus-within {
       @apply border-primary/80! outline-none!;
+    }
+    &:has(> input[disabled]),
+    &:has(> select[disabled]),
+    &:is(:disabled, [disabled]),
+    fieldset:disabled & {
+      @apply border-base-content/10!;
     }
   }
 
@@ -204,7 +200,7 @@ input[type='number'] {
   -moz-appearance: textfield;
 }
 
-/* tippy.js tooltip themes */
+/* custom Tippy.js themes */
 .tippy-box[data-theme~='default'] {
   @apply gradient bg-neutral/90 text-xs text-neutral-content;
 }
