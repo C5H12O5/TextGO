@@ -3,11 +3,13 @@ use crate::commands::keyboard::send_copy_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
-use crate::SELECTION_TEXT_CACHE;
 use log::warn;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use tauri::AppHandle;
+
+#[cfg(target_os = "windows")]
+use crate::SELECTION_TEXT_CACHE;
 
 // maximum wait time in milliseconds for clipboard to update
 static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);
@@ -79,7 +81,7 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
             // cache the selected text with current timestamp
             #[cfg(target_os = "windows")]
             if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
-                *cache = Some((selected_text.clone(), Instant::now()));
+                *cache = Some((selected_text.clone(), std::time::Instant::now()));
             }
 
             // adjust max wait time for next time

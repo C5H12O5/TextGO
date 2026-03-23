@@ -1,9 +1,9 @@
-use crate::commands::{get_clipboard_text, get_selection, is_blocked, set_clipboard_text};
+use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
-    LONG_PRESS_DURATION, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
+    SHORTCUT_SUSPEND,
 };
 use enigo::Mouse;
 use log::debug;
@@ -12,6 +12,11 @@ use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
+
+#[cfg(target_os = "windows")]
+use crate::commands::{get_clipboard_text, set_clipboard_text};
+#[cfg(target_os = "windows")]
+use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
 type Click = (Instant, (f64, f64), bool);
