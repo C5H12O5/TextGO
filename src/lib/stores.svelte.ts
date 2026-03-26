@@ -77,26 +77,27 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   });
 
   // listen for localStorage changes to implement cross-window sync
-  const handleStorageChange = debounce((event: StorageEvent) => {
+  const reloadFromStore = debounce(() => {
+    console.info(`[${currentWindow}] Detected external change for key "${key}", reloading from store.`);
+    syncing = true;
+    store.get<T>(key).then((item) => {
+      if (item !== undefined) {
+        state = options?.decrypt?.(item) ?? item;
+        options?.onchange?.(state);
+      }
+      // mark syncing as complete
+      tick().then(() => (syncing = false));
+    });
+  }, 100);
+  window.addEventListener('storage', (event: StorageEvent) => {
     if (!initialized) {
       return;
     }
     // only handle changes for the specific key and ignore changes from the same window
     if (event.key === key && event.newValue && event.newValue !== currentWindow) {
-      console.info(`[${currentWindow}] Detected external change for key "${key}", reloading from store.`);
-      syncing = true;
-      store.get<T>(key).then((item) => {
-        if (item !== undefined) {
-          state = options?.decrypt?.(item) ?? item;
-          options?.onchange?.(state);
-        }
-        // mark syncing as complete
-        tick().then(() => (syncing = false));
-      });
+      reloadFromStore();
     }
-  }, 100);
-  // register storage event listener
-  window.addEventListener('storage', handleStorageChange);
+  });
 
   return {
     get current() {
