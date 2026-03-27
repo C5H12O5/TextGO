@@ -62,7 +62,7 @@
   {@const active = deLocalizeHref(page.url.pathname) === href}
   <li>
     <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-    <a {href} class="gap-2 rounded-field transition-all active:bg-emphasis {active ? 'menu-emphasis' : ''}">
+    <a {href} class="gap-2 rounded-field transition-colors active:bg-emphasis {active ? 'menu-emphasis' : ''}">
       <Icon class="size-5 opacity-80" />
       <span class="truncate">{text}</span>
     </a>
