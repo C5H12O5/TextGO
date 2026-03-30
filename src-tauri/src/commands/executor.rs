@@ -1,4 +1,5 @@
 use crate::error::AppError;
+use base64::prelude::*;
 use log::debug;
 use serde_json::Value;
 use std::process::Stdio;
@@ -446,28 +447,40 @@ pub async fn execute_powershell(code: String, data: String) -> Result<String, Ap
         }
     }
 
+    // force UTF-8 output encoding to prevent garbled characters when Rust reads stdout
+    let preamble = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n\
+                    $OutputEncoding = [System.Text.Encoding]::UTF8\n";
+
     // create PowerShell script wrapper
-    let wrapped_code = format!("{}{}", variables, code);
+    let wrapped_code = format!("{}{}{}", preamble, variables, code);
 
     debug!("Executing PowerShell script");
 
+    // PowerShell -Command reads stdin with the system OEM code page (e.g. GBK on Chinese Windows),
+    // which corrupts UTF-8 encoded non-ASCII characters. Use -EncodedCommand instead: it accepts
+    // a base64-encoded UTF-16LE string, which is PowerShell's native encoding and bypasses stdin
+    // encoding entirely.
+    let utf16_bytes: Vec<u8> = wrapped_code
+        .encode_utf16()
+        .flat_map(|c| c.to_le_bytes())
+        .collect();
+    let encoded_code = BASE64_STANDARD.encode(&utf16_bytes);
+
     let mut command = Command::new("powershell");
-    command.arg("-Command").arg("-");
-    command.stdin(Stdio::piped());
-    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+    command
+        .arg("-NoProfile")
+        .arg("-NonInteractive")
+        .arg("-EncodedCommand")
+        .arg(&encoded_code)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 
     // hide console window on Windows
     #[cfg(target_os = "windows")]
     command.creation_flags(CREATE_NO_WINDOW);
 
     match command.spawn() {
-        Ok(mut child) => {
-            // write code to stdin
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(wrapped_code.as_bytes()).await?;
-                drop(stdin); // close stdin
-            }
-
+        Ok(child) => {
             let output = child.wait_with_output().await?;
             if output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);

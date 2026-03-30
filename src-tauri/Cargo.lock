@@ -6,6 +6,7 @@ version = 4
 name = "TextGO"
 version = "0.9.5"
 dependencies = [
+ "base64 0.22.1",
  "clipboard-rs",
  "core-foundation 0.10.1",
  "enigo",
