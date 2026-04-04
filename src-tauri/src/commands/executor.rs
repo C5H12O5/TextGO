@@ -456,7 +456,7 @@ pub async fn execute_powershell(code: String, data: String) -> Result<String, Ap
 
     debug!("Executing PowerShell script");
 
-    // PowerShell -Command reads stdin with the system OEM code page (e.g. GBK on Chinese Windows),
+    // PowerShell -Command reads stdin with the system OEM code page (e.g., GBK on Chinese Windows),
     // which corrupts UTF-8 encoded non-ASCII characters. Use -EncodedCommand instead: it accepts
     // a base64-encoded UTF-16LE string, which is PowerShell's native encoding and bypasses stdin
     // encoding entirely.

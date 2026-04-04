@@ -23,7 +23,7 @@ ${m.prompt_variables_tip()}
 
   // default values
   const DEFAULT_ICON = 'Robot';
-  const DEFAULT_MODEL = 'gemma3:4b';
+  const DEFAULT_MODEL = 'gemma4:e4b';
   const DEFAULT_PROVIDER = 'ollama';
   const DEFAULT_TEMPERATURE = 1;
   const DEFAULT_TOP_P = 1;
