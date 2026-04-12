@@ -1,4 +1,4 @@
-name: Bug 报告
+name: 问题反馈
 description: 报告 Bug 以帮助我们改进
 title: '[Bug Report]: '
 body:
@@ -6,7 +6,7 @@ body:
     id: description
     attributes:
       label: 问题描述
-      description: 清晰简洁地描述这个 Bug
+      description: 请清晰简洁地描述这个问题
       placeholder: 问题是...
     validations:
       required: true
@@ -14,7 +14,7 @@ body:
     id: reproduce
     attributes:
       label: 复现步骤
-      description: 复现该问题的步骤
+      description: 请提供复现该问题的大致步骤
       placeholder: |
         1. 打开 '...'
         2. 点击 '...'
@@ -24,11 +24,11 @@ body:
   - type: textarea
     id: environment
     attributes:
-      label: 系统信息
-      description: 请提供您的系统信息
+      label: 运行环境
+      description: 请提供您的运行环境信息
       value: |
-        - 系统：[例如 macOS 26]
-        - 版本：[例如 v1.0.0]
+        - 操作系统：[例如 macOS 26]
+        - 当前版本：[例如 v1.0.0]
     validations:
       required: true
   - type: textarea
