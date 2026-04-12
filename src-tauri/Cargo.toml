@@ -40,7 +40,7 @@ clipboard-rs = "0.3.3"
 wildmatch = "2.6.1"
 base64 = "0.22.1"
 enigo = "0.6.1"
-rdev = { git = "https://github.com/C5H12O5/rdev", rev = "5a5596d" }
+rdev = { git = "https://github.com/C5H12O5/rdev", rev = "e1145ce" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 core-foundation = "0.10.1"
