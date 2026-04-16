@@ -80,50 +80,48 @@
 </script>
 
 <Modal {...icon} {title} bind:this={modal}>
-  <div class="flex flex-col gap-3">
-    <!-- list items -->
-    <div class="flex max-h-96 min-h-18 flex-col justify-center gap-2 overflow-y-auto">
-      {#each list as item, index (index)}
-        {@const website = item.toLowerCase().startsWith('http://') || item.toLowerCase().startsWith('https://')}
-        <div class="flex items-center gap-2">
-          <label class="input input-sm w-full">
-            {#if website}
-              <GlobeIcon class="size-5 opacity-30" />
-            {:else}
-              <SquaresFourIcon class="size-5 opacity-30" />
-            {/if}
-            <input
-              type="search"
-              class="grow truncate"
-              spellcheck="false"
-              value={item}
-              oninput={(event) => handleInput(index, event.currentTarget.value)}
-              placeholder={m.bwlist_placeholder()}
-            />
-          </label>
-          <Button icon={MinusCircleIcon} size="sm" class="text-error" onclick={() => handleRemove(index)} />
-        </div>
-      {/each}
-      {#if list.length === 0}
-        <div class="h-8 text-center text-sm opacity-50">{m.bwlist_empty()}</div>
-      {/if}
-    </div>
-    <!-- action buttons -->
-    <div class="flex justify-end gap-2 border-t pt-4">
-      <Button
-        icon={SquaresFourIcon}
-        text={type === 'black' ? m.block_app() : m.allow_app()}
-        square={false}
-        class="font-normal btn-soft"
-        onclick={addApplication}
-      />
-      <Button
-        icon={GlobeIcon}
-        text={type === 'black' ? m.block_website() : m.allow_website()}
-        square={false}
-        class="font-normal btn-soft"
-        onclick={addWebsite}
-      />
-    </div>
+  <!-- list items -->
+  <div class="flex max-h-96 min-h-18 flex-col gap-2 overflow-y-auto p-1">
+    {#each list as item, index (index)}
+      {@const website = item.toLowerCase().startsWith('http://') || item.toLowerCase().startsWith('https://')}
+      <div class="my-auto flex items-center gap-2">
+        <label class="input input-sm w-full">
+          {#if website}
+            <GlobeIcon class="size-5 opacity-30" />
+          {:else}
+            <SquaresFourIcon class="size-5 opacity-30" />
+          {/if}
+          <input
+            type="search"
+            class="grow truncate"
+            spellcheck="false"
+            value={item}
+            oninput={(event) => handleInput(index, event.currentTarget.value)}
+            placeholder={m.bwlist_placeholder()}
+          />
+        </label>
+        <Button icon={MinusCircleIcon} size="sm" class="text-error" onclick={() => handleRemove(index)} />
+      </div>
+    {/each}
+    {#if list.length === 0}
+      <div class="m-auto text-sm opacity-50">{m.bwlist_empty()}</div>
+    {/if}
+  </div>
+  <!-- action buttons -->
+  <div class="flex justify-end gap-2 border-t pt-4">
+    <Button
+      icon={SquaresFourIcon}
+      text={type === 'black' ? m.block_app() : m.allow_app()}
+      square={false}
+      class="font-normal btn-soft"
+      onclick={addApplication}
+    />
+    <Button
+      icon={GlobeIcon}
+      text={type === 'black' ? m.block_website() : m.allow_website()}
+      square={false}
+      class="font-normal btn-soft"
+      onclick={addWebsite}
+    />
   </div>
 </Modal>
