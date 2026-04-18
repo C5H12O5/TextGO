@@ -13,7 +13,6 @@ use rdev::listen;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{LazyLock, Mutex};
-use std::time::Instant;
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -55,9 +54,6 @@ pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
 // global clipboard interrupted state for backup-restore flow
 pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
-// global selected text cache with timestamp
-pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
-    LazyLock::new(|| Mutex::new(None));
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{

@@ -14,9 +14,7 @@ use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
 #[cfg(target_os = "windows")]
-use crate::commands::{get_clipboard_text, set_clipboard_text};
-#[cfg(target_os = "windows")]
-use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
+use crate::CLIPBOARD_RESTORE_INTERRUPTED;
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
 type Click = (Instant, (f64, f64), bool);
@@ -74,38 +72,10 @@ pub fn handle_mouse_event(event: Event) {
                 CTRL_PRESSED.set(true);
             }
 
-            // detect user Ctrl+C operation on Windows
+            // mark clipboard restore as interrupted if user presses Ctrl+C
             #[cfg(target_os = "windows")]
             if matches!(key, Key::KeyC) && CTRL_PRESSED.get() {
                 CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
-                debug!("Ctrl+C detected, marking clipboard restore as interrupted");
-
-                let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
-                    cache.as_ref().and_then(|(text, cached_at)| {
-                        if cached_at.elapsed() < Duration::from_secs(1) {
-                            Some(text.clone())
-                        } else {
-                            None
-                        }
-                    })
-                });
-                if let Some(cached_text) = cached_text {
-                    tauri::async_runtime::spawn(async move {
-                        // wait briefly for OS to finish processing the Ctrl+C copy
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                        // check if clipboard content matches cached selection
-                        if let Ok(current) = get_clipboard_text() {
-                            if current.trim() != cached_text.trim() {
-                                // clipboard was overwritten by restore before interrupt fired
-                                // compensate by writing the cached selection back
-                                debug!(
-                                    "Ctrl+C compensation: restoring cached selection to clipboard"
-                                );
-                                let _ = set_clipboard_text(cached_text);
-                            }
-                        }
-                    });
-                }
             }
 
             // hide toolbar on key press
