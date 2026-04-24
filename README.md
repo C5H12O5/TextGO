@@ -56,7 +56,7 @@ TextGO requires the `Accessibility` permission on macOS to function properly.
 
 ### Extensions
 
-Visit the [**Extensions**](https://textgo.xylitol.top/extensions.html) page on the official website to browse and install various extensions that enhance the app's functionality:
+Visit the [**Extensions**](https://textgo.xylitol.top/extensions) page on the official website to browse and install various extensions that enhance the app's functionality:
 
 | <img align="center" src="screenshots/scripts.png" /> | <img align="center" src="screenshots/websites.png" /> |
 | ---------------------------------------------------- | ----------------------------------------------------- |
@@ -91,7 +91,7 @@ _Follow these steps to resolve:_
 </details>
 
 > [!NOTE]
-> For detailed usage instructions, please refer to the [User Guide](https://textgo.xylitol.top/guide/getting-started.html).
+> For detailed usage instructions, please refer to the [User Guide](https://textgo.xylitol.top/guide/getting-started).
 
 ## 🛠️ Development
 

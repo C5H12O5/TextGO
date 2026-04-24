@@ -56,7 +56,7 @@ TextGO 在 macOS 上需要开启`辅助功能`权限才能正常工作。
 
 ### 获取扩展
 
-访问官方网站的[**扩展页面**](https://textgo.xylitol.top/zh-CN/extensions.html)，可浏览并安装各种扩展来增强应用功能：
+访问官方网站的[**扩展页面**](https://textgo.xylitol.top/zh-CN/extensions)，可浏览并安装各种扩展来增强应用功能：
 
 | <img align="center" src="screenshots/scripts.zh-CN.png" /> | <img align="center" src="screenshots/websites.zh-CN.png" /> |
 | ---------------------------------------------------------- | ----------------------------------------------------------- |
@@ -91,7 +91,7 @@ _可以按照以下步骤解决：_
 </details>
 
 > [!NOTE]
-> 更详细的使用说明，请参考[用户指南](https://textgo.xylitol.top/zh-CN/guide/getting-started.html)
+> 更详细的使用说明，请参考[用户指南](https://textgo.xylitol.top/zh-CN/guide/getting-started)
 
 ## 🛠️ 开发指南
 

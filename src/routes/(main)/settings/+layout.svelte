@@ -43,7 +43,7 @@
       class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
       onclick={() => {
         const locale = getLocale();
-        openUrl(`https://textgo.xylitol.top${locale === 'en' ? '' : `/${locale}`}/extensions.html`);
+        openUrl(`https://textgo.xylitol.top${locale === 'en' ? '' : `/${locale}`}/extensions`);
       }}
     >
       <Extensions class="size-5" />
