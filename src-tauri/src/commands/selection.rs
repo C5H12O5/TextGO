@@ -8,9 +8,6 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
 
-#[cfg(target_os = "windows")]
-use crate::SELECTION_TEXT_CACHE;
-
 // maximum wait time in milliseconds for clipboard to update
 static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);
 
@@ -23,12 +20,6 @@ pub async fn get_selection(app: AppHandle, mouse: Option<bool>) -> Result<String
     // try using platform native API to get selected text first
     if let Ok(text) = platform::get_selection() {
         if !text.is_empty() {
-            // clear cache to avoid stale data
-            #[cfg(target_os = "windows")]
-            if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
-                *cache = None;
-            }
-
             return Ok(text);
         }
     }
@@ -78,12 +69,6 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
                 max_wait_time.as_millis()
             );
         } else {
-            // cache the selected text with current timestamp
-            #[cfg(target_os = "windows")]
-            if let Ok(mut cache) = SELECTION_TEXT_CACHE.lock() {
-                *cache = Some((selected_text.clone(), std::time::Instant::now()));
-            }
-
             // adjust max wait time for next time
             MAX_WAIT_TIME
                 .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
