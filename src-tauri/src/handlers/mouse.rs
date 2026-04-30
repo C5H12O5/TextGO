@@ -2,8 +2,8 @@ use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND,
+    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_DBCLICK_TRIGGER,
+    MOUSE_DRAG_TRIGGER, MOUSE_SHIFT_TRIGGER, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
 };
 use enigo::Mouse;
 use log::debug;
@@ -170,7 +170,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // check for drag end
     if IS_DRAGGING.get() {
         debug!("Checking for drag end (cursor: {})", is_valid_cursor);
-        if is_valid_cursor {
+        if is_valid_cursor && MOUSE_DRAG_TRIGGER.load(Ordering::Relaxed) {
             // emit drag end event
             emit_event("MouseClick+MouseMove", None)?;
         }
@@ -181,7 +181,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // check for shift+click
     if SHIFT_PRESSED.get() {
         debug!("Checking for shift+click (cursor: {})", is_valid_cursor);
-        if is_valid_cursor {
+        if is_valid_cursor && MOUSE_SHIFT_TRIGGER.load(Ordering::Relaxed) {
             // emit shift+click event
             emit_event("Shift+MouseClick", None)?;
         }
@@ -204,7 +204,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
             "Checking for double click (cursor: {}, interval: {}, distance: {})",
             valid_cursor, valid_interval, valid_distance
         );
-        if valid_cursor && valid_interval && valid_distance {
+        if valid_cursor && valid_interval && valid_distance && MOUSE_DBCLICK_TRIGGER.load(Ordering::Relaxed) {
             // emit double click event
             emit_event("MouseClick+MouseClick", None)?;
             // reset last click state

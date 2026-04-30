@@ -54,6 +54,11 @@ pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
 // global clipboard interrupted state for backup-restore flow
 pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
+// global mouse trigger enabled states (disabled by default, enabled by frontend when rules exist)
+pub static MOUSE_DRAG_TRIGGER: AtomicBool = AtomicBool::new(false);
+pub static MOUSE_DBCLICK_TRIGGER: AtomicBool = AtomicBool::new(false);
+pub static MOUSE_SHIFT_TRIGGER: AtomicBool = AtomicBool::new(false);
+
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
@@ -167,6 +172,9 @@ pub fn run() {
             set_long_press_duration,
             set_ibeam_cursor_enabled,
             get_selection,
+            set_mouse_drag_trigger,
+            set_mouse_dbclick_trigger,
+            set_mouse_shift_trigger,
             get_clipboard_text,
             set_clipboard_text,
             clear_clipboard,

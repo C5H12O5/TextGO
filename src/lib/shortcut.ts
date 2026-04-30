@@ -5,8 +5,16 @@ import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
-import { LONG_PRESS_SHORTCUT } from './constants';
+import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, LONG_PRESS_SHORTCUT, SHIFT_CLICK_SHORTCUT } from './constants';
 import { isMouseShortcut } from './helpers';
+
+/** Map mouse shortcut string to the backend command that enables/disables it. */
+function getMouseTriggerCommand(shortcut: string): string | null {
+  if (shortcut === DRAG_SHORTCUT) return 'set_mouse_drag_trigger';
+  if (shortcut === DBCLICK_SHORTCUT) return 'set_mouse_dbclick_trigger';
+  if (shortcut === SHIFT_CLICK_SHORTCUT) return 'set_mouse_shift_trigger';
+  return null;
+}
 
 /**
  * Update case ID in rules with given prefix.
@@ -147,6 +155,11 @@ export class Manager {
       // save rule to frontend registry
       const s = shortcuts.current[shortcut];
       if (s && s.rules && !s.rules.find((r) => r.id === rule.id)) {
+        // notify backend when the first rule is added for a mouse shortcut
+        if (isMouseShortcut(shortcut) && s.rules.length === 0) {
+          const cmd = getMouseTriggerCommand(shortcut);
+          if (cmd) await invoke(cmd, { enabled: true });
+        }
         s.rules.push(rule);
       }
     } catch (error) {
@@ -170,8 +183,11 @@ export class Manager {
         if (index !== -1) {
           s.rules.splice(index, 1);
         }
-        // unregister backend shortcut when no remaining rules
-        if (!isMouseShortcut(shortcut) && s.rules.length === 0) {
+        // notify backend when no remaining rules
+        if (isMouseShortcut(shortcut) && s.rules.length === 0) {
+          const cmd = getMouseTriggerCommand(shortcut);
+          if (cmd) await invoke(cmd, { enabled: false });
+        } else if (!isMouseShortcut(shortcut) && s.rules.length === 0) {
           await invoke('unregister_shortcut', { shortcut });
         }
       }
