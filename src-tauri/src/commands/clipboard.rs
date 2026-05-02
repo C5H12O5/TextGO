@@ -41,12 +41,17 @@ where
     F: FnOnce() -> Fut,
     Fut: std::future::Future<Output = Result<T, AppError>>,
 {
-    // reset interrupted state before operation
-    CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
-
-    // backup all format contents
+    // backup all format contents FIRST so that any user Ctrl+C that landed
+    // just before this task started is captured into the backup itself.
     let contents = run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get(&ALL_FORMATS)?))?;
     debug!("Clipboard backup: saved original clipboard contents");
+
+    // reset interrupted state ONLY AFTER backup. Resetting before backup
+    // would erase the user's pre-task Ctrl+C signal, and the subsequent
+    // restore would overwrite the user's intentional copy on apps where
+    // UIAutomation returns empty and we fall back to the polling clipboard
+    // method (e.g. WeChat).
+    CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
 
     // execute operation
     let result = operation().await?;
