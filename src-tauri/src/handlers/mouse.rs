@@ -2,8 +2,8 @@ use crate::commands::{get_selection, is_blocked};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND,
+    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_DBCLICK_TRIGGER,
+    MOUSE_DRAG_TRIGGER, MOUSE_SHIFT_TRIGGER, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
 };
 use enigo::Mouse;
 use log::debug;
@@ -14,9 +14,7 @@ use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
 #[cfg(target_os = "windows")]
-use crate::commands::{get_clipboard_text, set_clipboard_text};
-#[cfg(target_os = "windows")]
-use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
+use crate::CLIPBOARD_RESTORE_INTERRUPTED;
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
 type Click = (Instant, (f64, f64), bool);
@@ -42,6 +40,27 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
+    // Track Ctrl/Ctrl+C state regardless of suspend/pause so the user's Ctrl+C
+    // can interrupt our clipboard backup-restore cycle. Without this, while
+    // get_selection is running (SHORTCUT_SUSPEND=true), the user's Ctrl+C is
+    // silently overwritten by our restore step, making copy fail for the
+    // ~1s window that the clipboard fallback is polling.
+    #[cfg(target_os = "windows")]
+    {
+        match &event.event_type {
+            EventType::KeyPress(Key::ControlLeft | Key::ControlRight) => {
+                CTRL_PRESSED.set(true);
+            }
+            EventType::KeyRelease(Key::ControlLeft | Key::ControlRight) => {
+                CTRL_PRESSED.set(false);
+            }
+            EventType::KeyPress(Key::KeyC) if CTRL_PRESSED.get() => {
+                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
+            }
+            _ => {}
+        }
+    }
+
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
@@ -74,38 +93,10 @@ pub fn handle_mouse_event(event: Event) {
                 CTRL_PRESSED.set(true);
             }
 
-            // detect user Ctrl+C operation on Windows
+            // mark clipboard restore as interrupted if user presses Ctrl+C
             #[cfg(target_os = "windows")]
             if matches!(key, Key::KeyC) && CTRL_PRESSED.get() {
                 CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
-                debug!("Ctrl+C detected, marking clipboard restore as interrupted");
-
-                let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
-                    cache.as_ref().and_then(|(text, cached_at)| {
-                        if cached_at.elapsed() < Duration::from_secs(1) {
-                            Some(text.clone())
-                        } else {
-                            None
-                        }
-                    })
-                });
-                if let Some(cached_text) = cached_text {
-                    tauri::async_runtime::spawn(async move {
-                        // wait briefly for OS to finish processing the Ctrl+C copy
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                        // check if clipboard content matches cached selection
-                        if let Ok(current) = get_clipboard_text() {
-                            if current.trim() != cached_text.trim() {
-                                // clipboard was overwritten by restore before interrupt fired
-                                // compensate by writing the cached selection back
-                                debug!(
-                                    "Ctrl+C compensation: restoring cached selection to clipboard"
-                                );
-                                let _ = set_clipboard_text(cached_text);
-                            }
-                        }
-                    });
-                }
             }
 
             // hide toolbar on key press
@@ -200,7 +191,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // check for drag end
     if IS_DRAGGING.get() {
         debug!("Checking for drag end (cursor: {})", is_valid_cursor);
-        if is_valid_cursor {
+        if is_valid_cursor && MOUSE_DRAG_TRIGGER.load(Ordering::Relaxed) {
             // emit drag end event
             emit_event("MouseClick+MouseMove", None)?;
         }
@@ -211,7 +202,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
     // check for shift+click
     if SHIFT_PRESSED.get() {
         debug!("Checking for shift+click (cursor: {})", is_valid_cursor);
-        if is_valid_cursor {
+        if is_valid_cursor && MOUSE_SHIFT_TRIGGER.load(Ordering::Relaxed) {
             // emit shift+click event
             emit_event("Shift+MouseClick", None)?;
         }
@@ -234,7 +225,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
             "Checking for double click (cursor: {}, interval: {}, distance: {})",
             valid_cursor, valid_interval, valid_distance
         );
-        if valid_cursor && valid_interval && valid_distance {
+        if valid_cursor && valid_interval && valid_distance && MOUSE_DBCLICK_TRIGGER.load(Ordering::Relaxed) {
             // emit double click event
             emit_event("MouseClick+MouseClick", None)?;
             // reset last click state

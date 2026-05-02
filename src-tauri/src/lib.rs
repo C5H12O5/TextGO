@@ -13,7 +13,6 @@ use rdev::listen;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{LazyLock, Mutex};
-use std::time::Instant;
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -55,9 +54,11 @@ pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
 // global clipboard interrupted state for backup-restore flow
 pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
-// global selected text cache with timestamp
-pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
-    LazyLock::new(|| Mutex::new(None));
+// global mouse trigger enabled states (disabled by default, enabled by frontend when rules exist)
+pub static MOUSE_DRAG_TRIGGER: AtomicBool = AtomicBool::new(false);
+pub static MOUSE_DBCLICK_TRIGGER: AtomicBool = AtomicBool::new(false);
+pub static MOUSE_SHIFT_TRIGGER: AtomicBool = AtomicBool::new(false);
+
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
@@ -171,6 +172,9 @@ pub fn run() {
             set_long_press_duration,
             set_ibeam_cursor_enabled,
             get_selection,
+            set_mouse_drag_trigger,
+            set_mouse_dbclick_trigger,
+            set_mouse_shift_trigger,
             get_clipboard_text,
             set_clipboard_text,
             clear_clipboard,
@@ -297,6 +301,27 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 width: 1.0,
                 height: 1.0,
             }));
+
+            // on Windows, mark toolbar as non-activating so window.show() does not
+            // steal keyboard focus from the foreground app. This is a one-time
+            // window-style change applied at creation; it does NOT touch the show
+            // pipeline and therefore avoids the SW_SHOWNOACTIVATE flash-and-vanish
+            // regression documented in skills/textgo-build/references/troubleshooting.md
+            #[cfg(target_os = "windows")]
+            {
+                use windows::Win32::Foundation::HWND;
+                use windows::Win32::UI::WindowsAndMessaging::{
+                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+                };
+                if let Ok(raw) = window.hwnd() {
+                    let hwnd = HWND(raw.0);
+                    unsafe {
+                        let cur = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                        let new = cur | WS_EX_NOACTIVATE.0 as isize;
+                        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new);
+                    }
+                }
+            }
         }),
     );
 

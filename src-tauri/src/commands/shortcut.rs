@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use crate::{
-    IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND,
+    IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_DBCLICK_TRIGGER, MOUSE_DRAG_TRIGGER,
+    MOUSE_SHIFT_TRIGGER, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
 };
 use std::sync::atomic::Ordering;
 use tauri::AppHandle;
@@ -160,6 +160,27 @@ pub fn set_long_press_duration(duration: u64) -> Result<(), AppError> {
 #[tauri::command]
 pub fn set_ibeam_cursor_enabled(enabled: bool) -> Result<(), AppError> {
     IBEAM_CURSOR.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set mouse drag trigger enabled state.
+#[tauri::command]
+pub fn set_mouse_drag_trigger(enabled: bool) -> Result<(), AppError> {
+    MOUSE_DRAG_TRIGGER.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set mouse double-click trigger enabled state.
+#[tauri::command]
+pub fn set_mouse_dbclick_trigger(enabled: bool) -> Result<(), AppError> {
+    MOUSE_DBCLICK_TRIGGER.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set shift+click trigger enabled state.
+#[tauri::command]
+pub fn set_mouse_shift_trigger(enabled: bool) -> Result<(), AppError> {
+    MOUSE_SHIFT_TRIGGER.store(enabled, Ordering::Relaxed);
     Ok(())
 }
 
