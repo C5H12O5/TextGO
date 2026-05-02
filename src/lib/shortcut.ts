@@ -17,6 +17,23 @@ function getMouseTriggerCommand(shortcut: string): string | null {
 }
 
 /**
+ * Push the current effective state of a mouse shortcut to the backend.
+ * Effective = has at least one rule AND not disabled.
+ * Safe to call for any shortcut; non-mouse shortcuts are ignored.
+ */
+export async function syncMouseTrigger(shortcut: string): Promise<void> {
+  const cmd = getMouseTriggerCommand(shortcut);
+  if (!cmd) return;
+  const s = shortcuts.current[shortcut];
+  const enabled = !!s && !s.disabled && Array.isArray(s.rules) && s.rules.length > 0;
+  try {
+    await invoke(cmd, { enabled });
+  } catch (error) {
+    console.error(`Failed to sync mouse trigger for ${shortcut}: ${error}`);
+  }
+}
+
+/**
  * Update case ID in rules with given prefix.
  *
  * @param prefix - case ID prefix
@@ -155,12 +172,9 @@ export class Manager {
       // save rule to frontend registry
       const s = shortcuts.current[shortcut];
       if (s && s.rules && !s.rules.find((r) => r.id === rule.id)) {
-        // notify backend when the first rule is added for a mouse shortcut
-        if (isMouseShortcut(shortcut) && s.rules.length === 0) {
-          const cmd = getMouseTriggerCommand(shortcut);
-          if (cmd) await invoke(cmd, { enabled: true });
-        }
         s.rules.push(rule);
+        // sync backend mouse trigger flag (no-op for keyboard shortcuts)
+        await syncMouseTrigger(shortcut);
       }
     } catch (error) {
       console.error(`Failed to register rule: ${error}`);
@@ -183,11 +197,10 @@ export class Manager {
         if (index !== -1) {
           s.rules.splice(index, 1);
         }
-        // notify backend when no remaining rules
-        if (isMouseShortcut(shortcut) && s.rules.length === 0) {
-          const cmd = getMouseTriggerCommand(shortcut);
-          if (cmd) await invoke(cmd, { enabled: false });
-        } else if (!isMouseShortcut(shortcut) && s.rules.length === 0) {
+        // sync backend mouse trigger flag (no-op for keyboard shortcuts)
+        await syncMouseTrigger(shortcut);
+        // unregister keyboard shortcut at backend when last rule removed
+        if (!isMouseShortcut(shortcut) && s.rules.length === 0) {
           await invoke('unregister_shortcut', { shortcut });
         }
       }

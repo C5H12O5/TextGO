@@ -2,6 +2,7 @@
   import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut, Toggle } from '$lib/components';
   import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
+  import { syncMouseTrigger } from '$lib/shortcut';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { blacklist, longPress, shortcuts } from '$lib/stores.svelte';
@@ -263,8 +264,11 @@
           class="ml-auto {disabled ? 'text-emphasis' : 'text-inactive'}"
           iconClass={disabled ? '' : 'rotate-90'}
           text={disabled ? m.enable_shortcut() : m.disable_shortcut()}
-          onclick={() => {
+          onclick={async () => {
             shortcuts.current[shortcut].disabled = !shortcuts.current[shortcut].disabled;
+            // sync backend mouse trigger flag so disabled mouse shortcuts no longer
+            // trigger get_selection / focus stealing in the source app
+            await syncMouseTrigger(shortcut);
           }}
         />
         <Button
