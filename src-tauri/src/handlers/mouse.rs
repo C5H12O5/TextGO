@@ -40,6 +40,27 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
+    // Track Ctrl/Ctrl+C state regardless of suspend/pause so the user's Ctrl+C
+    // can interrupt our clipboard backup-restore cycle. Without this, while
+    // get_selection is running (SHORTCUT_SUSPEND=true), the user's Ctrl+C is
+    // silently overwritten by our restore step, making copy fail for the
+    // ~1s window that the clipboard fallback is polling.
+    #[cfg(target_os = "windows")]
+    {
+        match &event.event_type {
+            EventType::KeyPress(Key::ControlLeft | Key::ControlRight) => {
+                CTRL_PRESSED.set(true);
+            }
+            EventType::KeyRelease(Key::ControlLeft | Key::ControlRight) => {
+                CTRL_PRESSED.set(false);
+            }
+            EventType::KeyPress(Key::KeyC) if CTRL_PRESSED.get() => {
+                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
+            }
+            _ => {}
+        }
+    }
+
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
