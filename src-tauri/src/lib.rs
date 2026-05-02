@@ -301,6 +301,27 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
                 width: 1.0,
                 height: 1.0,
             }));
+
+            // on Windows, mark toolbar as non-activating so window.show() does not
+            // steal keyboard focus from the foreground app. This is a one-time
+            // window-style change applied at creation; it does NOT touch the show
+            // pipeline and therefore avoids the SW_SHOWNOACTIVATE flash-and-vanish
+            // regression documented in skills/textgo-build/references/troubleshooting.md
+            #[cfg(target_os = "windows")]
+            {
+                use windows::Win32::Foundation::HWND;
+                use windows::Win32::UI::WindowsAndMessaging::{
+                    GetWindowLongPtrW, SetWindowLongPtrW, GWL_EXSTYLE, WS_EX_NOACTIVATE,
+                };
+                if let Ok(raw) = window.hwnd() {
+                    let hwnd = HWND(raw.0);
+                    unsafe {
+                        let cur = GetWindowLongPtrW(hwnd, GWL_EXSTYLE);
+                        let new = cur | WS_EX_NOACTIVATE.0 as isize;
+                        SetWindowLongPtrW(hwnd, GWL_EXSTYLE, new);
+                    }
+                }
+            }
         }),
     );
 
