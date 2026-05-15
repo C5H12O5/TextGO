@@ -116,27 +116,27 @@ function parseBackendJson(): Package[] {
  * @returns array of table rows
  */
 function generateTable(packages: Package[], title: string): string[] {
-  const table: string[] = [];
+  const rows: string[] = [];
   // filter out the project itself
   const pkgs = packages.filter((pkg) => pkg.name !== 'text-go' && pkg.name !== 'TextGO');
   // add title
-  table.push(`## ${title}\n`);
-  table.push(`> **${pkgs.length}** packages included\n`);
+  rows.push(`## ${title}\n`);
+  rows.push(`> **${pkgs.length}** packages included\n`);
   // add table header
-  table.push('| Package | Version | License | Description |');
-  table.push('|---------|---------|---------|-------------|');
+  rows.push('| Package | Version | License | Description |');
+  rows.push('|---------|---------|---------|-------------|');
   // add table content
   for (const pkg of pkgs) {
-    const name = pkg.repository ? `[${pkg.name}](${pkg.repository})` : pkg.name;
+    const repo = pkg.repository?.replace(/^git\+/, '');
+    const name = repo ? `[${pkg.name}](${repo})` : pkg.name;
     const version = pkg.version || '-';
     const license = pkg.license || 'Unknown';
     // escape pipes in description to avoid breaking table structure
     const description = (pkg.description || '-').replace(/\|/g, '\\|');
-
-    table.push(`| ${name} | ${version} | ${license} | ${description} |`);
+    rows.push(`| ${name} | ${version} | ${license} | ${description} |`);
   }
-  table.push('');
-  return table;
+  rows.push('');
+  return rows;
 }
 
 /**
