@@ -13,7 +13,7 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=5120']
   - repo: https://github.com/commitizen-tools/commitizen
-    rev: v4.13.9
+    rev: v4.16.2
     hooks:
       - id: commitizen
         stages: [commit-msg]
@@ -22,9 +22,9 @@ repos:
     hooks:
       - id: prettier
         additional_dependencies:
-          - prettier@3.8.1
-          - prettier-plugin-svelte@3.5.1
-          - prettier-plugin-tailwindcss@0.7.2
+          - prettier@3.8.3
+          - prettier-plugin-svelte@3.5.2
+          - prettier-plugin-tailwindcss@0.8.0
         args: [--config, ./.prettierrc, --ignore-path, ./.prettierignore, --write, ./src]
   - repo: local
     hooks:

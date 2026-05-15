@@ -1,2 +1,4 @@
+publicHoistPattern:
+  - '@codemirror/*'
 allowBuilds:
   core-js: true

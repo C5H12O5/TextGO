@@ -62,7 +62,7 @@ jobs:
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
       - name: install pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@latest-11
 
       - name: install frontend dependencies
         run: pnpm install

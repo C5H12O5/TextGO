@@ -210,7 +210,7 @@
   <!-- data list -->
   {#if !collapsed}
     <ul
-      class="list overflow-y-auto bg-base-100 scrollbar-none [&_.list-row]:min-h-10 [&_.list-row]:py-1"
+      class="list scrollbar-none overflow-y-auto bg-base-100 [&_.list-row]:min-h-10 [&_.list-row]:py-1"
       transition:slide={{ duration: 300 }}
     >
       {#if data.length === 0 && hint}
