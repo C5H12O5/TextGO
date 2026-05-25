@@ -94,6 +94,15 @@ export class Manager {
         return;
       }
 
+      // fetch selection for mouse shortcuts if not provided
+      const mouse = isMouseShortcut(shortcut);
+      if (mouse && !selection.trim()) {
+        selection = await invoke<string>('get_selection', { mouse: true });
+        if (!selection.trim()) {
+          return;
+        }
+      }
+
       if (s.mode === 'toolbar') {
         // find all matching rules
         const rules = await matchAll(selection, s.rules);
@@ -103,7 +112,6 @@ export class Manager {
         }
         // show toolbar window
         const payload = JSON.stringify({ rules, selection });
-        const mouse = isMouseShortcut(shortcut);
         if (mouse) {
           await invoke('show_toolbar', { payload, mouse });
         } else {
