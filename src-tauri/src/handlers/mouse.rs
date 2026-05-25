@@ -153,7 +153,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
             if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {
                 debug!("Long press triggered after {}ms", duration);
                 LONG_PRESS_TRIGGERED.store(true, Ordering::Relaxed);
-                let _ = emit_event("LongPress", Some(true));
+                let _ = emit_event("LongPress", None);
             }
         });
     }
@@ -274,8 +274,8 @@ fn is_ibeam_cursor() -> bool {
     }
 }
 
-/// Emit mouse event to frontend with current selection.
-fn emit_event(shortcut: &str, skip_selection: Option<bool>) -> Result<(), AppError> {
+/// Emit mouse event to frontend with optional selection fetching.
+fn emit_event(shortcut: &str, with_selection: Option<bool>) -> Result<(), AppError> {
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         // check if current frontmost application/website is in blacklist
         if let Ok(true) = is_blocked(app.clone()) {
@@ -283,7 +283,7 @@ fn emit_event(shortcut: &str, skip_selection: Option<bool>) -> Result<(), AppErr
         }
 
         // emit event directly without fetching selection
-        if skip_selection.unwrap_or(false) {
+        if !with_selection.unwrap_or(false) {
             let event_data = serde_json::json!({
                 "shortcut": shortcut,
                 "selection": ""
