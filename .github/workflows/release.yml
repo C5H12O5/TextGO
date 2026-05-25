@@ -43,6 +43,10 @@ jobs:
                 {
                   "title": "### :hammer: Bug Fixes",
                   "labels": ["fix"]
+                },
+                {
+                  "title": "### :rocket: Refactors",
+                  "labels": ["refactor"]
                 }
               ],
               "commit_template": "- #{{TITLE}} (by [@#{{AUTHOR}}](https://github.com/#{{AUTHOR}}))"
