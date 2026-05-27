@@ -7,6 +7,8 @@ use tokio::{io::AsyncWriteExt, process::Command};
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
+#[cfg(target_os = "windows")]
+const POWERSHELL_DATA_ENV: &str = "TEXTGO_POWERSHELL_DATA";
 
 /// Execute JavaScript code.
 #[tauri::command]
@@ -431,28 +433,25 @@ pub async fn execute_shell(code: String, data: String) -> Result<String, AppErro
 /// Execute PowerShell script.
 #[tauri::command]
 pub async fn execute_powershell(code: String, data: String) -> Result<String, AppError> {
-    // parse JSON data
-    let json_data: Value = serde_json::from_str(&data)?;
-
-    // generate PowerShell variable definitions
-    let mut variables = String::new();
-    if let Some(obj) = json_data.as_object() {
-        for (k, v) in obj {
-            let value = match v {
-                // escape single quotes in strings
-                Value::String(s) => s.replace("'", "''"),
-                _ => v.to_string(),
-            };
-            variables.push_str(&format!("${} = '{}'\n", k, value));
-        }
-    }
-
-    // force UTF-8 output encoding to prevent garbled characters when Rust reads stdout
-    let preamble = "[Console]::OutputEncoding = [System.Text.Encoding]::UTF8\n\
-                    $OutputEncoding = [System.Text.Encoding]::UTF8\n";
+    // bootstrap PowerShell variables from JSON stored in an environment variable
+    let preamble = format!(
+        r#"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+$__jsonData = [Environment]::GetEnvironmentVariable('{POWERSHELL_DATA_ENV}')
+if ($__jsonData) {{
+    $__data = ConvertFrom-Json -InputObject $__jsonData
+    if ($__data) {{
+        foreach ($__prop in $__data.PSObject.Properties) {{
+            Set-Variable -Name $__prop.Name -Value $__prop.Value
+        }}
+    }}
+}}
+        "#
+    );
 
     // create PowerShell script wrapper
-    let wrapped_code = format!("{}{}{}", preamble, variables, code);
+    let wrapped_code = format!("{}{}", preamble, code);
 
     debug!("Executing PowerShell script");
 
@@ -472,6 +471,7 @@ pub async fn execute_powershell(code: String, data: String) -> Result<String, Ap
         .arg("-NonInteractive")
         .arg("-EncodedCommand")
         .arg(&encoded_code)
+        .env(POWERSHELL_DATA_ENV, &data)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
 
