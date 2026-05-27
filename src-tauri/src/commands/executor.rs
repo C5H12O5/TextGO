@@ -7,7 +7,7 @@ use tokio::{io::AsyncWriteExt, process::Command};
 
 #[cfg(target_os = "windows")]
 const CREATE_NO_WINDOW: u32 = 0x08000000;
-#[cfg(target_os = "windows")]
+
 const POWERSHELL_DATA_ENV: &str = "TEXTGO_POWERSHELL_DATA";
 
 /// Execute JavaScript code.
