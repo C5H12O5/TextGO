@@ -1,3 +1,4 @@
+minimumReleaseAge: 1440
 publicHoistPattern:
   - '@codemirror/*'
 allowBuilds:
