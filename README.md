@@ -90,6 +90,21 @@ _Follow these steps to resolve:_
 
 </details>
 
+<details>
+<summary>3. macOS accessibility permission not working after update.</summary>
+
+<br>
+
+_TextGO is not a signed app, so macOS binds the accessibility permission to the current binary. After each update, the new binary has a different identity, and the permission no longer applies — even though it still appears checked in System Settings._
+
+_To fix this:_
+
+1. Open "System Settings" > "Privacy & Security" > "Accessibility"
+2. Select TextGO from the list and remove it with the "−" button
+3. Click the "+" button to add TextGO back
+
+</details>
+
 > [!NOTE]
 > For detailed usage instructions, please refer to the [User Guide](https://textgo.xylitol.top/guide/getting-started).
 

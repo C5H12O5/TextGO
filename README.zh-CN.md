@@ -90,6 +90,21 @@ _可以按照以下步骤解决：_
 
 </details>
 
+<details>
+<summary>3. macOS 更新后辅助功能权限失效。</summary>
+
+<br>
+
+_TextGO 是未签名应用，macOS 将辅助功能权限与当前二进制文件绑定。每次更新后，新的二进制文件身份发生变化，导致原有权限失效——即使系统设置中仍显示为已勾选状态。_
+
+_可以按照以下步骤解决：_
+
+1. 打开"系统设置" > "隐私与安全性" > "辅助功能"
+2. 选中 TextGO 点击"−"按钮将其移除
+3. 点击"+"按钮重新添加 TextGO
+
+</details>
+
 > [!NOTE]
 > 更详细的使用说明，请参考[用户指南](https://textgo.xylitol.top/zh-CN/guide/getting-started)
 
