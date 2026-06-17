@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, List, Searcher, Setting } from '$lib/components';
+  import { Button, Icon, List, Searcher, Setting, alert } from '$lib/components';
   import { dumpExtension } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { searchers } from '$lib/stores.svelte';
@@ -58,6 +58,7 @@
         });
         if (path) {
           await writeTextFile(path, dumpExtension(item));
+          alert(m.exported_success());
         }
       } catch (error) {
         console.error(`Failed to export searcher: ${error}`);

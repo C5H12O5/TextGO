@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, List, Regexp, Setting } from '$lib/components';
+  import { Button, Icon, List, Regexp, Setting, alert } from '$lib/components';
   import { dumpExtension } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { regexps } from '$lib/stores.svelte';
@@ -58,6 +58,7 @@
         });
         if (path) {
           await writeTextFile(path, dumpExtension(item));
+          alert(m.exported_success());
         }
       } catch (error) {
         console.error(`Failed to export regexp: ${error}`);

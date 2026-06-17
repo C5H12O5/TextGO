@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting } from '$lib/components';
+  import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting, alert } from '$lib/components';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
   import { Deno, JavaScript, NodeJS, PowerShell, Python, Shell } from '$lib/icons';
@@ -68,6 +68,7 @@
         });
         if (path) {
           await writeTextFile(path, dumpExtension(item));
+          alert(m.exported_success());
         }
       } catch (error) {
         console.error(`Failed to export script: ${error}`);

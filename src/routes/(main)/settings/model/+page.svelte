@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
   import { Classifier } from '$lib/classifier';
-  import { Button, Icon, List, Model, Setting } from '$lib/components';
+  import { Button, Icon, List, Model, Setting, alert } from '$lib/components';
   import { dumpExtension } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { models } from '$lib/stores.svelte';
@@ -67,6 +67,7 @@
         });
         if (path) {
           await writeTextFile(path, dumpExtension(item));
+          alert(m.exported_success());
         }
       } catch (error) {
         console.error(`Failed to export model: ${error}`);
