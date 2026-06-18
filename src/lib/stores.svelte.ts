@@ -1,5 +1,16 @@
+import { DEFAULT_POPUP_WINDOW_SIZE } from '$lib/constants';
 import { manager } from '$lib/shortcut';
-import type { CustomLLMProvider, Entry, Model, Prompt, Regexp, Script, Searcher, Shortcut } from '$lib/types';
+import type {
+  CustomLLMProvider,
+  Entry,
+  Model,
+  Prompt,
+  Regexp,
+  Script,
+  Searcher,
+  Shortcut,
+  WindowSize
+} from '$lib/types';
 import { decrypt, encrypt } from '$lib/utils';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
@@ -42,14 +53,15 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   const currentWindow = getCurrentWindow().label;
 
   // load data from store
-  store.get<T>(key).then((item) => {
+  const ready = store.get<T>(key).then(async (item) => {
     if (item !== undefined) {
       state = options?.decrypt?.(item) ?? item;
       options?.onload?.(state);
       options?.onchange?.(state);
     }
     // mark as initialized
-    tick().then(() => (initialized = true));
+    await tick();
+    initialized = true;
   });
 
   // watch for state changes and persist to store
@@ -105,7 +117,8 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
     },
     set current(value: T) {
       state = value;
-    }
+    },
+    ready
   };
 }
 
@@ -160,6 +173,9 @@ export const accessibility = persisted<boolean>('accessibility', false);
 
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);
+
+// remember the popup window size across app restarts
+export const popupWindowSize = persisted<WindowSize>('popupWindowSize', DEFAULT_POPUP_WINDOW_SIZE);
 
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);

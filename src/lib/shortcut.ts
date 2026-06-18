@@ -81,6 +81,8 @@ export class Manager {
    */
   private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
     try {
+      await shortcuts.ready;
+
       // handle long press shortcut
       if (LONG_PRESS_SHORTCUT === shortcut) {
         const payload = JSON.stringify({ rules: [{ action: 'paste', shortcut }], selection });

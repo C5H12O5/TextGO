@@ -13,6 +13,14 @@ export type WindowPlacement = {
 };
 
 /**
+ * Window size in logical pixels.
+ */
+export type WindowSize = {
+  width: number;
+  height: number;
+};
+
+/**
  * Convert all properties in type T to nullable.
  */
 export type Optional<T> = {

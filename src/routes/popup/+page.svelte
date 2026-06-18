@@ -1,13 +1,46 @@
+<script lang="ts" module>
+  import { DEFAULT_POPUP_WINDOW_SIZE, MIN_POPUP_WINDOW_SIZE } from '$lib/constants';
+  import type { WindowSize } from '$lib/types';
+
+  /**
+   * Normalize a saved popup window size before applying it to the native window.
+   *
+   * @param size - persisted popup size; invalid or missing dimensions fall back to defaults
+   * @returns normalized logical popup window size
+   */
+  function normalizePopupWindowSize(size?: Partial<WindowSize> | null): WindowSize {
+    return {
+      width: normalizeDimension(size?.width, DEFAULT_POPUP_WINDOW_SIZE.width, MIN_POPUP_WINDOW_SIZE.width),
+      height: normalizeDimension(size?.height, DEFAULT_POPUP_WINDOW_SIZE.height, MIN_POPUP_WINDOW_SIZE.height)
+    };
+  }
+
+  /**
+   * Normalize one persisted popup dimension before it is restored.
+   *
+   * @param value - persisted dimension value
+   * @param fallback - default dimension
+   * @param min - minimum allowed dimension
+   * @returns rounded dimension constrained to the minimum size
+   */
+  function normalizeDimension(value: number | undefined, fallback: number, min: number): number {
+    const dimension = typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : fallback;
+    return Math.round(Math.max(dimension, min));
+  }
+</script>
+
 <script lang="ts">
   import { Button, CodeMirror, Icon } from '$lib/components';
   import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
   import { m } from '$lib/paraglide/messages';
-  import { popupPinned, prompts } from '$lib/stores.svelte';
+  import { popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
+  import { LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { openUrl } from '@tauri-apps/plugin-opener';
+  import { debounce } from 'es-toolkit/function';
   import { marked } from 'marked';
   import {
     ArrowCircleRightIcon,
@@ -25,6 +58,7 @@
 
   // current window
   const currentWindow = getCurrentWindow();
+  let canPersistWindowSize = false;
 
   // shortcut trigger record
   let entry: Entry | null = $state(null);
@@ -59,6 +93,25 @@
   let replyBox = $state(false);
   let userMessage = $state('');
   let userMessageInput: HTMLInputElement | null = $state(null);
+
+  /**
+   * Apply persisted popup window size to native window.
+   */
+  async function restoreWindowSize() {
+    const size = normalizePopupWindowSize(popupWindowSize.current);
+    popupWindowSize.current = size;
+    await currentWindow.setSize(new LogicalSize(size.width, size.height));
+  }
+
+  /**
+   * Persist popup window size after native resize events settle.
+   */
+  const saveWindowSize = debounce((size: WindowSize) => {
+    if (!canPersistWindowSize) {
+      return;
+    }
+    popupWindowSize.current = normalizePopupWindowSize(size);
+  }, 200);
 
   /**
    * Start AI conversation.
@@ -236,9 +289,57 @@
     }
   }
 
-  onMount(async () => {
-    // mark popup as initialized
-    await invoke('mark_popup_initialized');
+  onMount(() => {
+    let unlistenResize: (() => void) | undefined;
+    let mounted = true;
+
+    void (async () => {
+      try {
+        // wait for persisted size so the first native resize uses the stored value
+        await popupWindowSize.ready;
+        await restoreWindowSize();
+      } catch (error) {
+        console.error(`Failed to restore popup window size: ${error}`);
+      } finally {
+        // mark popup as initialized after the first size restore attempt
+        await invoke('mark_popup_initialized');
+      }
+
+      try {
+        const unlisten = await currentWindow.onResized(({ payload }) => {
+          if (!mounted || !canPersistWindowSize) {
+            return;
+          }
+          void currentWindow
+            .scaleFactor()
+            .then((scaleFactor) => {
+              saveWindowSize({
+                width: payload.width / scaleFactor,
+                height: payload.height / scaleFactor
+              });
+            })
+            .catch((error) => {
+              console.error(`Failed to persist popup window size: ${error}`);
+            });
+        });
+        // the async listener registration may resolve after the component has already unmounted
+        if (!mounted) {
+          unlisten();
+          return;
+        }
+        unlistenResize = unlisten;
+        canPersistWindowSize = true;
+      } catch (error) {
+        console.error(`Failed to listen for popup window resize: ${error}`);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+      canPersistWindowSize = false;
+      saveWindowSize.cancel();
+      unlistenResize?.();
+    };
   });
 
   onMount(() => {
@@ -285,21 +386,23 @@
 </script>
 
 {#key entry?.id}
-  {@const height = 'calc(100vh - 2.625rem)'}
-  <main class="bg-transparent p-1">
-    <div class="overflow-hidden rounded-box border shadow-sm">
+  <main class="h-screen bg-transparent p-0.5 pb-0.75">
+    <div class="flex h-full flex-col overflow-hidden rounded-box border shadow-sm">
       <!-- popup window title -->
-      <div class="flex h-8 items-center bg-base-300 p-1" data-tauri-drag-region>
+      <div class="flex h-8 shrink-0 items-center bg-base-300 p-1">
         <Button
           icon={PushPinIcon}
           iconWeight="fill"
           iconClass={popupPinned.current ? '-rotate-90' : '-rotate-45 text-base-content/30'}
           onclick={() => (popupPinned.current = !popupPinned.current)}
         />
-        <div class="pointer-events-none flex items-center truncate">
+        <div
+          class="flex h-full min-w-0 flex-1 cursor-grab items-center truncate active:cursor-grabbing"
+          data-tauri-drag-region
+        >
           {#if promptMode}
-            <Icon icon={promptIcon} class="m-1.5 size-4.5 shrink-0" />
-            <span class="truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
+            <Icon icon={promptIcon} class="pointer-events-none m-1.5 size-4.5 shrink-0" />
+            <span class="pointer-events-none truncate text-sm text-base-content/80">{entry?.actionLabel}</span>
           {/if}
         </div>
         <div class="ml-auto flex items-center gap-1">
@@ -328,7 +431,7 @@
         </div>
       </div>
       <!-- popup window body -->
-      <div style:height class="overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
+      <div class="min-h-0 flex-1 overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
         {#if promptMode}
           <div class="px-4 pt-2 pb-10">
             {#if streaming && !entry?.response}
@@ -360,7 +463,7 @@
           <!-- continue chat input -->
           {#if replyBox}
             <div
-              class="fixed inset-1 top-9 z-50 flex items-end justify-center rounded-b-box bg-black/20"
+              class="fixed inset-x-0.5 top-8.5 bottom-0.75 z-50 flex items-end justify-center rounded-b-box bg-black/20"
               transition:fade={{ duration: 150 }}
             >
               <label
@@ -386,10 +489,10 @@
           <CodeMirror
             bind:this={codeMirror}
             document={entry?.result}
-            minHeight={height}
-            maxHeight={height}
+            minHeight="100%"
+            maxHeight="100%"
             panelClass="hidden"
-            class="rounded-none border-none"
+            class="h-full rounded-none border-none"
           />
         {/if}
       </div>

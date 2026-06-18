@@ -80,7 +80,7 @@
   });
 
   onMount(() => {
-    const unlisten = currentWindow.onFocusChanged(({ payload: focused }) => {
+    const unlisten = currentWindow.onFocusChanged(async ({ payload: focused }) => {
       if (focused) {
         // pause shortcut handling when window gains focus and there are open modals
         if (modals.size > 0) {
@@ -88,6 +88,7 @@
         }
 
         // auto check for updates once per day
+        await autoUpdate.ready;
         if (autoUpdate.current) {
           const AUTO_UPDATE_KEY = 'lastAutoUpdateCheck';
           const today = new Date().toDateString();

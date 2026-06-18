@@ -47,3 +47,19 @@ export const PROMPT_MARK = 'prompt-';
  * Searcher prefix.
  */
 export const SEARCHER_MARK = 'searcher-';
+
+/**
+ * Popup window default size.
+ */
+export const DEFAULT_POPUP_WINDOW_SIZE = {
+  width: 400,
+  height: 300
+};
+
+/**
+ * Popup window minimum size.
+ */
+export const MIN_POPUP_WINDOW_SIZE = {
+  width: 320,
+  height: 220
+};
