@@ -41,7 +41,8 @@
         "alwaysOnTop": true,
         "resizable": true,
         "maximizable": false,
-        "acceptFirstMouse": true
+        "acceptFirstMouse": true,
+        "visibleOnAllWorkspaces": true
       },
       {
         "label": "toolbar",
