@@ -49,6 +49,15 @@ export const PROMPT_MARK = 'prompt-';
 export const SEARCHER_MARK = 'searcher-';
 
 /**
+ * Toolbar visible action count.
+ */
+export const TOOLBAR_ACTION_COUNT = {
+  min: 1,
+  default: 6,
+  max: 12
+};
+
+/**
  * Popup window default size.
  */
 export const DEFAULT_POPUP_WINDOW_SIZE = {

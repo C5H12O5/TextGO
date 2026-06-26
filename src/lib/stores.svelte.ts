@@ -1,4 +1,4 @@
-import { DEFAULT_POPUP_WINDOW_SIZE } from '$lib/constants';
+import { DEFAULT_POPUP_WINDOW_SIZE, TOOLBAR_ACTION_COUNT } from '$lib/constants';
 import { manager } from '$lib/shortcut';
 import type {
   CustomLLMProvider,
@@ -170,6 +170,9 @@ export const minimizeToTray = persisted<boolean>('minimizeToTray', false);
 
 // accessibility permission granted
 export const accessibility = persisted<boolean>('accessibility', false);
+
+// maximum number of visible toolbar actions
+export const toolbarMaxActions = persisted<number>('toolbarMaxActions', TOOLBAR_ACTION_COUNT.default);
 
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);

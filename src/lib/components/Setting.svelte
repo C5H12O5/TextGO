@@ -13,6 +13,7 @@
     tip?: string;
     /** Custom style class name. */
     class?: string;
+    iconClass?: string;
     /** Callback function when clicking more operations. */
     moreOptions?: () => void;
   };
@@ -24,7 +25,7 @@
   import { m } from '$lib/paraglide/messages';
   import { QuestionIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
 
-  let { children, icon, title, tip, class: _class, moreOptions }: SettingProps = $props();
+  let { children, icon, title, tip, class: _class, iconClass, moreOptions }: SettingProps = $props();
 </script>
 
 <div class="rounded-container {_class}">
@@ -32,7 +33,7 @@
     <span class="mr-auto flex min-h-7 items-center gap-2">
       {#if icon}
         {@const Icon = icon}
-        <Icon class="size-5 opacity-80" />
+        <Icon class="size-5 opacity-80 {iconClass}" />
       {/if}
       <span class="font-semibold tracking-wider">
         {title}

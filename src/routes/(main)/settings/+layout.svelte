@@ -14,6 +14,7 @@
     GearSixIcon,
     MagnifyingGlassIcon,
     MouseLeftClickIcon,
+    PaletteIcon,
     RobotIcon,
     ScrollIcon,
     SphereIcon,
@@ -81,6 +82,7 @@
       {@render menu(CodeIcon, m.script_execution(), resolve('/settings/script'))}
       {@render menu(MagnifyingGlassIcon, m.web_search(), resolve('/settings/searcher'))}
       <div class="divider my-0 opacity-50"></div>
+      {@render menu(PaletteIcon, m.display_settings(), resolve('/settings/display'))}
       {@render menu(MouseLeftClickIcon, m.mouse_settings(), resolve('/settings/mouse'))}
       {@render menu(GearIcon, m.general_settings(), resolve('/settings/general'))}
     </ul>

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Icon } from '$lib/components';
-  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
+  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK, TOOLBAR_ACTION_COUNT } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
-  import { prompts, scripts, searchers } from '$lib/stores.svelte';
+  import { prompts, scripts, searchers, toolbarMaxActions } from '$lib/stores.svelte';
   import type { Rule, WindowPlacement } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
@@ -17,9 +17,6 @@
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
   import { fly } from 'svelte/transition';
-
-  // maximum visible actions in toolbar
-  const MAX_VISIBLE_ACTIONS = 6;
 
   // operating system type
   const osType = type();
@@ -49,8 +46,15 @@
 
   // matched actions to display
   let actions: Action[] = $state([]);
-  let visibleActions: Action[] = $derived(actions.slice(0, MAX_VISIBLE_ACTIONS));
-  let overflowActions: Action[] = $derived(actions.slice(MAX_VISIBLE_ACTIONS));
+  let maxVisibleActions = $derived.by(() => {
+    const value = toolbarMaxActions.current;
+    if (!Number.isFinite(value)) {
+      return TOOLBAR_ACTION_COUNT.default;
+    }
+    return Math.min(TOOLBAR_ACTION_COUNT.max, Math.max(TOOLBAR_ACTION_COUNT.min, Math.trunc(value)));
+  });
+  let visibleActions: Action[] = $derived(actions.slice(0, maxVisibleActions));
+  let overflowActions: Action[] = $derived(actions.slice(maxVisibleActions));
 
   // custom action types
   let actionTypes = $derived([
