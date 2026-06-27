@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Icon } from '$lib/components';
-  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK, TOOLBAR_ACTION_COUNT } from '$lib/constants';
+  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
-  import { prompts, scripts, searchers, toolbarMaxActions } from '$lib/stores.svelte';
+  import { prompts, scripts, searchers, toolbarCornerRadius, toolbarMaxActions } from '$lib/stores.svelte';
   import type { Rule, WindowPlacement } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
@@ -59,6 +59,14 @@
   });
   let visibleActions: Action[] = $derived(actions.slice(0, maxVisibleActions));
   let overflowActions: Action[] = $derived(actions.slice(maxVisibleActions));
+  let toolbarCornerRadiusStyle = $derived.by(() => {
+    const value = toolbarCornerRadius.current;
+    if (!Number.isFinite(value)) {
+      return `${TOOLBAR_CORNER_RADIUS.default}px`;
+    }
+    const cornerRadius = Math.min(TOOLBAR_CORNER_RADIUS.max, Math.max(TOOLBAR_CORNER_RADIUS.min, Math.trunc(value)));
+    return `${cornerRadius}px`;
+  });
 
   // custom action types
   let actionTypes = $derived([
@@ -474,7 +482,11 @@
 
 <main class="bg-transparent p-1 select-none">
   {#if initialized && menuMode && actions.length > 0}
-    <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -6, duration: 100 }}>
+    <div
+      class="w-fit overflow-hidden border shadow-sm"
+      style:border-radius={toolbarCornerRadiusStyle}
+      in:fly={{ y: -6, duration: 100 }}
+    >
       <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm" bind:this={container}>
         {#each actions as action (action.id)}
           <button
@@ -495,7 +507,11 @@
       </div>
     </div>
   {:else if initialized && visibleActions.length > 0}
-    <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
+    <div
+      class="w-fit overflow-hidden border shadow-sm"
+      style:border-radius={toolbarCornerRadiusStyle}
+      in:fly={{ y: -10, duration: 100 }}
+    >
       <div class="flex h-8 w-max min-w-max bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
           class="flex shrink-0 cursor-grab active:cursor-grabbing items-center opacity-20 transition-opacity"
