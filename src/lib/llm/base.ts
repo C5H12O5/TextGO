@@ -54,8 +54,8 @@ export abstract class OpenAICompatibleClient implements LLMClient {
           messages: request.messages,
           max_tokens: request.max_tokens,
           max_completion_tokens: request.max_tokens,
-          temperature: request.temperature,
-          top_p: request.top_p
+          temperature: request.temperature === 1 ? undefined : request.temperature,
+          top_p: request.top_p === 1 ? undefined : request.top_p
         }),
         signal: this.abortController.signal
       });
