@@ -213,8 +213,7 @@
         {...schema.url}
         bind:value={url}
         placeholder={URL_PLACEHOLDER}
-        rows="2"
-      ></textarea>
+        rows="2"></textarea>
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
