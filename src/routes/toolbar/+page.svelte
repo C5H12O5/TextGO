@@ -36,6 +36,9 @@
   const osType = type();
   const isWindows = osType === 'windows';
 
+  // bottom safe area offset to avoid taskbar/dock, aligned with Tauri window positioning
+  const SAFE_AREA_BOTTOM = 80;
+
   // current window
   const currentWindow = getCurrentWindow();
 
@@ -260,10 +263,38 @@
       await currentWindow.setSize(new LogicalSize(width, height));
       if (reposition) {
         await invoke('position_toolbar', { mouse });
+      } else if (menuMode) {
+        await clampToolbarToSafeArea();
       }
     } catch (error) {
       console.error(`Failed to resize window: ${error}`);
     }
+  }
+
+  /**
+   * Keep the resized HTML menu inside the current monitor safe area.
+   */
+  async function clampToolbarToSafeArea() {
+    const monitor = await currentMonitor();
+    if (!monitor) {
+      return;
+    }
+
+    const scaleFactor = await currentWindow.scaleFactor();
+    const windowPosition = (await currentWindow.outerPosition()).toLogical(scaleFactor);
+    const windowSize = (await currentWindow.outerSize()).toLogical(scaleFactor);
+    const screenPosition = monitor.position.toLogical(scaleFactor);
+    const screenSize = monitor.size.toLogical(scaleFactor);
+    const safeAreaBottom = SAFE_AREA_BOTTOM / scaleFactor;
+
+    const minX = screenPosition.x;
+    const maxX = Math.max(minX, screenPosition.x + screenSize.width - windowSize.width);
+    const minY = screenPosition.y;
+    const maxY = Math.max(minY, screenPosition.y + screenSize.height - windowSize.height - safeAreaBottom);
+    const x = Math.min(maxX, Math.max(minX, windowPosition.x));
+    const y = Math.min(maxY, Math.max(minY, windowPosition.y));
+
+    await currentWindow.setPosition(new LogicalPosition(x, y));
   }
 
   /**
