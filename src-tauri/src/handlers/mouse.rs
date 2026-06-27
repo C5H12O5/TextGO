@@ -13,8 +13,41 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
-use crate::commands::{get_clipboard_text, set_clipboard_text};
+use crate::commands::{get_clipboard_text, send_copy_keys, set_clipboard_text};
 use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
+
+#[cfg(target_os = "macos")]
+const MACOS_KEY_C: u32 = 8;
+#[cfg(target_os = "macos")]
+const MACOS_LEFT_COMMAND: u32 = 55;
+#[cfg(target_os = "macos")]
+const MACOS_RIGHT_COMMAND: u32 = 54;
+#[cfg(target_os = "macos")]
+const CG_EVENT_SOURCE_STATE_HID_SYSTEM_STATE: i32 = 1;
+
+#[cfg(target_os = "macos")]
+#[link(name = "ApplicationServices", kind = "framework")]
+unsafe extern "C" {
+    unsafe fn CGEventSourceKeyState(state_id: i32, key: u16) -> bool;
+}
+
+#[cfg(target_os = "macos")]
+fn macos_command_key_pressed() -> bool {
+    let left_command_pressed = unsafe {
+        CGEventSourceKeyState(
+            CG_EVENT_SOURCE_STATE_HID_SYSTEM_STATE,
+            MACOS_LEFT_COMMAND as u16,
+        )
+    };
+    let right_command_pressed = unsafe {
+        CGEventSourceKeyState(
+            CG_EVENT_SOURCE_STATE_HID_SYSTEM_STATE,
+            MACOS_RIGHT_COMMAND as u16,
+        )
+    };
+
+    left_command_pressed || right_command_pressed
+}
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
 type Click = (Instant, (f64, f64), bool);
@@ -70,7 +103,9 @@ pub fn handle_mouse_event(event: Event) {
             }
 
             // close native action menu on key press
-            let _ = close_native_menu(key);
+            if matches!(close_native_menu(key, event.platform_code), Ok(true)) {
+                return;
+            }
 
             // hide toolbar on key press
             let _ = hide_toolbar(false);
@@ -332,14 +367,66 @@ fn emit_event(shortcut: &str, with_selection: Option<bool>) -> Result<(), AppErr
 }
 
 /// Close native action menu if it is open.
-fn close_native_menu(key: Key) -> Result<(), AppError> {
-    if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) && !matches!(key, Key::Escape) {
+/// Returns true when the key was handled and should not hide the toolbar.
+fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
+    #[cfg(target_os = "windows")]
+    let _ = platform_code;
+
+    if !TOOLBAR_MENU_OPEN.load(Ordering::Relaxed) {
+        return Ok(false);
+    }
+
+    if matches!(key, Key::Escape) {
+        TOOLBAR_MENU_OPEN.store(false, Ordering::Relaxed);
+        return Ok(false);
+    }
+
+    #[cfg(target_os = "windows")]
+    if matches!(key, Key::ControlLeft | Key::ControlRight) {
+        return Ok(true);
+    }
+
+    #[cfg(target_os = "macos")]
+    if matches!(key, Key::MetaLeft | Key::MetaRight)
+        || matches!(platform_code, MACOS_LEFT_COMMAND | MACOS_RIGHT_COMMAND)
+    {
+        return Ok(true);
+    }
+
+    #[cfg(target_os = "windows")]
+    let copy_shortcut = matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get();
+
+    #[cfg(target_os = "macos")]
+    let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == MACOS_KEY_C)
+        && (COPY_MODIFIER_PRESSED.get() || macos_command_key_pressed());
+
+    if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) {
         let mut enigo_guard = ENIGO.lock()?;
         let enigo = enigo_guard.as_mut()?;
         enigo.key(EnigoKey::Escape, Direction::Click)?;
+
+        if copy_shortcut {
+            tauri::async_runtime::spawn(async {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+
+                if let Some(app) = APP_HANDLE
+                    .lock()
+                    .ok()
+                    .and_then(|guard| guard.as_ref().cloned())
+                {
+                    let _ = app.run_on_main_thread(|| {
+                        let _ = send_copy_keys(Some(false), Some(true));
+                    });
+                } else {
+                    let _ = send_copy_keys(Some(false), Some(true));
+                }
+            });
+        }
+
+        return Ok(false);
     }
 
-    Ok(())
+    Ok(false)
 }
 
 /// Hide toolbar if click is outside its bounds.
