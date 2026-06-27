@@ -20,6 +20,7 @@
 
   // operating system type
   const osType = type();
+  const isWindows = osType === 'windows';
 
   // current window
   const currentWindow = getCurrentWindow();
@@ -35,6 +36,9 @@
 
   // track if mouse is inside toolbar
   let mouseEntered = $state(true);
+
+  // whether the toolbar is rendering as an HTML menu
+  let menuMode = $state(false);
 
   // toolbar action type
   type Action = {
@@ -125,6 +129,8 @@
    * @returns whether the toolbar window should be shown
    */
   async function setup(data: { rules: Rule[]; selection: string; mouse?: boolean }): Promise<boolean> {
+    menuMode = false;
+
     if (!data || !data.rules || !Array.isArray(data.rules)) {
       return false;
     }
@@ -153,6 +159,13 @@
 
     // show native menu directly if no visible actions
     if (maxVisibleActions === 0) {
+      if (isWindows) {
+        menuMode = true;
+        initialized = true;
+        await resizeToolbar(data.mouse ?? false, true);
+        return true;
+      }
+
       await currentWindow.hide();
       await showNativeMenu(actions);
       return false;
@@ -161,24 +174,37 @@
     // mark as initialized
     initialized = true;
 
-    // resize window to fit content after actions are updated
-    await tick();
-    if (container) {
-      try {
-        // measure natural content size instead of the viewport-constrained layout size
-        const dpr = window.devicePixelRatio;
-        const scale = await currentWindow.scaleFactor();
-        const width = ((container.scrollWidth + 10) * dpr) / scale;
-        const height = ((container.scrollHeight + 10) * dpr) / scale;
-        // set window size with some padding
-        await currentWindow.setSize(new LogicalSize(width, height));
-        await invoke('position_toolbar', { mouse: data.mouse ?? false });
-      } catch (error) {
-        console.error(`Failed to resize window: ${error}`);
-      }
-    }
+    await resizeToolbar(data.mouse ?? false, true);
 
     return true;
+  }
+
+  /**
+   * Resize the toolbar window to fit current content.
+   *
+   * @param mouse - whether to position near mouse cursor
+   * @param reposition - whether to reposition the toolbar after resizing
+   */
+  async function resizeToolbar(mouse: boolean, reposition: boolean) {
+    await tick();
+    if (!container) {
+      return;
+    }
+
+    try {
+      // measure natural content size instead of the viewport-constrained layout size
+      const dpr = window.devicePixelRatio;
+      const scale = await currentWindow.scaleFactor();
+      const width = ((container.scrollWidth + 10) * dpr) / scale;
+      const height = ((container.scrollHeight + 10) * dpr) / scale;
+      // set window size with some padding
+      await currentWindow.setSize(new LogicalSize(width, height));
+      if (reposition) {
+        await invoke('position_toolbar', { mouse });
+      }
+    } catch (error) {
+      console.error(`Failed to resize window: ${error}`);
+    }
   }
 
   /**
@@ -230,6 +256,12 @@
    */
   async function showMoreActions() {
     try {
+      if (isWindows) {
+        menuMode = true;
+        await resizeToolbar(false, false);
+        return;
+      }
+
       // calculate bottom-right corner position
       const size = await currentWindow.innerSize();
       const scale = await currentWindow.scaleFactor();
@@ -420,6 +452,7 @@
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
       initialized = false;
+      menuMode = false;
     });
 
     // listen to mouse enter/exit events
@@ -440,7 +473,28 @@
 </script>
 
 <main class="bg-transparent p-1 select-none">
-  {#if initialized && visibleActions.length > 0}
+  {#if initialized && menuMode && actions.length > 0}
+    <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -6, duration: 100 }}>
+      <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm" bind:this={container}>
+        {#each actions as action (action.id)}
+          <button
+            class="flex h-8 w-full cursor-pointer items-center gap-2 px-2 text-left transition-colors"
+            class:hover:bg-btn-hover={mouseEntered}
+            class:hover:text-primary={mouseEntered}
+            onclick={() => executeAction(action)}
+            title={action.label}
+          >
+            {#if action.icon}
+              <Icon icon={action.icon} class="size-4.5 shrink-0" />
+            {:else}
+              <span class="size-4.5 shrink-0"></span>
+            {/if}
+            <span class="min-w-0 flex-1 truncate text-xs font-[450]">{action.label}</span>
+          </button>
+        {/each}
+      </div>
+    </div>
+  {:else if initialized && visibleActions.length > 0}
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
       <div class="flex h-8 w-max min-w-max bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
