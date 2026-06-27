@@ -16,6 +16,27 @@ use tauri::{Emitter, Manager};
 use crate::commands::{get_clipboard_text, send_copy_keys, set_clipboard_text};
 use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
 
+#[cfg(target_os = "windows")]
+const WINDOWS_KEY_C: u32 = 0x43;
+#[cfg(target_os = "windows")]
+const WINDOWS_LEFT_CONTROL: i32 = 0xA2;
+#[cfg(target_os = "windows")]
+const WINDOWS_RIGHT_CONTROL: i32 = 0xA3;
+
+#[cfg(target_os = "windows")]
+#[link(name = "user32")]
+unsafe extern "system" {
+    unsafe fn GetAsyncKeyState(vkey: i32) -> i16;
+}
+
+#[cfg(target_os = "windows")]
+fn windows_control_key_pressed() -> bool {
+    let left_control_state = unsafe { GetAsyncKeyState(WINDOWS_LEFT_CONTROL) } as u16;
+    let right_control_state = unsafe { GetAsyncKeyState(WINDOWS_RIGHT_CONTROL) } as u16;
+
+    left_control_state & 0x8000 != 0 || right_control_state & 0x8000 != 0
+}
+
 #[cfg(target_os = "macos")]
 const MACOS_KEY_C: u32 = 8;
 #[cfg(target_os = "macos")]
@@ -73,12 +94,11 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
-    detect_user_copy_operation(event.event_type);
-
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
     }
+    detect_user_copy_operation(event.event_type);
 
     match event.event_type {
         EventType::ButtonPress(Button::Left) => {
@@ -121,13 +141,16 @@ pub fn handle_mouse_event(event: Event) {
     }
 }
 
-/// Detect user copy operation before shortcut handling is suspended.
+/// Detect user copy operation while shortcut handling is active.
 fn detect_user_copy_operation(event_type: EventType) {
     match event_type {
         EventType::KeyPress(key) => {
             update_copy_modifier_state(key, true);
 
             if matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get() {
+                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
+                debug!("Copy shortcut detected, marking clipboard restore as interrupted");
+
                 let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
                     cache.as_ref().and_then(|(text, cached_at)| {
                         if cached_at.elapsed() < Duration::from_secs(1) {
@@ -138,9 +161,6 @@ fn detect_user_copy_operation(event_type: EventType) {
                     })
                 });
                 if let Some(cached_text) = cached_text {
-                    CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
-                    debug!("Copy shortcut detected, marking clipboard restore as interrupted");
-
                     tauri::async_runtime::spawn(async move {
                         // wait briefly for OS to finish processing the copy shortcut
                         tokio::time::sleep(Duration::from_millis(100)).await;
@@ -394,19 +414,31 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
     }
 
     #[cfg(target_os = "windows")]
-    let copy_shortcut = matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get();
+    let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == WINDOWS_KEY_C)
+        && (COPY_MODIFIER_PRESSED.get() || windows_control_key_pressed());
 
     #[cfg(target_os = "macos")]
     let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == MACOS_KEY_C)
         && (COPY_MODIFIER_PRESSED.get() || macos_command_key_pressed());
 
     if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) {
-        let mut enigo_guard = ENIGO.lock()?;
-        let enigo = enigo_guard.as_mut()?;
-        enigo.key(EnigoKey::Escape, Direction::Click)?;
+        tauri::async_runtime::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(10)).await;
 
-        if copy_shortcut {
-            tauri::async_runtime::spawn(async {
+            let was_suspended = SHORTCUT_SUSPEND.swap(true, Ordering::Relaxed);
+            let escape_result = (|| -> Result<(), AppError> {
+                let mut enigo_guard = ENIGO.lock()?;
+                let enigo = enigo_guard.as_mut()?;
+                Ok(enigo.key(EnigoKey::Escape, Direction::Click)?)
+            })();
+            SHORTCUT_SUSPEND.store(was_suspended, Ordering::Relaxed);
+
+            if let Err(error) = escape_result {
+                debug!("Native menu close failed: {:?}", error);
+                return;
+            }
+
+            if copy_shortcut {
                 tokio::time::sleep(Duration::from_millis(100)).await;
 
                 if let Some(app) = APP_HANDLE
@@ -415,13 +447,13 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
                     .and_then(|guard| guard.as_ref().cloned())
                 {
                     let _ = app.run_on_main_thread(|| {
-                        let _ = send_copy_keys(Some(false), Some(true));
+                        let _ = send_copy_keys(Some(true), Some(true));
                     });
                 } else {
-                    let _ = send_copy_keys(Some(false), Some(true));
+                    let _ = send_copy_keys(Some(true), Some(true));
                 }
-            });
-        }
+            }
+        });
 
         return Ok(false);
     }
