@@ -13,9 +13,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 
-#[cfg(target_os = "windows")]
 use crate::commands::{get_clipboard_text, set_clipboard_text};
-#[cfg(target_os = "windows")]
 use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
 
 /// Type alias for mouse click data (time, position, is_valid_cursor).
@@ -32,7 +30,7 @@ thread_local! {
     static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
     static SHIFT_PRESSED: Cell<bool> = const { Cell::new(false) };
-    static CTRL_PRESSED: Cell<bool> = const { Cell::new(false) };
+    static COPY_MODIFIER_PRESSED: Cell<bool> = const { Cell::new(false) };
 }
 
 // thresholds for drag and double click detection
@@ -42,6 +40,8 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
+    detect_user_copy_operation(event.event_type);
+
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
@@ -69,17 +69,30 @@ pub fn handle_mouse_event(event: Event) {
                 SHIFT_PRESSED.set(true);
             }
 
-            // track ctrl key state
-            if matches!(key, Key::ControlLeft | Key::ControlRight) {
-                CTRL_PRESSED.set(true);
-            }
+            // close native action menu on key press
+            let _ = close_native_menu(key);
 
-            // detect user Ctrl+C operation on Windows
-            #[cfg(target_os = "windows")]
-            if matches!(key, Key::KeyC) && CTRL_PRESSED.get() {
-                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
-                debug!("Ctrl+C detected, marking clipboard restore as interrupted");
+            // hide toolbar on key press
+            let _ = hide_toolbar(false);
+        }
+        EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
+            SHIFT_PRESSED.set(false);
+        }
+        EventType::Wheel { .. } => {
+            // hide toolbar on wheel scroll
+            let _ = hide_toolbar(false);
+        }
+        _ => (),
+    }
+}
 
+/// Detect user copy operation before shortcut handling is suspended.
+fn detect_user_copy_operation(event_type: EventType) {
+    match event_type {
+        EventType::KeyPress(key) => {
+            update_copy_modifier_state(key, true);
+
+            if matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get() {
                 let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
                     cache.as_ref().and_then(|(text, cached_at)| {
                         if cached_at.elapsed() < Duration::from_secs(1) {
@@ -90,8 +103,11 @@ pub fn handle_mouse_event(event: Event) {
                     })
                 });
                 if let Some(cached_text) = cached_text {
+                    CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
+                    debug!("Copy shortcut detected, marking clipboard restore as interrupted");
+
                     tauri::async_runtime::spawn(async move {
-                        // wait briefly for OS to finish processing the Ctrl+C copy
+                        // wait briefly for OS to finish processing the copy shortcut
                         tokio::time::sleep(Duration::from_millis(100)).await;
                         // check if clipboard content matches cached selection
                         if let Ok(current) = get_clipboard_text() {
@@ -99,7 +115,7 @@ pub fn handle_mouse_event(event: Event) {
                                 // clipboard was overwritten by restore before interrupt fired
                                 // compensate by writing the cached selection back
                                 debug!(
-                                    "Ctrl+C compensation: restoring cached selection to clipboard"
+                                    "Copy shortcut compensation: restoring cached selection to clipboard"
                                 );
                                 let _ = set_clipboard_text(cached_text);
                             }
@@ -107,24 +123,24 @@ pub fn handle_mouse_event(event: Event) {
                     });
                 }
             }
-
-            // close native action menu on key press
-            let _ = close_native_menu(key);
-
-            // hide toolbar on key press
-            let _ = hide_toolbar(false);
         }
-        EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
-            SHIFT_PRESSED.set(false);
-        }
-        EventType::KeyRelease(Key::ControlLeft) | EventType::KeyRelease(Key::ControlRight) => {
-            CTRL_PRESSED.set(false);
-        }
-        EventType::Wheel { .. } => {
-            // hide toolbar on wheel scroll
-            let _ = hide_toolbar(false);
+        EventType::KeyRelease(key) => {
+            update_copy_modifier_state(key, false);
         }
         _ => (),
+    }
+}
+
+/// Update platform copy modifier state (Ctrl on Windows, Command on macOS).
+fn update_copy_modifier_state(key: Key, pressed: bool) {
+    #[cfg(target_os = "windows")]
+    if matches!(key, Key::ControlLeft | Key::ControlRight) {
+        COPY_MODIFIER_PRESSED.set(pressed);
+    }
+
+    #[cfg(target_os = "macos")]
+    if matches!(key, Key::MetaLeft | Key::MetaRight) {
+        COPY_MODIFIER_PRESSED.set(pressed);
     }
 }
 

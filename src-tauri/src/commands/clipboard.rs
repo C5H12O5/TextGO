@@ -51,9 +51,9 @@ where
     // execute operation
     let result = operation().await?;
 
-    // check if restore was interrupted by user Ctrl+C during the operation
+    // check if restore was interrupted by user copy shortcut during the operation
     if CLIPBOARD_RESTORE_INTERRUPTED.swap(false, Ordering::Relaxed) {
-        debug!("Clipboard restore skipped: interrupted by user Ctrl+C");
+        debug!("Clipboard restore skipped: interrupted by user copy shortcut");
     } else {
         // restore original clipboard contents
         debug!("Clipboard restore: restoring original clipboard contents");
