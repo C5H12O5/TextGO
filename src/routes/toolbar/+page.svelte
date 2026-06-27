@@ -124,7 +124,7 @@
    * @param data - toolbar setup data
    * @returns whether the toolbar window should be shown
    */
-  async function setup(data: { rules: Rule[]; selection: string }): Promise<boolean> {
+  async function setup(data: { rules: Rule[]; selection: string; mouse?: boolean }): Promise<boolean> {
     if (!data || !data.rules || !Array.isArray(data.rules)) {
       return false;
     }
@@ -165,14 +165,14 @@
     await tick();
     if (container) {
       try {
-        // get container size
-        const rect = container.getBoundingClientRect();
+        // measure natural content size instead of the viewport-constrained layout size
         const dpr = window.devicePixelRatio;
         const scale = await currentWindow.scaleFactor();
-        const width = ((rect.width + 10) * dpr) / scale;
-        const height = ((rect.height + 10) * dpr) / scale;
+        const width = ((container.scrollWidth + 10) * dpr) / scale;
+        const height = ((container.scrollHeight + 10) * dpr) / scale;
         // set window size with some padding
-        currentWindow.setSize(new LogicalSize(width, height));
+        await currentWindow.setSize(new LogicalSize(width, height));
+        await invoke('position_toolbar', { mouse: data.mouse ?? false });
       } catch (error) {
         console.error(`Failed to resize window: ${error}`);
       }
@@ -442,9 +442,9 @@
 <main class="bg-transparent p-1 select-none">
   {#if initialized && visibleActions.length > 0}
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
-      <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+      <div class="flex h-8 w-max min-w-max bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
-          class="flex cursor-grab active:cursor-grabbing items-center opacity-20 transition-opacity"
+          class="flex shrink-0 cursor-grab active:cursor-grabbing items-center opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
           data-tauri-drag-region
         >
@@ -454,7 +454,7 @@
           {@const showIcon = action.rule.displayMode !== 'label'}
           {@const showLabel = action.rule.displayMode !== 'icon'}
           <button
-            class="flex cursor-pointer items-center gap-0.5 px-1.75 transition-colors"
+            class="flex shrink-0 cursor-pointer items-center gap-0.5 px-1.75 transition-colors"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:text-primary={mouseEntered}
             onclick={() => executeAction(action)}
@@ -470,7 +470,7 @@
         {/each}
         {#if overflowActions.length > 0}
           <button
-            class="h-8 cursor-pointer opacity-60 transition-all"
+            class="h-8 shrink-0 cursor-pointer opacity-30 transition-all"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:opacity-100={mouseEntered}
             onclick={showMoreActions}

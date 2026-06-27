@@ -85,7 +85,7 @@ export class Manager {
 
       // handle long press shortcut
       if (LONG_PRESS_SHORTCUT === shortcut) {
-        const payload = JSON.stringify({ rules: [{ action: 'paste', shortcut }], selection });
+        const payload = JSON.stringify({ rules: [{ action: 'paste', shortcut }], selection, mouse: true });
         await invoke('show_toolbar', { payload, mouse: true });
         return;
       }
@@ -113,7 +113,7 @@ export class Manager {
           return;
         }
         // show toolbar window
-        const payload = JSON.stringify({ rules, selection });
+        const payload = JSON.stringify({ rules, selection, mouse });
         if (mouse) {
           await invoke('show_toolbar', { payload, mouse });
         } else {

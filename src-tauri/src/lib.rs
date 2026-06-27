@@ -163,6 +163,7 @@ pub fn run() {
             set_toolbar_menu_open,
             show_popup,
             show_popup_sameplace,
+            position_toolbar,
             show_toolbar,
             show_toolbar_regardless,
             navigate_to,

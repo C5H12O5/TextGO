@@ -152,6 +152,18 @@ pub fn show_popup_sameplace(
     Ok(())
 }
 
+/// Position toolbar window near the mouse or selection.
+#[tauri::command]
+pub fn position_toolbar(app: AppHandle, mouse: Option<bool>) -> Result<(), AppError> {
+    if let Some(window) = app.get_webview_window("toolbar") {
+        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
+    } else {
+        return Err("Toolbar window not found".into());
+    }
+
+    Ok(())
+}
+
 /// Show toolbar window and position it near the cursor.
 #[tauri::command]
 pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
