@@ -52,7 +52,7 @@ export const SEARCHER_MARK = 'searcher-';
  * Toolbar visible action count.
  */
 export const TOOLBAR_ACTION_COUNT = {
-  min: 1,
+  min: 0,
   default: 6,
   max: 12
 };

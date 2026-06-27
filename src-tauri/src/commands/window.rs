@@ -1,6 +1,6 @@
 use crate::error::AppError;
 use crate::platform;
-use crate::ENIGO;
+use crate::{ENIGO, TOOLBAR_MENU_OPEN};
 use enigo::Mouse;
 use serde::{Deserialize, Serialize};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -66,6 +66,12 @@ pub fn mark_popup_initialized() {
 #[tauri::command]
 pub fn mark_toolbar_initialized() {
     TOOLBAR_INITIALIZED.store(true, Ordering::Relaxed);
+}
+
+/// Set toolbar native menu open state.
+#[tauri::command]
+pub fn set_toolbar_menu_open(open: bool) {
+    TOOLBAR_MENU_OPEN.store(open, Ordering::Relaxed);
 }
 
 /// Show popup window and position it near the cursor.

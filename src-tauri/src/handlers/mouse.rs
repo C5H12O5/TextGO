@@ -3,9 +3,9 @@ use crate::error::AppError;
 use crate::platform;
 use crate::{
     APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND,
+    SHORTCUT_SUSPEND, TOOLBAR_MENU_OPEN,
 };
-use enigo::Mouse;
+use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
 use rdev::{Button, Event, EventType, Key};
 use std::cell::Cell;
@@ -107,6 +107,9 @@ pub fn handle_mouse_event(event: Event) {
                     });
                 }
             }
+
+            // close native action menu on key press
+            let _ = close_native_menu(key);
 
             // hide toolbar on key press
             let _ = hide_toolbar(false);
@@ -307,6 +310,17 @@ fn emit_event(shortcut: &str, with_selection: Option<bool>) -> Result<(), AppErr
                 }
             }
         });
+    }
+
+    Ok(())
+}
+
+/// Close native action menu if it is open.
+fn close_native_menu(key: Key) -> Result<(), AppError> {
+    if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) && !matches!(key, Key::Escape) {
+        let mut enigo_guard = ENIGO.lock()?;
+        let enigo = enigo_guard.as_mut()?;
+        enigo.key(EnigoKey::Escape, Direction::Click)?;
     }
 
     Ok(())

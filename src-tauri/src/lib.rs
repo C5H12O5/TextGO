@@ -40,6 +40,9 @@ pub static LONG_PRESS: AtomicBool = AtomicBool::new(false);
 // global long press duration threshold
 pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
 
+// global toolbar native menu open state
+pub static TOOLBAR_MENU_OPEN: AtomicBool = AtomicBool::new(false);
+
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -157,6 +160,7 @@ pub fn run() {
             toggle_main_window,
             mark_popup_initialized,
             mark_toolbar_initialized,
+            set_toolbar_menu_open,
             show_popup,
             show_popup_sameplace,
             show_toolbar,

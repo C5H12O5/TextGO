@@ -122,20 +122,25 @@
    * Setup toolbar with given rules and selection.
    *
    * @param data - toolbar setup data
+   * @returns whether the toolbar window should be shown
    */
-  async function setup(data: { rules: Rule[]; selection: string }) {
+  async function setup(data: { rules: Rule[]; selection: string }): Promise<boolean> {
     if (!data || !data.rules || !Array.isArray(data.rules)) {
-      return;
+      return false;
+    }
+
+    // map rules to actions
+    actions = data.rules.map(mapToAction).filter((a) => !!a);
+    if (actions.length === 0) {
+      return false;
     }
 
     // update current selection
     selection = data.selection || '';
 
-    // map rules to actions
-    actions = data.rules.map(mapToAction).filter((a) => !!a);
+    // replace label with preview result
     for (const action of actions) {
       if (action.rule.preview) {
-        // replace label with preview result
         const result = await execute(action.rule, selection);
         if (result) {
           action.label = result;
@@ -144,6 +149,13 @@
           action.rule.preview = false;
         }
       }
+    }
+
+    // show native menu directly if no visible actions
+    if (maxVisibleActions === 0) {
+      await currentWindow.hide();
+      await showNativeMenu(actions);
+      return false;
     }
 
     // mark as initialized
@@ -165,17 +177,23 @@
         console.error(`Failed to resize window: ${error}`);
       }
     }
+
+    return true;
   }
 
   /**
-   * Show more actions in overflow menu.
+   * Show actions in a native menu.
+   *
+   * @param menuActions - actions to show in menu
+   * @param position - optional menu position relative to toolbar window
    */
-  async function showMoreActions() {
+  async function showNativeMenu(menuActions: Action[], position?: LogicalPosition) {
+    let menu: Menu | undefined;
     try {
       // create menu items with icons
-      const menu = await Menu.new({
+      menu = await Menu.new({
         items: await Promise.all(
-          overflowActions.map(async (action) => {
+          menuActions.map(async (action) => {
             return await IconMenuItem.new({
               id: action.id,
               text: action.label,
@@ -186,6 +204,32 @@
         )
       });
 
+      await invoke('set_toolbar_menu_open', { open: true });
+
+      if (position) {
+        // popup menu at the given position of toolbar window
+        await menu.popup(position, currentWindow);
+      } else {
+        // popup menu at current mouse position
+        await menu.popup();
+      }
+    } catch (error) {
+      console.error(`Failed to show actions menu: ${error}`);
+    } finally {
+      try {
+        await invoke('set_toolbar_menu_open', { open: false });
+        await menu?.close();
+      } catch (error) {
+        console.error(`Failed to cleanup actions menu: ${error}`);
+      }
+    }
+  }
+
+  /**
+   * Show more actions in overflow menu.
+   */
+  async function showMoreActions() {
+    try {
       // calculate bottom-right corner position
       const size = await currentWindow.innerSize();
       const scale = await currentWindow.scaleFactor();
@@ -194,7 +238,7 @@
       const bottomRightPosition = new LogicalPosition(width - 32, height - 2);
 
       // popup menu at bottom-right corner of toolbar window
-      await menu.popup(bottomRightPosition, currentWindow);
+      await showNativeMenu(overflowActions, bottomRightPosition);
     } catch (error) {
       console.error(`Failed to show more actions menu: ${error}`);
     }
@@ -362,13 +406,16 @@
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
       initialized = false;
-      setup(JSON.parse(event.payload)).then(() => {
+      setup(JSON.parse(event.payload)).then(async (showToolbar) => {
+        if (!showToolbar) {
+          await currentWindow.hide();
+          return;
+        }
         // show window without focusing
-        currentWindow.isVisible().then((visible) => {
-          if (!visible) {
-            invoke('show_toolbar_regardless');
-          }
-        });
+        const visible = await currentWindow.isVisible();
+        if (!visible) {
+          await invoke('show_toolbar_regardless');
+        }
       });
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
@@ -393,7 +440,7 @@
 </script>
 
 <main class="bg-transparent p-1 select-none">
-  {#if initialized && actions.length > 0}
+  {#if initialized && visibleActions.length > 0}
     <div class="w-fit overflow-hidden rounded-box border shadow-sm" in:fly={{ y: -10, duration: 100 }}>
       <div class="flex h-8 w-fit bg-base-200/95 backdrop-blur-sm" bind:this={container}>
         <span
