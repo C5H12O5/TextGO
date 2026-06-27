@@ -1,8 +1,8 @@
 <script lang="ts">
   import { Label, Select, Setting } from '$lib/components';
-  import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
+  import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS, TOOLBAR_OPACITY } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
-  import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions } from '$lib/stores.svelte';
+  import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions, toolbarOpacity } from '$lib/stores.svelte';
   import { AppWindowIcon, DeviceMobileSpeakerIcon } from 'phosphor-svelte';
 
   // generate toolbar action count options
@@ -14,14 +14,12 @@
     }
   );
 
-  // generate corner radius marks
-  const cornerRadiusMarkCount = 4;
-  const createCornerRadiusMarks = ({ min, max }: { min: number; max: number }) =>
-    Array.from({ length: cornerRadiusMarkCount }, (_, index) =>
-      Math.round(min + ((max - min) * index) / (cornerRadiusMarkCount - 1))
-    );
-  const toolbarCornerRadiusMarks = createCornerRadiusMarks(TOOLBAR_CORNER_RADIUS);
-  const popupCornerRadiusMarks = createCornerRadiusMarks(POPUP_CORNER_RADIUS);
+  // generate range marks
+  const createRangeMarks = ({ min, max }: { min: number; max: number }, count: number) =>
+    Array.from({ length: count }, (_, index) => Math.round(min + ((max - min) * index) / (count - 1)));
+  const toolbarCornerRadiusMarks = createRangeMarks(TOOLBAR_CORNER_RADIUS, 4);
+  const popupCornerRadiusMarks = createRangeMarks(POPUP_CORNER_RADIUS, 4);
+  const toolbarOpacityMarks = createRangeMarks(TOOLBAR_OPACITY, 3);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -45,6 +43,25 @@
         <div class="flex justify-between text-xs opacity-70">
           {#each toolbarCornerRadiusMarks as radius (radius)}
             <span>{radius}px</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.toolbar_opacity_explain()} tipPlacement="duplex">{m.toolbar_opacity()}</Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={TOOLBAR_OPACITY.min}
+          max={TOOLBAR_OPACITY.max}
+          step={TOOLBAR_OPACITY.step}
+          bind:value={toolbarOpacity.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each toolbarOpacityMarks as opacity (opacity)}
+            <span>{opacity}%</span>
           {/each}
         </div>
       </label>

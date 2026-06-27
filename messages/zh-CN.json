@@ -171,6 +171,8 @@
   "max_action_count_explain": "控制工具栏最多显示的动作数，0 为菜单模式",
   "toolbar_corner_radius": "圆角半径",
   "toolbar_corner_radius_explain": "调整工具栏圆角大小，单位为像素",
+  "toolbar_opacity": "透明度",
+  "toolbar_opacity_explain": "调整工具栏背景透明度，数值越低越透明",
   "popup_settings": "弹窗设置",
   "popup_corner_radius": "圆角半径",
   "popup_corner_radius_explain": "调整弹窗圆角大小，单位为像素",

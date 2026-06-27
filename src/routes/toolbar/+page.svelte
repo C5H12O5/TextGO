@@ -1,8 +1,22 @@
 <script lang="ts">
   import { Icon } from '$lib/components';
-  import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
+  import {
+    PROMPT_MARK,
+    SCRIPT_MARK,
+    SEARCHER_MARK,
+    TOOLBAR_ACTION_COUNT,
+    TOOLBAR_CORNER_RADIUS,
+    TOOLBAR_OPACITY
+  } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
-  import { prompts, scripts, searchers, toolbarCornerRadius, toolbarMaxActions } from '$lib/stores.svelte';
+  import {
+    prompts,
+    scripts,
+    searchers,
+    toolbarCornerRadius,
+    toolbarMaxActions,
+    toolbarOpacity
+  } from '$lib/stores.svelte';
   import type { Rule, WindowPlacement } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalPosition, LogicalSize } from '@tauri-apps/api/dpi';
@@ -68,6 +82,41 @@
     }
     const cornerRadius = Math.min(TOOLBAR_CORNER_RADIUS.max, Math.max(TOOLBAR_CORNER_RADIUS.min, Math.trunc(value)));
     return `${cornerRadius}px`;
+  });
+
+  // toolbar opacity value
+  let toolbarOpacityValue = $derived.by(() => {
+    const value = toolbarOpacity.current;
+    return Number.isFinite(value)
+      ? Math.min(TOOLBAR_OPACITY.max, Math.max(TOOLBAR_OPACITY.min, Math.trunc(value)))
+      : TOOLBAR_OPACITY.default;
+  });
+
+  // toolbar background style
+  let toolbarBackgroundStyle = $derived.by(() => {
+    const opacity = toolbarOpacityValue;
+    return `color-mix(in oklab, var(--color-base-200) ${opacity}%, transparent)`;
+  });
+
+  // action background style
+  let actionBackgroundStyle = $derived.by(() => {
+    const opacity = toolbarOpacityValue;
+    const centerOpacity = Math.max(18, Math.round((100 - opacity) * 0.72));
+    const middleOpacity = Math.round(centerOpacity * 0.42);
+    const highlightOpacity = Math.round(centerOpacity * 0.18);
+    const colorMix = (color: string, mixOpacity: number) => `color-mix(in oklab, ${color} ${mixOpacity}%, transparent)`;
+    const highlightGradient = [
+      'linear-gradient(to bottom',
+      colorMix('var(--color-base-100)', highlightOpacity),
+      'transparent 46%)'
+    ].join(', ');
+    const actionGlowGradient = [
+      'radial-gradient(120% 95% at 50% 48%',
+      `${colorMix('var(--color-base-200)', centerOpacity)} 0%`,
+      `${colorMix('var(--color-base-200)', middleOpacity)} 48%`,
+      'transparent 78%)'
+    ].join(', ');
+    return `${highlightGradient}, ${actionGlowGradient}`;
   });
 
   // custom action types
@@ -514,10 +563,11 @@
       style:border-radius={cornerRadiusStyle}
       in:fly={{ y: -10, duration: 100 }}
     >
-      <div class="flex h-8 w-max min-w-max bg-base-200/95 backdrop-blur-sm" bind:this={container}>
+      <div class="flex h-8 w-max min-w-max" style:background-color={toolbarBackgroundStyle} bind:this={container}>
         <span
           class="flex shrink-0 cursor-grab active:cursor-grabbing items-center opacity-20 transition-opacity"
           class:hover:opacity-90={mouseEntered}
+          style:background-image={actionBackgroundStyle}
           data-tauri-drag-region
         >
           <LineVerticalIcon class="pointer-events-none size-4" />
@@ -529,6 +579,7 @@
             class="flex shrink-0 cursor-pointer items-center gap-0.5 px-1.75 transition-colors"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:text-primary={mouseEntered}
+            style:background-image={actionBackgroundStyle}
             onclick={() => executeAction(action)}
             title={action.label}
           >
@@ -545,6 +596,7 @@
             class="h-8 shrink-0 cursor-pointer opacity-30 transition-all"
             class:hover:bg-btn-hover={mouseEntered}
             class:hover:opacity-100={mouseEntered}
+            style:background-image={actionBackgroundStyle}
             onclick={showMoreActions}
           >
             <DotsThreeVerticalIcon weight="bold" class="size-5" />

@@ -171,6 +171,8 @@
   "max_action_count_explain": "Controls the maximum visible toolbar actions. 0 uses menu mode",
   "toolbar_corner_radius": "Corner Radius",
   "toolbar_corner_radius_explain": "Controls the toolbar corner radius in pixels",
+  "toolbar_opacity": "Opacity",
+  "toolbar_opacity_explain": "Controls the toolbar background opacity",
   "popup_settings": "Popup Settings",
   "popup_corner_radius": "Corner Radius",
   "popup_corner_radius_explain": "Controls the popup corner radius in pixels",

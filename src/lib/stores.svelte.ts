@@ -2,7 +2,8 @@ import {
   DEFAULT_POPUP_WINDOW_SIZE,
   POPUP_CORNER_RADIUS,
   TOOLBAR_ACTION_COUNT,
-  TOOLBAR_CORNER_RADIUS
+  TOOLBAR_CORNER_RADIUS,
+  TOOLBAR_OPACITY
 } from '$lib/constants';
 import { manager } from '$lib/shortcut';
 import type {
@@ -181,6 +182,9 @@ export const toolbarMaxActions = persisted<number>('toolbarMaxActions', TOOLBAR_
 
 // toolbar corner radius in pixels
 export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOLBAR_CORNER_RADIUS.default);
+
+// toolbar background opacity percentage
+export const toolbarOpacity = persisted<number>('toolbarOpacity', TOOLBAR_OPACITY.default);
 
 // popup corner radius in pixels
 export const popupCornerRadius = persisted<number>('popupCornerRadius', POPUP_CORNER_RADIUS.default);

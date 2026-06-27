@@ -68,6 +68,16 @@ export const TOOLBAR_CORNER_RADIUS = {
 };
 
 /**
+ * Toolbar background opacity percentage.
+ */
+export const TOOLBAR_OPACITY = {
+  min: 50,
+  default: 95,
+  max: 100,
+  step: 5
+};
+
+/**
  * Popup corner radius in pixels.
  */
 export const POPUP_CORNER_RADIUS = {
