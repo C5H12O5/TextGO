@@ -18,7 +18,7 @@
 <div class="flex flex-col gap-2">
   <Setting icon={DeviceMobileSpeakerIcon} iconClass="rotate-270" title={m.toolbar_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.max_action_count()}</Label>
+      <Label tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
       <Select options={toolbarActionCountOptions} bind:value={toolbarMaxActions.current} class="w-24 select-sm" />
     </fieldset>
   </Setting>

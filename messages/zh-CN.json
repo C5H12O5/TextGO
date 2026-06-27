@@ -168,6 +168,7 @@
   "display_settings": "显示设置",
   "toolbar_settings": "工具栏设置",
   "max_action_count": "最大动作数量",
+  "max_action_count_explain": "控制工具栏最多显示的动作数，0 为菜单模式",
   "mouse_settings": "鼠标设置",
   "cursor_settings": "指针设置",
   "ibeam_cursor_enabled": "文本模式",

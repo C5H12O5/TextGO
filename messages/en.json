@@ -168,6 +168,7 @@
   "display_settings": "Display Settings",
   "toolbar_settings": "Toolbar Settings",
   "max_action_count": "Max Action Count",
+  "max_action_count_explain": "Controls the maximum visible toolbar actions. 0 uses menu mode",
   "mouse_settings": "Mouse Settings",
   "cursor_settings": "Cursor Settings",
   "ibeam_cursor_enabled": "I-Beam Cursor Check",
