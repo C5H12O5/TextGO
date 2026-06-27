@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Label, Select, Setting } from '$lib/components';
-  import { TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
+  import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
-  import { toolbarCornerRadius, toolbarMaxActions } from '$lib/stores.svelte';
-  import { DeviceMobileSpeakerIcon } from 'phosphor-svelte';
+  import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions } from '$lib/stores.svelte';
+  import { AppWindowIcon, DeviceMobileSpeakerIcon } from 'phosphor-svelte';
 
   // generate toolbar action count options
   const toolbarActionCountOptions = Array.from(
@@ -14,13 +14,14 @@
     }
   );
 
-  const toolbarCornerRadiusMarkCount = 4;
-  const toolbarCornerRadiusMarks = Array.from({ length: toolbarCornerRadiusMarkCount }, (_, index) =>
-    Math.round(
-      TOOLBAR_CORNER_RADIUS.min +
-        ((TOOLBAR_CORNER_RADIUS.max - TOOLBAR_CORNER_RADIUS.min) * index) / (toolbarCornerRadiusMarkCount - 1)
-    )
-  );
+  // generate corner radius marks
+  const cornerRadiusMarkCount = 4;
+  const createCornerRadiusMarks = ({ min, max }: { min: number; max: number }) =>
+    Array.from({ length: cornerRadiusMarkCount }, (_, index) =>
+      Math.round(min + ((max - min) * index) / (cornerRadiusMarkCount - 1))
+    );
+  const toolbarCornerRadiusMarks = createCornerRadiusMarks(TOOLBAR_CORNER_RADIUS);
+  const popupCornerRadiusMarks = createCornerRadiusMarks(POPUP_CORNER_RADIUS);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -43,6 +44,26 @@
         />
         <div class="flex justify-between text-xs opacity-70">
           {#each toolbarCornerRadiusMarks as radius (radius)}
+            <span>{radius}px</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+  </Setting>
+  <Setting icon={AppWindowIcon} title={m.popup_settings()}>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.popup_corner_radius_explain()} tipPlacement="duplex">{m.popup_corner_radius()}</Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={POPUP_CORNER_RADIUS.min}
+          max={POPUP_CORNER_RADIUS.max}
+          step={POPUP_CORNER_RADIUS.step}
+          bind:value={popupCornerRadius.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each popupCornerRadiusMarks as radius (radius)}
             <span>{radius}px</span>
           {/each}
         </div>

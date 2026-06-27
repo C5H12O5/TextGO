@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { DEFAULT_POPUP_WINDOW_SIZE, MIN_POPUP_WINDOW_SIZE } from '$lib/constants';
+  import { DEFAULT_POPUP_WINDOW_SIZE, MIN_POPUP_WINDOW_SIZE, POPUP_CORNER_RADIUS } from '$lib/constants';
   import type { WindowSize } from '$lib/types';
 
   /**
@@ -33,7 +33,7 @@
   import { Button, CodeMirror, Icon } from '$lib/components';
   import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
   import { m } from '$lib/paraglide/messages';
-  import { popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
+  import { popupCornerRadius, popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalSize } from '@tauri-apps/api/dpi';
@@ -59,6 +59,16 @@
   // current window
   const currentWindow = getCurrentWindow();
   let canPersistWindowSize = false;
+
+  // popup corner radius style
+  let cornerRadiusStyle = $derived.by(() => {
+    const value = popupCornerRadius.current;
+    if (!Number.isFinite(value)) {
+      return `${POPUP_CORNER_RADIUS.default}px`;
+    }
+    const cornerRadius = Math.min(POPUP_CORNER_RADIUS.max, Math.max(POPUP_CORNER_RADIUS.min, Math.trunc(value)));
+    return `${cornerRadius}px`;
+  });
 
   // shortcut trigger record
   let entry: Entry | null = $state(null);
@@ -387,7 +397,7 @@
 
 {#key entry?.id}
   <main class="h-screen bg-transparent p-0.5 pb-0.75">
-    <div class="flex h-full flex-col overflow-hidden rounded-box border shadow-sm">
+    <div class="flex h-full flex-col overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle}>
       <!-- popup window title -->
       <div class="flex h-8 shrink-0 items-center bg-base-300 p-1">
         <Button

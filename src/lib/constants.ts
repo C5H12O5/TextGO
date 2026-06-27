@@ -68,6 +68,16 @@ export const TOOLBAR_CORNER_RADIUS = {
 };
 
 /**
+ * Popup corner radius in pixels.
+ */
+export const POPUP_CORNER_RADIUS = {
+  min: 0,
+  default: 8,
+  max: 18,
+  step: 1
+};
+
+/**
  * Popup window default size.
  */
 export const DEFAULT_POPUP_WINDOW_SIZE = {

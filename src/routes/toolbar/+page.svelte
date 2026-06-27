@@ -59,7 +59,9 @@
   });
   let visibleActions: Action[] = $derived(actions.slice(0, maxVisibleActions));
   let overflowActions: Action[] = $derived(actions.slice(maxVisibleActions));
-  let toolbarCornerRadiusStyle = $derived.by(() => {
+
+  // toolbar corner radius style
+  let cornerRadiusStyle = $derived.by(() => {
     const value = toolbarCornerRadius.current;
     if (!Number.isFinite(value)) {
       return `${TOOLBAR_CORNER_RADIUS.default}px`;
@@ -484,7 +486,7 @@
   {#if initialized && menuMode && actions.length > 0}
     <div
       class="w-fit overflow-hidden border shadow-sm"
-      style:border-radius={toolbarCornerRadiusStyle}
+      style:border-radius={cornerRadiusStyle}
       in:fly={{ y: -6, duration: 100 }}
     >
       <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm" bind:this={container}>
@@ -509,7 +511,7 @@
   {:else if initialized && visibleActions.length > 0}
     <div
       class="w-fit overflow-hidden border shadow-sm"
-      style:border-radius={toolbarCornerRadiusStyle}
+      style:border-radius={cornerRadiusStyle}
       in:fly={{ y: -10, duration: 100 }}
     >
       <div class="flex h-8 w-max min-w-max bg-base-200/95 backdrop-blur-sm" bind:this={container}>

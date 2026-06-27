@@ -1,4 +1,9 @@
-import { DEFAULT_POPUP_WINDOW_SIZE, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS } from '$lib/constants';
+import {
+  DEFAULT_POPUP_WINDOW_SIZE,
+  POPUP_CORNER_RADIUS,
+  TOOLBAR_ACTION_COUNT,
+  TOOLBAR_CORNER_RADIUS
+} from '$lib/constants';
 import { manager } from '$lib/shortcut';
 import type {
   CustomLLMProvider,
@@ -176,6 +181,9 @@ export const toolbarMaxActions = persisted<number>('toolbarMaxActions', TOOLBAR_
 
 // toolbar corner radius in pixels
 export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOLBAR_CORNER_RADIUS.default);
+
+// popup corner radius in pixels
+export const popupCornerRadius = persisted<number>('popupCornerRadius', POPUP_CORNER_RADIUS.default);
 
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);
