@@ -2,18 +2,16 @@
   import Button from '$lib/components/Button.svelte';
   import { confirm } from '$lib/components/Confirm.svelte';
   import { m } from '$lib/paraglide/messages';
-  import {
-    ArrowCircleDownIcon,
-    ArrowCircleUpIcon,
-    CaretDownIcon,
-    CaretRightIcon,
-    DownloadIcon,
-    LightbulbIcon,
-    PlusCircleIcon,
-    ShareIcon,
-    XCircleIcon,
-    type IconComponentProps
-  } from 'phosphor-svelte';
+  import ArrowCircleDownIcon from 'phosphor-svelte/lib/ArrowCircleDownIcon';
+  import ArrowCircleUpIcon from 'phosphor-svelte/lib/ArrowCircleUpIcon';
+  import CaretDownIcon from 'phosphor-svelte/lib/CaretDownIcon';
+  import CaretRightIcon from 'phosphor-svelte/lib/CaretRightIcon';
+  import DownloadIcon from 'phosphor-svelte/lib/DownloadIcon';
+  import LightbulbIcon from 'phosphor-svelte/lib/LightbulbIcon';
+  import PlusCircleIcon from 'phosphor-svelte/lib/PlusCircleIcon';
+  import ShareIcon from 'phosphor-svelte/lib/ShareIcon';
+  import XCircleIcon from 'phosphor-svelte/lib/XCircleIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
   import { slide } from 'svelte/transition';

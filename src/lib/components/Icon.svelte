@@ -1,7 +1,8 @@
 <script lang="ts" module>
+  import { phosphorIcons as phosphorIconLoaders } from '$lib/icons';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import * as phosphor from 'phosphor-svelte';
   import type { Component } from 'svelte';
+  export { phosphorIcons } from '$lib/icons';
 
   export type IconProps = {
     /** Icon name or base64-encoded SVG data URL. */
@@ -9,13 +10,6 @@
     /** Custom style class name. */
     class?: string;
   };
-
-  // mapping of phosphor icons
-  export const phosphorIcons = Object.fromEntries(
-    Object.entries(phosphor)
-      .filter(([name]) => name.endsWith('Icon'))
-      .map(([name, icon]) => [name.replace(/Icon$/, ''), icon])
-  ) as Record<string, Component<IconComponentProps>>;
 
   /**
    * Decode base64 SVG data URL to SVG HTML string.
@@ -42,6 +36,13 @@
 
 <script lang="ts">
   const { icon, class: _class }: IconProps = $props();
+
+  const namedIcon = $derived.by(() => {
+    if (typeof icon !== 'string' || icon.startsWith('data:image/svg+xml;base64,')) {
+      return;
+    }
+    return phosphorIconLoaders[icon]?.().then(({ default: Icon }) => Icon);
+  });
 </script>
 
 {#if typeof icon !== 'string'}
@@ -55,8 +56,9 @@
   {@html svg}
 {:else}
   <!-- render phosphor icon name -->
-  {@const Icon = phosphorIcons[icon]}
-  {#if Icon}
-    <Icon class={_class} />
+  {#if namedIcon}
+    {#await namedIcon then Icon}
+      <Icon class={_class} />
+    {/await}
   {/if}
 {/if}

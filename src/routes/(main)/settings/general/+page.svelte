@@ -11,13 +11,11 @@
   import { invoke } from '@tauri-apps/api/core';
   import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { type } from '@tauri-apps/plugin-os';
-  import {
-    CheckCircleIcon,
-    ClockCounterClockwiseIcon,
-    MonitorIcon,
-    ShieldCheckIcon,
-    WarningCircleIcon
-  } from 'phosphor-svelte';
+  import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
+  import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
+  import MonitorIcon from 'phosphor-svelte/lib/MonitorIcon';
+  import ShieldCheckIcon from 'phosphor-svelte/lib/ShieldCheckIcon';
+  import WarningCircleIcon from 'phosphor-svelte/lib/WarningCircleIcon';
   import { onMount } from 'svelte';
 
   // operating system type

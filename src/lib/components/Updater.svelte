@@ -4,7 +4,10 @@
   import { relaunch } from '@tauri-apps/plugin-process';
   import type { Update } from '@tauri-apps/plugin-updater';
   import { check } from '@tauri-apps/plugin-updater';
-  import { CheckCircleIcon, DownloadIcon, SparkleIcon, WarningIcon } from 'phosphor-svelte';
+  import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
+  import DownloadIcon from 'phosphor-svelte/lib/DownloadIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
 
   // update checking states
   let versionHovering = $state(false);

@@ -1,22 +1,20 @@
 <script lang="ts" module>
   import { getKbdLabel } from '$lib/helpers';
-  import {
-    ArrowBendDownLeftIcon,
-    ArrowDownIcon,
-    ArrowFatUpIcon,
-    ArrowLeftIcon,
-    ArrowLineRightIcon,
-    ArrowRightIcon,
-    ArrowUpIcon,
-    BackspaceIcon,
-    CommandIcon,
-    ControlIcon,
-    MouseLeftClickIcon,
-    OptionIcon,
-    WaveSineIcon,
-    WindowsLogoIcon,
-    type IconComponentProps
-  } from 'phosphor-svelte';
+  import ArrowBendDownLeftIcon from 'phosphor-svelte/lib/ArrowBendDownLeftIcon';
+  import ArrowDownIcon from 'phosphor-svelte/lib/ArrowDownIcon';
+  import ArrowFatUpIcon from 'phosphor-svelte/lib/ArrowFatUpIcon';
+  import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeftIcon';
+  import ArrowLineRightIcon from 'phosphor-svelte/lib/ArrowLineRightIcon';
+  import ArrowRightIcon from 'phosphor-svelte/lib/ArrowRightIcon';
+  import ArrowUpIcon from 'phosphor-svelte/lib/ArrowUpIcon';
+  import BackspaceIcon from 'phosphor-svelte/lib/BackspaceIcon';
+  import CommandIcon from 'phosphor-svelte/lib/CommandIcon';
+  import ControlIcon from 'phosphor-svelte/lib/ControlIcon';
+  import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
+  import OptionIcon from 'phosphor-svelte/lib/OptionIcon';
+  import WaveSineIcon from 'phosphor-svelte/lib/WaveSineIcon';
+  import WindowsLogoIcon from 'phosphor-svelte/lib/WindowsLogoIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
   // mapping of key labels to icon components

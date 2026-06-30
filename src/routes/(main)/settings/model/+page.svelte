@@ -14,14 +14,12 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import {
-    ArrowClockwiseIcon,
-    PackageIcon,
-    PencilSimpleLineIcon,
-    SparkleIcon,
-    SphereIcon,
-    WarningIcon
-  } from 'phosphor-svelte';
+  import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
+  import PackageIcon from 'phosphor-svelte/lib/PackageIcon';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import SphereIcon from 'phosphor-svelte/lib/SphereIcon';
+  import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
 
   // classification model components
   let modelCreator: Model;

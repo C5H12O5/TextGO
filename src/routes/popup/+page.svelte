@@ -44,17 +44,15 @@
   import { openUrl } from '@tauri-apps/plugin-opener';
   import { debounce } from 'es-toolkit/function';
   import { marked } from 'marked';
-  import {
-    ArrowCircleRightIcon,
-    ArrowClockwiseIcon,
-    ArrowCounterClockwiseIcon,
-    ChatTeardropDotsIcon,
-    CopySimpleIcon,
-    PushPinIcon,
-    StopCircleIcon,
-    TextIndentIcon,
-    XIcon
-  } from 'phosphor-svelte';
+  import ArrowCircleRightIcon from 'phosphor-svelte/lib/ArrowCircleRightIcon';
+  import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
+  import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
+  import ChatTeardropDotsIcon from 'phosphor-svelte/lib/ChatTeardropDotsIcon';
+  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import PushPinIcon from 'phosphor-svelte/lib/PushPinIcon';
+  import StopCircleIcon from 'phosphor-svelte/lib/StopCircleIcon';
+  import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
+  import XIcon from 'phosphor-svelte/lib/XIcon';
   import { onMount, tick } from 'svelte';
   import { fade, fly } from 'svelte/transition';
 

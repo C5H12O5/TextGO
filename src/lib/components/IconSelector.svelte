@@ -8,7 +8,8 @@
   import { m } from '$lib/paraglide/messages';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
-  import { ArrowsLeftRightIcon, UploadIcon } from 'phosphor-svelte';
+  import ArrowsLeftRightIcon from 'phosphor-svelte/lib/ArrowsLeftRightIcon';
+  import UploadIcon from 'phosphor-svelte/lib/UploadIcon';
   import { scale } from 'svelte/transition';
 
   let { icon: _icon = $bindable() }: { icon: string } = $props();

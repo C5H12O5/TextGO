@@ -17,7 +17,10 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { CodeIcon, PencilSimpleLineIcon, SlidersHorizontalIcon, SparkleIcon } from 'phosphor-svelte';
+  import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
 
   // form constraints
   const schema = buildFormSchema(({ text }) => ({

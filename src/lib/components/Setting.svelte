@@ -23,7 +23,8 @@
   import Button from '$lib/components/Button.svelte';
   import { tooltip } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
-  import { QuestionIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
+  import QuestionIcon from 'phosphor-svelte/lib/QuestionIcon';
+  import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
 
   let { children, icon, title, tip, class: _class, iconClass, moreOptions }: SettingProps = $props();
 </script>

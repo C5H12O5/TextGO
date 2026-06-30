@@ -32,17 +32,15 @@
   import { manager } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
-  import {
-    AppWindowIcon,
-    ArrowArcRightIcon,
-    ArrowFatLineRightIcon,
-    ArrowSquareInIcon,
-    ClipboardTextIcon,
-    ClockCounterClockwiseIcon,
-    SlidersHorizontalIcon,
-    SparkleIcon,
-    TextItalicIcon
-  } from 'phosphor-svelte';
+  import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
+  import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
+  import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
+  import ArrowSquareInIcon from 'phosphor-svelte/lib/ArrowSquareInIcon';
+  import ClipboardTextIcon from 'phosphor-svelte/lib/ClipboardTextIcon';
+  import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
+  import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import TextItalicIcon from 'phosphor-svelte/lib/TextItalicIcon';
   import { untrack } from 'svelte';
 
   // loading status

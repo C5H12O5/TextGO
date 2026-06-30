@@ -33,15 +33,13 @@
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import {
-    CubeIcon,
-    PencilSimpleLineIcon,
-    PlusIcon,
-    RobotIcon,
-    SlidersHorizontalIcon,
-    SparkleIcon,
-    TrashIcon
-  } from 'phosphor-svelte';
+  import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import PlusIcon from 'phosphor-svelte/lib/PlusIcon';
+  import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
+  import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
   import type { Component } from 'svelte';
   import { fly } from 'svelte/transition';
 

@@ -13,7 +13,10 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { GlobeIcon, MagnifyingGlassIcon, PencilSimpleLineIcon, SparkleIcon } from 'phosphor-svelte';
+  import GlobeIcon from 'phosphor-svelte/lib/GlobeIcon';
+  import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
 
   // searcher components
   let searcherCreator: Searcher;

@@ -9,19 +9,17 @@
   import { m } from '$lib/paraglide/messages';
   import { deLocalizeHref, getLocale } from '$lib/paraglide/runtime';
   import { openUrl } from '@tauri-apps/plugin-opener';
-  import {
-    ArrowLeftIcon,
-    CodeIcon,
-    GearIcon,
-    GearSixIcon,
-    MagnifyingGlassIcon,
-    MouseLeftClickIcon,
-    PaletteIcon,
-    RobotIcon,
-    ScrollIcon,
-    SphereIcon,
-    type IconComponentProps
-  } from 'phosphor-svelte';
+  import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeftIcon';
+  import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
+  import GearIcon from 'phosphor-svelte/lib/GearIcon';
+  import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
+  import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
+  import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
+  import PaletteIcon from 'phosphor-svelte/lib/PaletteIcon';
+  import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
+  import ScrollIcon from 'phosphor-svelte/lib/ScrollIcon';
+  import SphereIcon from 'phosphor-svelte/lib/SphereIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();

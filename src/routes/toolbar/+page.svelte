@@ -27,7 +27,11 @@
   import { type } from '@tauri-apps/plugin-os';
   import { memoize } from 'es-toolkit/function';
   import type { IconComponentProps } from 'phosphor-svelte';
-  import { CodeIcon, DotsThreeVerticalIcon, LineVerticalIcon, MagnifyingGlassIcon, RobotIcon } from 'phosphor-svelte';
+  import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
+  import DotsThreeVerticalIcon from 'phosphor-svelte/lib/DotsThreeVerticalIcon';
+  import LineVerticalIcon from 'phosphor-svelte/lib/LineVerticalIcon';
+  import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
+  import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount } from 'svelte';
   import { fly } from 'svelte/transition';

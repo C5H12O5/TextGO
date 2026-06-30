@@ -228,13 +228,11 @@
     rectangularSelection
   } from '@codemirror/view';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import {
-    ArrowCounterClockwiseIcon,
-    CodeIcon,
-    CopySimpleIcon,
-    FrameCornersIcon,
-    TextIndentIcon
-  } from 'phosphor-svelte';
+  import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
+  import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
+  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import FrameCornersIcon from 'phosphor-svelte/lib/FrameCornersIcon';
+  import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
   import { onMount } from 'svelte';
   import CodeMirror from './CodeMirror.svelte';
 

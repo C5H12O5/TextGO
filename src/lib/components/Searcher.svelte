@@ -47,7 +47,7 @@
   import { SEARCHER_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
-  import { GlobeIcon } from 'phosphor-svelte';
+  import GlobeIcon from 'phosphor-svelte/lib/GlobeIcon';
 
   const { searchers }: { searchers: Searcher[] } = $props();
   const loading = new Loading();

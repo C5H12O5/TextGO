@@ -10,22 +10,20 @@
   import { m } from '$lib/paraglide/messages';
   import { entries } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
-  import {
-    ArrowFatLineRightIcon,
-    ArrowLeftIcon,
-    BroomIcon,
-    ClockCounterClockwiseIcon,
-    CopySimpleIcon,
-    CubeIcon,
-    FileJsIcon,
-    FilePyIcon,
-    FingerprintSimpleIcon,
-    MagnifyingGlassIcon,
-    RobotIcon,
-    TerminalWindowIcon,
-    TextboxIcon,
-    TrashIcon
-  } from 'phosphor-svelte';
+  import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
+  import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeftIcon';
+  import BroomIcon from 'phosphor-svelte/lib/BroomIcon';
+  import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
+  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
+  import FileJsIcon from 'phosphor-svelte/lib/FileJsIcon';
+  import FilePyIcon from 'phosphor-svelte/lib/FilePyIcon';
+  import FingerprintSimpleIcon from 'phosphor-svelte/lib/FingerprintSimpleIcon';
+  import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
+  import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
+  import TerminalWindowIcon from 'phosphor-svelte/lib/TerminalWindowIcon';
+  import TextboxIcon from 'phosphor-svelte/lib/TextboxIcon';
+  import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
   import { flip } from 'svelte/animate';
 
   /**

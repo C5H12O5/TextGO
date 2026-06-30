@@ -14,26 +14,24 @@
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { blacklist, longPress, shortcuts } from '$lib/stores.svelte';
-  import {
-    ArrowArcRightIcon,
-    ArrowCircleRightIcon,
-    ArrowClockwiseIcon,
-    ArrowFatLineRightIcon,
-    ArrowFatUpIcon,
-    ArrowsClockwiseIcon,
-    BrowserIcon,
-    CursorClickIcon,
-    GearSixIcon,
-    KeyboardIcon,
-    MouseLeftClickIcon,
-    ProhibitIcon,
-    ProhibitInsetIcon,
-    SparkleIcon,
-    StackPlusIcon,
-    TrashIcon,
-    WarningIcon,
-    WaveSineIcon
-  } from 'phosphor-svelte';
+  import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
+  import ArrowCircleRightIcon from 'phosphor-svelte/lib/ArrowCircleRightIcon';
+  import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
+  import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
+  import ArrowFatUpIcon from 'phosphor-svelte/lib/ArrowFatUpIcon';
+  import ArrowsClockwiseIcon from 'phosphor-svelte/lib/ArrowsClockwiseIcon';
+  import BrowserIcon from 'phosphor-svelte/lib/BrowserIcon';
+  import CursorClickIcon from 'phosphor-svelte/lib/CursorClickIcon';
+  import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
+  import KeyboardIcon from 'phosphor-svelte/lib/KeyboardIcon';
+  import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
+  import ProhibitIcon from 'phosphor-svelte/lib/ProhibitIcon';
+  import ProhibitInsetIcon from 'phosphor-svelte/lib/ProhibitInsetIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import StackPlusIcon from 'phosphor-svelte/lib/StackPlusIcon';
+  import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
+  import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
+  import WaveSineIcon from 'phosphor-svelte/lib/WaveSineIcon';
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
 

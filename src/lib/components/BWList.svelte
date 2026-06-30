@@ -1,6 +1,10 @@
 <script lang="ts" module>
   import { type as os } from '@tauri-apps/plugin-os';
-  import { CheckFatIcon, GlobeIcon, MinusCircleIcon, ProhibitIcon, SquaresFourIcon } from 'phosphor-svelte';
+  import CheckFatIcon from 'phosphor-svelte/lib/CheckFatIcon';
+  import GlobeIcon from 'phosphor-svelte/lib/GlobeIcon';
+  import MinusCircleIcon from 'phosphor-svelte/lib/MinusCircleIcon';
+  import ProhibitIcon from 'phosphor-svelte/lib/ProhibitIcon';
+  import SquaresFourIcon from 'phosphor-svelte/lib/SquaresFourIcon';
 
   export type BWListProps = {
     /** Type of the list: black or white. */

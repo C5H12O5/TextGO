@@ -21,7 +21,7 @@
 
 <script lang="ts">
   import { tooltip } from '$lib/helpers';
-  import { QuestionIcon } from 'phosphor-svelte';
+  import QuestionIcon from 'phosphor-svelte/lib/QuestionIcon';
 
   let { children, icon, tip, tipPlacement = 'left', required = false, class: _class }: LabelProps = $props();
 </script>

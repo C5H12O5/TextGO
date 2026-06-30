@@ -25,15 +25,13 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import {
-  ArrowsClockwiseIcon,
-  BrowsersIcon,
-  CopySimpleIcon,
-  FolderOpenIcon,
-  FunctionIcon,
-  ScissorsIcon,
-  SelectionBackgroundIcon
-} from 'phosphor-svelte';
+import ArrowsClockwiseIcon from 'phosphor-svelte/lib/ArrowsClockwiseIcon';
+import BrowsersIcon from 'phosphor-svelte/lib/BrowsersIcon';
+import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+import FolderOpenIcon from 'phosphor-svelte/lib/FolderOpenIcon';
+import FunctionIcon from 'phosphor-svelte/lib/FunctionIcon';
+import ScissorsIcon from 'phosphor-svelte/lib/ScissorsIcon';
+import SelectionBackgroundIcon from 'phosphor-svelte/lib/SelectionBackgroundIcon';
 
 /**
  * Executor function type.

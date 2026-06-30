@@ -1,7 +1,9 @@
 <script lang="ts" module>
   import { m } from '$lib/paraglide/messages';
   import { escape } from 'es-toolkit/string';
-  import { WarningIcon, XIcon, type IconComponentProps } from 'phosphor-svelte';
+  import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
+  import XIcon from 'phosphor-svelte/lib/XIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import { tick, type Component } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
   import { fade } from 'svelte/transition';

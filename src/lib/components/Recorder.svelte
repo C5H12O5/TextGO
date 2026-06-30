@@ -3,7 +3,8 @@
   import Modal from '$lib/components/Modal.svelte';
   import { Keyboard } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
-  import { LightbulbIcon, StackPlusIcon } from 'phosphor-svelte';
+  import LightbulbIcon from 'phosphor-svelte/lib/LightbulbIcon';
+  import StackPlusIcon from 'phosphor-svelte/lib/StackPlusIcon';
   import { onMount } from 'svelte';
 
   const { onrecord }: { onrecord?: (value: string) => void } = $props();

@@ -10,7 +10,9 @@
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
-  import { ClockCounterClockwiseIcon, GearSixIcon, StackIcon } from 'phosphor-svelte';
+  import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
+  import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
+  import StackIcon from 'phosphor-svelte/lib/StackIcon';
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();

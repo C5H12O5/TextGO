@@ -1,5 +1,6 @@
 <script lang="ts" module>
-  import { XIcon, type IconComponentProps } from 'phosphor-svelte';
+  import XIcon from 'phosphor-svelte/lib/XIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component, Snippet } from 'svelte';
   import { SvelteMap } from 'svelte/reactivity';
 

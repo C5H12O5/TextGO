@@ -6,22 +6,20 @@ import type { Model, Option, Rule } from '$lib/types';
 import { ModelOperations, type ModelResult } from '@vscode/vscode-languagedetection';
 import { memoize } from 'es-toolkit/function';
 import { francAll, type TrigramTuple } from 'franc-min';
-import {
-  CalendarDotsIcon,
-  ClockIcon,
-  CodeIcon,
-  EnvelopeIcon,
-  FolderIcon,
-  GlobeIcon,
-  GlobeSimpleIcon,
-  KeyIcon,
-  LinkIcon,
-  MagnetIcon,
-  NumberCircleNineIcon,
-  TextAaIcon,
-  TextTIcon,
-  TranslateIcon
-} from 'phosphor-svelte';
+import CalendarDotsIcon from 'phosphor-svelte/lib/CalendarDotsIcon';
+import ClockIcon from 'phosphor-svelte/lib/ClockIcon';
+import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
+import EnvelopeIcon from 'phosphor-svelte/lib/EnvelopeIcon';
+import FolderIcon from 'phosphor-svelte/lib/FolderIcon';
+import GlobeIcon from 'phosphor-svelte/lib/GlobeIcon';
+import GlobeSimpleIcon from 'phosphor-svelte/lib/GlobeSimpleIcon';
+import KeyIcon from 'phosphor-svelte/lib/KeyIcon';
+import LinkIcon from 'phosphor-svelte/lib/LinkIcon';
+import MagnetIcon from 'phosphor-svelte/lib/MagnetIcon';
+import NumberCircleNineIcon from 'phosphor-svelte/lib/NumberCircleNineIcon';
+import TextAaIcon from 'phosphor-svelte/lib/TextAaIcon';
+import TextTIcon from 'phosphor-svelte/lib/TextTIcon';
+import TranslateIcon from 'phosphor-svelte/lib/TranslateIcon';
 
 /**
  * Matcher context to share state across matchers.

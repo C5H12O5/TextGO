@@ -13,7 +13,9 @@
   import { basename } from '@tauri-apps/api/path';
   import { open, save } from '@tauri-apps/plugin-dialog';
   import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
-  import { PencilSimpleLineIcon, ScrollIcon, SparkleIcon } from 'phosphor-svelte';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import ScrollIcon from 'phosphor-svelte/lib/ScrollIcon';
+  import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
 
   // regular expression components
   let regexpCreator: Regexp;

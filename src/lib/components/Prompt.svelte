@@ -49,7 +49,8 @@ ${m.prompt_variables_tip()}
     xaiApiKey
   } from '$lib/stores.svelte';
   import { markdown } from '@codemirror/lang-markdown';
-  import { CubeIcon, SlidersHorizontalIcon } from 'phosphor-svelte';
+  import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
+  import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
 
   const { prompts }: { prompts: Prompt[] } = $props();
   const loading = new Loading();

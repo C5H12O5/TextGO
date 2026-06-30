@@ -1,5 +1,9 @@
 <script lang="ts" module>
-  import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, type IconComponentProps } from 'phosphor-svelte';
+  import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
+  import InfoIcon from 'phosphor-svelte/lib/InfoIcon';
+  import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
+  import XCircleIcon from 'phosphor-svelte/lib/XCircleIcon';
+  import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
 
   export type Message = {

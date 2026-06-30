@@ -5,7 +5,8 @@
   import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS, TOOLBAR_OPACITY } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
   import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions, toolbarOpacity } from '$lib/stores.svelte';
-  import { AppWindowIcon, DeviceMobileSpeakerIcon } from 'phosphor-svelte';
+  import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
+  import DeviceMobileSpeakerIcon from 'phosphor-svelte/lib/DeviceMobileSpeakerIcon';
 
   // generate toolbar action count options
   const toolbarActionCountOptions = Array.from(
