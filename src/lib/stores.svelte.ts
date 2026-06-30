@@ -5,7 +5,6 @@ import {
   TOOLBAR_CORNER_RADIUS,
   TOOLBAR_OPACITY
 } from '$lib/constants';
-import { manager } from '$lib/shortcut';
 import type {
   CustomLLMProvider,
   Entry,
@@ -152,6 +151,7 @@ export const shortcuts = persisted<Record<string, Shortcut>>(
     onload: async (shortcuts) => {
       // register all shortcut groups when main window initializes
       if (getCurrentWindow().label === 'main') {
+        const { manager } = await import('$lib/shortcut');
         for (const shortcut of Object.values(shortcuts)) {
           for (const rule of shortcut.rules) {
             await manager.register(rule);

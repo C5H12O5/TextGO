@@ -1,5 +1,4 @@
 import { execute } from '$lib/executor';
-import { matchAll, matchOne } from '$lib/matcher';
 import { shortcuts } from '$lib/stores.svelte';
 import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
@@ -105,6 +104,7 @@ export class Manager {
         }
       }
 
+      const { matchAll, matchOne } = await import('$lib/matcher');
       if (s.mode === 'toolbar') {
         // find all matching rules
         const rules = await matchAll(selection, s.rules);
