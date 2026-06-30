@@ -1,9 +1,8 @@
-import { predict } from '$lib/classifier';
 import { MODEL_MARK, REGEXP_MARK } from '$lib/constants';
+import type { ProgrammingLanguageResult } from '$lib/detector';
 import { m } from '$lib/paraglide/messages';
 import { models, regexps } from '$lib/stores.svelte';
 import type { Model, Option, Rule } from '$lib/types';
-import { ModelOperations, type ModelResult } from '@vscode/vscode-languagedetection';
 import { memoize } from 'es-toolkit/function';
 import { francAll, type TrigramTuple } from 'franc-min';
 import CalendarDotsIcon from 'phosphor-svelte/lib/CalendarDotsIcon';
@@ -32,7 +31,7 @@ interface MatcherContext {
   /** Natural language detection results */
   naturalLangs: TrigramTuple[] | null;
   /** Programming language detection results */
-  programmingLangs: ModelResult[] | null;
+  programmingLangs: ProgrammingLanguageResult[] | null;
 }
 
 /**
@@ -255,36 +254,6 @@ export const PROGRAMMING_CASES: Option[] = [
 // natural language detection options for franc
 const FRANC_OPTIONS = { minLength: 2, only: NATURAL_CASES.map((c) => c.value as string) };
 
-// create programming language recognition model instance
-const MODEL_OPERATIONS = new ModelOperations({
-  // custom JSON model loader function
-  modelJsonLoaderFunc: async () => {
-    try {
-      const response = await fetch('/model.json');
-      if (!response.ok) {
-        throw new Error(`Unable to load model JSON file: ${response.status}`);
-      }
-      return await response.json();
-    } catch (error) {
-      console.error(`Failed to load model JSON file: ${error}`);
-      throw error;
-    }
-  },
-  // custom weights file loader function
-  weightsLoaderFunc: async () => {
-    try {
-      const response = await fetch('/group1-shard1of1.bin');
-      if (!response.ok) {
-        throw new Error(`Unable to load model weights file: ${response.status}`);
-      }
-      return await response.arrayBuffer();
-    } catch (error) {
-      console.error(`Failed to load model weights file: ${error}`);
-      throw error;
-    }
-  }
-});
-
 // minimum expected confidence
 const MIN_CONFIDENCE = 0.2;
 
@@ -298,6 +267,16 @@ const RELATIVE_THRESHOLD = 0.15;
 const findBuiltinCase = memoize((_case: string) => [...GENERAL_CASES, ...TEXT_CASES].find((c) => c.value === _case));
 const findNaturalCase = memoize((_case: string) => NATURAL_CASES.find((c) => c.value === _case));
 const findProgrammingCase = memoize((_case: string) => PROGRAMMING_CASES.find((c) => c.value === _case));
+
+async function detectProgrammingLanguages(text: string): Promise<ProgrammingLanguageResult[]> {
+  const detector = await import('$lib/detector');
+  return await detector.detectProgrammingLanguages(text);
+}
+
+async function predictModel(modelId: string, text: string): Promise<number | null> {
+  const classifier = await import('$lib/classifier');
+  return await classifier.predict(modelId, text);
+}
 
 /**
  * Skip matcher - matches empty case (no recognition).
@@ -366,7 +345,7 @@ const programmingMatcher: Matcher = async (context) => {
     try {
       // lazy load programming language detection results
       if (context.programmingLangs === null) {
-        context.programmingLangs = await MODEL_OPERATIONS.runModel(context.text);
+        context.programmingLangs = await detectProgrammingLanguages(context.text);
         console.debug(`Programming language detection result: ${JSON.stringify(context.programmingLangs)}`);
       }
       if (matchProgrammingCase(context.rule.case, context.programmingLangs)) {
@@ -458,7 +437,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
 
   // shared context for lazy-loaded results
   let naturalLangs: TrigramTuple[] | null = null;
-  let programmingLangs: ModelResult[] | null = null;
+  let programmingLangs: ProgrammingLanguageResult[] | null = null;
 
   // iterate through all rules
   for (const rule of rules) {
@@ -527,7 +506,7 @@ export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
  * @param results - model recognition results
  * @returns whether it matches the target language
  */
-function matchProgrammingCase(targetId: string, results: ModelResult[]): boolean {
+function matchProgrammingCase(targetId: string, results: ProgrammingLanguageResult[]): boolean {
   if (!results || results.length === 0) {
     return false;
   }
@@ -601,7 +580,7 @@ async function matchModelCase(model: Model, text: string): Promise<boolean> {
     return false;
   }
   // load trained model for matching
-  const confidence = await predict(model.id, text);
+  const confidence = await predictModel(model.id, text);
   return confidence !== null && confidence >= model.threshold;
 }
 
@@ -615,7 +594,7 @@ async function matchModelCase(model: Model, text: string): Promise<boolean> {
 export async function guessProgrammingLanguage(text: string, langs: string[]): Promise<string | null> {
   try {
     // run programming language detection model
-    let results = await MODEL_OPERATIONS.runModel(text);
+    let results = await detectProgrammingLanguages(text);
     // filter results to only include possible languages
     results = results.filter((result) => langs.includes(result.languageId));
     if (results.length === 0) {

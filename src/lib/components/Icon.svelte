@@ -1,8 +1,8 @@
 <script lang="ts" module>
-  import { phosphorIcons as phosphorIconLoaders } from '$lib/icons';
+  import { phosphorIcons as phosphorIconLoaders } from '$lib/phosphor';
   import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
-  export { phosphorIcons } from '$lib/icons';
+  export { phosphorIcons } from '$lib/phosphor';
 
   export type IconProps = {
     /** Icon name or base64-encoded SVG data URL. */
