@@ -31,9 +31,9 @@
 
 <script lang="ts">
   import Button from '$lib/components/Button.svelte';
-  import CodeMirror from '$lib/components/CodeMirror.svelte';
   import Icon from '$lib/components/Icon.svelte';
-  import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
+  import type CodeMirror from '$lib/components/CodeMirror.svelte';
+  import type { ChatMessage, LLMClient } from '$lib/llm';
   import { m } from '$lib/paraglide/messages';
   import { popupCornerRadius, popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
   import type { Entry } from '$lib/types';
@@ -86,7 +86,8 @@
     return icon;
   });
 
-  // CodeMirror instance
+  // CodeMirror lazy component and instance
+  let codeMirrorComponent: Promise<{ default: typeof CodeMirror }> | null = $state(null);
   let codeMirror: CodeMirror | null = $state(null);
 
   // LLM client instance
@@ -143,6 +144,7 @@
 
     let aborted = false;
     try {
+      const { createLLMClient } = await import('$lib/llm');
       // create or update LLM client based on provider
       llmClient = createLLMClient(entry.provider);
 
@@ -358,6 +360,7 @@
     const setup = (data: Entry | null) => {
       entry = data;
       abort();
+      codeMirror = null;
       // reset chat history
       chatMessages = [];
       replyBox = false;
@@ -370,6 +373,8 @@
       // start chat if in prompt mode
       if (entry?.actionType === 'prompt') {
         chat();
+      } else {
+        codeMirrorComponent ??= import('$lib/components/CodeMirror.svelte');
       }
       // show and focus window
       currentWindow.isVisible().then((visible) => {
@@ -379,8 +384,10 @@
         }
       });
       // copy to clipboard if needed
-      tick().then(() => {
+      tick().then(async () => {
         if (!promptMode && entry?.copyOnPopup) {
+          await codeMirrorComponent;
+          await tick();
           codeMirror?.copy();
         }
       });
@@ -496,16 +503,26 @@
               </label>
             </div>
           {/if}
-        {:else}
+        {:else if codeMirrorComponent}
           <!-- show result in CodeMirror in non-prompt mode -->
-          <CodeMirror
-            bind:this={codeMirror}
-            document={entry?.result}
-            minHeight="100%"
-            maxHeight="100%"
-            panelClass="hidden"
-            class="h-full rounded-none border-none"
-          />
+          {#await codeMirrorComponent}
+            <div class="flex h-full items-center justify-center">
+              <div class="loading loading-sm loading-dots opacity-70"></div>
+            </div>
+          {:then { default: Editor }}
+            <Editor
+              bind:this={codeMirror}
+              document={entry?.result}
+              minHeight="100%"
+              maxHeight="100%"
+              panelClass="hidden"
+              class="h-full rounded-none border-none"
+            />
+          {/await}
+        {:else}
+          <div class="flex h-full items-center justify-center">
+            <div class="loading loading-sm loading-dots opacity-70"></div>
+          </div>
         {/if}
       </div>
     </div>

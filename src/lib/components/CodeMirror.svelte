@@ -1,16 +1,10 @@
 <script lang="ts" module>
-  import { guessProgrammingLanguage } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import type { Language, LanguageSupport } from '@codemirror/language';
   import type { Extension } from '@codemirror/state';
   import type { Options } from 'prettier';
-  import babel from 'prettier/plugins/babel';
-  import estree from 'prettier/plugins/estree';
-  import html from 'prettier/plugins/html';
-  import markdown from 'prettier/plugins/markdown';
-  import postcss from 'prettier/plugins/postcss';
-  import yaml from 'prettier/plugins/yaml';
-  import * as prettier from 'prettier/standalone';
+
+  type FormatOptionLoader = () => Promise<Options>;
 
   export type CodeMirrorProps = Partial<{
     /** Document language. */
@@ -63,6 +57,7 @@
    * @param doc - document content
    */
   async function guessLanguageType(doc: string): Promise<string | null> {
+    const { guessProgrammingLanguage } = await import('$lib/matcher');
     const langs: Record<string, string> = {
       js: 'javascript',
       json: 'json',
@@ -115,13 +110,37 @@
   /**
    * Supported formatting options for different languages.
    */
-  const formatOptions: Record<string, Options> = {
-    javascript: { parser: 'babel', plugins: [babel, estree], singleQuote: true },
-    json: { parser: 'json', plugins: [babel, estree] },
-    css: { parser: 'css', plugins: [postcss] },
-    html: { parser: 'html', plugins: [html] },
-    yaml: { parser: 'yaml', plugins: [yaml], singleQuote: true },
-    markdown: { parser: 'markdown', plugins: [markdown] }
+  const formatOptionLoaders: Record<string, FormatOptionLoader> = {
+    javascript: async () => {
+      const [{ default: babel }, { default: estree }] = await Promise.all([
+        import('prettier/plugins/babel'),
+        import('prettier/plugins/estree')
+      ]);
+      return { parser: 'babel', plugins: [babel, estree], singleQuote: true } as Options;
+    },
+    json: async () => {
+      const [{ default: babel }, { default: estree }] = await Promise.all([
+        import('prettier/plugins/babel'),
+        import('prettier/plugins/estree')
+      ]);
+      return { parser: 'json', plugins: [babel, estree] } as Options;
+    },
+    css: async () => {
+      const { default: postcss } = await import('prettier/plugins/postcss');
+      return { parser: 'css', plugins: [postcss] } as Options;
+    },
+    html: async () => {
+      const { default: html } = await import('prettier/plugins/html');
+      return { parser: 'html', plugins: [html] } as Options;
+    },
+    yaml: async () => {
+      const { default: yaml } = await import('prettier/plugins/yaml');
+      return { parser: 'yaml', plugins: [yaml], singleQuote: true } as Options;
+    },
+    markdown: async () => {
+      const { default: markdown } = await import('prettier/plugins/markdown');
+      return { parser: 'markdown', plugins: [markdown] } as Options;
+    }
   };
 
   /**
@@ -133,12 +152,13 @@
    * @param lineLength - maximum line length
    */
   async function formatDocument(view: EditorView, language: string, tabSize: number, lineLength: number) {
-    const option = formatOptions[language.toLowerCase()];
-    if (!option) {
+    const loadOptions = formatOptionLoaders[language.toLowerCase()];
+    if (!loadOptions) {
       return;
     }
     try {
       const source = view.state.doc.toString();
+      const [prettier, option] = await Promise.all([import('prettier/standalone'), loadOptions()]);
       const formatted = await prettier.format(source, {
         ...option,
         tabWidth: tabSize,
@@ -461,7 +481,7 @@
       {#if !readOnly && resetter}
         <Button icon={ArrowCounterClockwiseIcon} class="border-0 bg-transparent shadow-none" onclick={reset} />
       {/if}
-      {#if !readOnly && formatter && languageName.toLowerCase() in formatOptions}
+      {#if !readOnly && formatter && languageName.toLowerCase() in formatOptionLoaders}
         <Button icon={TextIndentIcon} class="border-0 bg-transparent shadow-none" onclick={format} />
       {/if}
       {#if copier}
