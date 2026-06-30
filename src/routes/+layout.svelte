@@ -1,6 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment';
-  import { Alert, Confirm } from '$lib/components';
+  import Alert from '$lib/components/Alert.svelte';
+  import Confirm from '$lib/components/Confirm.svelte';
   import { theme } from '$lib/stores.svelte';
   import { platform } from '@tauri-apps/plugin-os';
   import type { Snippet } from 'svelte';

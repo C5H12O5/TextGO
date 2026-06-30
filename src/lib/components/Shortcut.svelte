@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Kbd } from '$lib/components';
+  import Kbd from '$lib/components/Kbd.svelte';
 
   const {
     shortcut,

@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { Kbd, Modal } from '$lib/components';
+  import Kbd from '$lib/components/Kbd.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { Keyboard } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { LightbulbIcon, StackPlusIcon } from 'phosphor-svelte';

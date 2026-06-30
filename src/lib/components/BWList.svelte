@@ -14,7 +14,8 @@
 </script>
 
 <script lang="ts">
-  import { Button, Modal } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { m } from '$lib/paraglide/messages';
   import { invoke } from '@tauri-apps/api/core';
   import { open } from '@tauri-apps/plugin-dialog';

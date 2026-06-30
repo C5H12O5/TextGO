@@ -20,7 +20,7 @@
 </script>
 
 <script lang="ts">
-  import { Button } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
   import { tooltip } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { QuestionIcon, SlidersHorizontalIcon } from 'phosphor-svelte';

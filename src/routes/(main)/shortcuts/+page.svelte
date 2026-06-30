@@ -1,5 +1,14 @@
 <script lang="ts">
-  import { alert, Binder, Button, BWList, confirm, Icon, List, Recorder, Shortcut, Toggle } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import Binder from '$lib/components/Binder.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import BWList from '$lib/components/BWList.svelte';
+  import { confirm } from '$lib/components/Confirm.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import List from '$lib/components/List.svelte';
+  import Recorder from '$lib/components/Recorder.svelte';
+  import Shortcut from '$lib/components/Shortcut.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
   import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';

@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { Label, Select, Setting } from '$lib/components';
+  import Label from '$lib/components/Label.svelte';
+  import Select from '$lib/components/Select.svelte';
+  import Setting from '$lib/components/Setting.svelte';
   import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS, TOOLBAR_OPACITY } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
   import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions, toolbarOpacity } from '$lib/stores.svelte';

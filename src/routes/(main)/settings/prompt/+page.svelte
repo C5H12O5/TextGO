@@ -1,7 +1,15 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, Label, List, Modal, Prompt, Setting, alert, confirm } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import { confirm } from '$lib/components/Confirm.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import List from '$lib/components/List.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import Prompt from '$lib/components/Prompt.svelte';
+  import Setting from '$lib/components/Setting.svelte';
   import { LLM_PROVIDERS } from '$lib/constants';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';

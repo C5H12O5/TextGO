@@ -16,7 +16,11 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { Classifier } from '$lib/classifier';
-  import { CodeMirror, IconSelector, Label, Modal, alert } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import CodeMirror from '$lib/components/CodeMirror.svelte';
+  import IconSelector from '$lib/components/IconSelector.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { MODEL_MARK } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
   import { updateCaseId } from '$lib/shortcut';

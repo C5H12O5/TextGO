@@ -1,6 +1,11 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, List, Searcher, Setting, alert } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import List from '$lib/components/List.svelte';
+  import Searcher from '$lib/components/Searcher.svelte';
+  import Setting from '$lib/components/Setting.svelte';
   import { dumpExtension } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { searchers } from '$lib/stores.svelte';

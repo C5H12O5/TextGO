@@ -40,7 +40,10 @@
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { IconSelector, Label, Modal, alert } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import IconSelector from '$lib/components/IconSelector.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { SEARCHER_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';

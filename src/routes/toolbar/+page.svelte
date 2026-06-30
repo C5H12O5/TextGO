@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Icon } from '$lib/components';
+  import Icon from '$lib/components/Icon.svelte';
   import {
     PROMPT_MARK,
     SCRIPT_MARK,

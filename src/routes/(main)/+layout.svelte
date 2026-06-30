@@ -1,7 +1,7 @@
 <script lang="ts">
   import { afterNavigate, goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { Title } from '$lib/components';
+  import Title from '$lib/components/Title.svelte';
   import { modals } from '$lib/components/Modal.svelte';
   import { checkForUpdates } from '$lib/components/Updater.svelte';
   import { Moon, Sun } from '$lib/icons';

@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { confirm } from '$lib/components';
+  import { confirm } from '$lib/components/Confirm.svelte';
   import { m } from '$lib/paraglide/messages';
   import { relaunch } from '@tauri-apps/plugin-process';
   import type { Update } from '@tauri-apps/plugin-updater';

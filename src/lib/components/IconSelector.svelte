@@ -1,6 +1,9 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { alert, Icon, Label, Modal } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Modal from '$lib/components/Modal.svelte';
   import { phosphorIcons } from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
   import { open } from '@tauri-apps/plugin-dialog';

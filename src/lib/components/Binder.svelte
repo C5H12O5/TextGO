@@ -20,7 +20,14 @@
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { alert, confirm, Icon, Label, Modal, Radio, Select, Toggle } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import { confirm } from '$lib/components/Confirm.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import Radio from '$lib/components/Radio.svelte';
+  import Select from '$lib/components/Select.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
   import { m } from '$lib/paraglide/messages';
   import { manager } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';

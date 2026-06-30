@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { Label, Setting, Toggle } from '$lib/components';
+  import Label from '$lib/components/Label.svelte';
+  import Setting from '$lib/components/Setting.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
   import { m } from '$lib/paraglide/messages';
   import { iBeamCursor, longPress, longPressDuration } from '$lib/stores.svelte';
   import { CursorClickIcon, CursorTextIcon } from 'phosphor-svelte';

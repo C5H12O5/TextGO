@@ -2,7 +2,9 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
   import { page } from '$app/state';
-  import { Button, Title, Updater } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
+  import Title from '$lib/components/Title.svelte';
+  import Updater from '$lib/components/Updater.svelte';
   import { Extensions, GitHub } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { deLocalizeHref, getLocale } from '$lib/paraglide/runtime';

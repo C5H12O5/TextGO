@@ -1,4 +1,4 @@
-import { alert } from '$lib/components';
+import { alert } from '$lib/components/Alert.svelte';
 import type { EventHandler } from 'svelte/elements';
 
 /**

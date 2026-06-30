@@ -1,5 +1,6 @@
 <script lang="ts" generics="T extends { id: string }">
-  import { Button, confirm } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
+  import { confirm } from '$lib/components/Confirm.svelte';
   import { m } from '$lib/paraglide/messages';
   import {
     ArrowCircleDownIcon,

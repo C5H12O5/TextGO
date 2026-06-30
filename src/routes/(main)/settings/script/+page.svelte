@@ -1,6 +1,13 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { Button, Icon, Label, List, Modal, Script as ScriptModal, Setting, alert } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import Icon from '$lib/components/Icon.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import List from '$lib/components/List.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import ScriptModal from '$lib/components/Script.svelte';
+  import Setting from '$lib/components/Setting.svelte';
   import { buildFormSchema } from '$lib/constraint';
   import { dumpExtension } from '$lib/helpers';
   import { Deno, JavaScript, NodeJS, PowerShell, Python, Shell } from '$lib/icons';

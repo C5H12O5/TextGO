@@ -1,7 +1,10 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { Button, Shortcut, Title, confirm } from '$lib/components';
+  import { confirm } from '$lib/components/Confirm.svelte';
+  import Button from '$lib/components/Button.svelte';
+  import Shortcut from '$lib/components/Shortcut.svelte';
+  import Title from '$lib/components/Title.svelte';
   import { formatISO8601 } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';

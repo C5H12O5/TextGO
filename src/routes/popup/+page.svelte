@@ -30,7 +30,9 @@
 </script>
 
 <script lang="ts">
-  import { Button, CodeMirror, Icon } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
+  import CodeMirror from '$lib/components/CodeMirror.svelte';
+  import Icon from '$lib/components/Icon.svelte';
   import { createLLMClient, type ChatMessage, type LLMClient } from '$lib/llm';
   import { m } from '$lib/paraglide/messages';
   import { popupCornerRadius, popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';

@@ -31,7 +31,12 @@ ${m.prompt_variables_tip()}
 
 <script lang="ts">
   import { enhance } from '$app/forms';
-  import { CodeMirror, IconSelector, Label, Modal, Select, alert } from '$lib/components';
+  import { alert } from '$lib/components/Alert.svelte';
+  import CodeMirror from '$lib/components/CodeMirror.svelte';
+  import IconSelector from '$lib/components/IconSelector.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Modal from '$lib/components/Modal.svelte';
+  import Select from '$lib/components/Select.svelte';
   import { PROMPT_MARK } from '$lib/constants';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';

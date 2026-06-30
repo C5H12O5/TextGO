@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { Button, Label, Select, Setting, Toggle } from '$lib/components';
+  import Button from '$lib/components/Button.svelte';
+  import Label from '$lib/components/Label.svelte';
+  import Select from '$lib/components/Select.svelte';
+  import Setting from '$lib/components/Setting.svelte';
+  import Toggle from '$lib/components/Toggle.svelte';
   import { setupTray } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';

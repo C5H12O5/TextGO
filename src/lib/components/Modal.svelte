@@ -26,7 +26,7 @@
 </script>
 
 <script lang="ts">
-  import { Alert } from '$lib/components';
+  import Alert from '$lib/components/Alert.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { tick } from 'svelte';
   import { fade } from 'svelte/transition';
