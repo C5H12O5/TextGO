@@ -600,7 +600,7 @@
     >
       <div class="flex h-8 w-max min-w-max" style:background-color={toolbarBackgroundStyle} bind:this={container}>
         <span
-          class="flex shrink-0 cursor-grab active:cursor-grabbing items-center opacity-20 transition-opacity"
+          class="flex shrink-0 cursor-grab items-center opacity-20 transition-opacity active:cursor-grabbing"
           class:hover:opacity-90={mouseEntered}
           style:background-image={actionBackgroundStyle}
           data-tauri-drag-region

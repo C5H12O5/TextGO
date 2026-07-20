@@ -174,11 +174,11 @@
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={searcherIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={searcherName} />
+        <input class="autofocus input grow input-sm" {...schema.name} bind:value={searcherName} />
       </div>
       <Label>{m.browser()}</Label>
       <div class="relative">
-        <label class="input input-sm w-full">
+        <label class="input w-full input-sm">
           <GlobeIcon class="size-5 opacity-50" />
           <input
             class="grow"

@@ -113,7 +113,7 @@
       <div class="relative" bind:this={searchContainer}>
         <input
           type="search"
-          class="autofocus input input-sm w-full"
+          class="autofocus input w-full input-sm"
           placeholder={m.search_icon()}
           bind:value={searchInput}
         />
@@ -123,7 +123,7 @@
               {#each filteredIcons as iconName (iconName)}
                 <button
                   type="button"
-                  class="btn h-auto flex-col gap-1 p-1 btn-ghost"
+                  class="btn h-auto flex-col gap-1 btn-ghost p-1"
                   onclick={() => {
                     icon = iconName;
                     searchInput = '';

@@ -90,7 +90,7 @@
     {#each list as item, index (index)}
       {@const website = item.toLowerCase().startsWith('http://') || item.toLowerCase().startsWith('https://')}
       <div class="my-auto flex items-center gap-2">
-        <label class="input input-sm w-full">
+        <label class="input w-full input-sm">
           {#if website}
             <GlobeIcon class="size-5 opacity-30" />
           {:else}
@@ -118,14 +118,14 @@
       icon={SquaresFourIcon}
       text={type === 'black' ? m.block_app() : m.allow_app()}
       square={false}
-      class="font-normal btn-soft"
+      class="btn-soft font-normal"
       onclick={addApplication}
     />
     <Button
       icon={GlobeIcon}
       text={type === 'black' ? m.block_website() : m.allow_website()}
       square={false}
-      class="font-normal btn-soft"
+      class="btn-soft font-normal"
       onclick={addWebsite}
     />
   </div>

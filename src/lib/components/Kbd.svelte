@@ -61,7 +61,7 @@
   const kbd = $derived(getLabelOrIcon(key));
 </script>
 
-<kbd class="kbd text-inherit min-w-8 font-sans {small ? 'kbd-sm' : ''} {_class}">
+<kbd class="kbd min-w-8 font-sans text-inherit {small ? 'kbd-sm' : ''} {_class}">
   {#if typeof kbd === 'string'}
     <span class="font-light {small ? 'text-sm' : 'text-base'}">{kbd}</span>
   {:else}

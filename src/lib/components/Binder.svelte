@@ -382,7 +382,7 @@
                 <Icon icon={ArrowArcRightIcon} class="m-auto size-6 opacity-50" />
               {/if}
             </span>
-            <Select bind:value={caseId} options={unusedCases} class="select-sm shadow-sm" disabled={!!ruleId} />
+            <Select bind:value={caseId} options={unusedCases} class="shadow-sm select-sm" disabled={!!ruleId} />
           </div>
         </div>
         <!-- arrow separator -->
@@ -398,7 +398,7 @@
                 <Icon icon={selectedAction.icon} class="m-auto size-5" />
               {/if}
             </span>
-            <Select bind:value={actionId} options={unusedActions} class="select-sm shadow-sm" disabled={!!ruleId} />
+            <Select bind:value={actionId} options={unusedActions} class="shadow-sm select-sm" disabled={!!ruleId} />
           </div>
         </div>
       </div>

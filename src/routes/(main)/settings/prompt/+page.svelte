@@ -310,7 +310,7 @@
         icon={PlusIcon}
         text="{m.add()}{m.custom_provider()}"
         square={false}
-        class="mt-2 h-7! w-full font-normal btn-soft"
+        class="mt-2 h-7! w-full btn-soft font-normal"
         onclick={() => showProviderModal()}
       />
     </fieldset>

@@ -182,7 +182,7 @@ ${m.prompt_variables_tip()}
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={promptIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={promptName} />
+        <input class="autofocus input grow input-sm" {...schema.name} bind:value={promptName} />
       </div>
       <div class="grid grid-cols-2 gap-2">
         <span>
@@ -211,7 +211,7 @@ ${m.prompt_variables_tip()}
         </span>
         <span>
           <Label required>{m.model_name()}</Label>
-          <label class="input input-sm w-full">
+          <label class="input w-full input-sm">
             <CubeIcon class="size-5 opacity-50" />
             <input class="grow" {...schema.modelName} bind:value={modelName} />
           </label>
@@ -236,7 +236,7 @@ ${m.prompt_variables_tip()}
           <CodeMirror title={m.system_prompt()} language={markdown()} bind:document={systemPrompt} />
           <!-- max tokens -->
           <Label tip={m.max_tokens_tip()}>{m.max_tokens()}</Label>
-          <input class="input input-sm w-full" placeholder="0" {...schema.maxTokens} bind:value={maxTokens} />
+          <input class="input w-full input-sm" placeholder="0" {...schema.maxTokens} bind:value={maxTokens} />
           <!-- temperature -->
           <Label tip={m.temperature_tip()}>{m.temperature()}</Label>
           <label class="flex items-center gap-4">

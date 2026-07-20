@@ -180,7 +180,7 @@
       <Label required>{m.type_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={modelIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={modelName} />
+        <input class="autofocus input grow input-sm" {...schema.name} bind:value={modelName} />
       </div>
       <Label required>{m.positive_samples()}</Label>
       <CodeMirror

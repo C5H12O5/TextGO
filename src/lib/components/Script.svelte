@@ -213,7 +213,7 @@ def process(data):
       <Label required>{m.action_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={scriptIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={scriptName} />
+        <input class="autofocus input grow input-sm" {...schema.name} bind:value={scriptName} />
       </div>
       <Label required>{m.script_type()}</Label>
       <Select

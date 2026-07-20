@@ -134,10 +134,10 @@
       <Label required>{m.type_name()}</Label>
       <div class="flex items-center gap-2">
         <IconSelector bind:icon={regexpIcon} />
-        <input class="autofocus input input-sm grow" {...schema.name} bind:value={regexpName} />
+        <input class="autofocus input grow input-sm" {...schema.name} bind:value={regexpName} />
       </div>
       <Label required>{m.regexp()}</Label>
-      <label class="input input-sm w-full">
+      <label class="input w-full input-sm">
         <span class="text-xl text-emphasis/50">/</span>
         <input class="grow" placeholder={m.regexp_placeholder()} {...schema.pattern} bind:value={regexpPattern} />
         <span class="text-xl text-emphasis/50">/</span>
