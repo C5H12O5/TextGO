@@ -1,6 +1,79 @@
 <script lang="ts" module>
+  import type CodeMirror from '$lib/components/CodeMirror.svelte';
   import { DEFAULT_POPUP_WINDOW_SIZE, MIN_POPUP_WINDOW_SIZE, POPUP_CORNER_RADIUS } from '$lib/constants';
-  import type { WindowSize } from '$lib/types';
+  import type { ChatMessage, LLMClient } from '$lib/llm';
+  import type { Entry, WindowSize } from '$lib/types';
+
+  /** Message displayed in the popup conversation. */
+  type ConversationMessage = {
+    /** Message author supported by the conversation UI. */
+    role: Extract<ChatMessage['role'], 'user' | 'assistant'>;
+    /** Plain-text message content. */
+    content: string;
+    /** Whether the content is a provider error excluded from future context. */
+    error?: boolean;
+  };
+
+  /**
+   * Start a new or regenerated assistant turn.
+   *
+   * @param messages - current visible conversation messages
+   * @param userContent - optional new user message; omit it when regenerating the latest assistant turn
+   * @returns new conversation messages ending with an empty assistant placeholder
+   */
+  function startAssistantTurn(messages: ConversationMessage[], userContent?: string): ConversationMessage[] {
+    const nextMessages = [...messages];
+    if (userContent === undefined) {
+      if (nextMessages.at(-1)?.role === 'assistant') {
+        nextMessages.pop();
+      }
+    } else {
+      nextMessages.push({ role: 'user', content: userContent });
+    }
+    return [...nextMessages, { role: 'assistant', content: '' }];
+  }
+
+  /**
+   * Keep a partial aborted response, or remove an empty assistant placeholder.
+   *
+   * @param messages - current visible conversation messages
+   * @returns new conversation messages after applying the abort state
+   */
+  function abortAssistantMessage(messages: ConversationMessage[]): ConversationMessage[] {
+    const index = findLatestAssistantIndex(messages);
+    if (index >= 0 && !messages[index]?.content) {
+      return messages.filter((_, messageIndex) => messageIndex !== index);
+    }
+    return [...messages];
+  }
+
+  /**
+   * Find the latest assistant message.
+   *
+   * @param messages - visible conversation messages
+   * @returns latest assistant message index, or -1 when no assistant message exists
+   */
+  function findLatestAssistantIndex(messages: ConversationMessage[]): number {
+    return messages.findLastIndex((message) => message.role === 'assistant');
+  }
+
+  /**
+   * Apply an immutable update to the latest assistant message.
+   *
+   * @param messages - current visible conversation messages
+   * @param update - function that returns the updated assistant message
+   * @returns new conversation messages containing the updated assistant message
+   */
+  function updateLatestAssistant(
+    messages: ConversationMessage[],
+    update: (message: ConversationMessage) => ConversationMessage
+  ): ConversationMessage[] {
+    const index = findLatestAssistantIndex(messages);
+    if (index < 0) {
+      return [...messages];
+    }
+    return messages.map((message, messageIndex) => (messageIndex === index ? update(message) : message));
+  }
 
   /**
    * Normalize a saved popup window size before applying it to the native window.
@@ -32,11 +105,8 @@
 <script lang="ts">
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
-  import type CodeMirror from '$lib/components/CodeMirror.svelte';
-  import type { ChatMessage, LLMClient } from '$lib/llm';
   import { m } from '$lib/paraglide/messages';
   import { popupCornerRadius, popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
-  import type { Entry } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
@@ -90,6 +160,7 @@
 
   // LLM client instance
   let llmClient: LLMClient | null = $state(null);
+  let chatRequestId = 0;
 
   // streaming status
   let streaming: boolean = $state(false);
@@ -100,7 +171,12 @@
   let scrollTimer: ReturnType<typeof setInterval> | null = $state(null);
 
   // chat messages history
-  let chatMessages: ChatMessage[] = $state([]);
+  let chatMessages: ConversationMessage[] = $state([]);
+  let latestAssistant = $derived(chatMessages.findLast((message) => message.role === 'assistant'));
+  let conversationMode = $derived(chatMessages.filter((message) => message.role === 'user').length > 1);
+  let canRegenerate = $derived(!!latestAssistant || chatMessages.at(-1)?.role === 'user');
+
+  // reply box state
   let replyBox = $state(false);
   let userMessage = $state('');
   let userMessageInput: HTMLInputElement | null = $state(null);
@@ -125,31 +201,52 @@
   }, 200);
 
   /**
+   * Mirror response content to the initial entry without overwriting it during continuous conversation.
+   *
+   * @param response - latest initial assistant response content
+   */
+  function syncInitialResponse(response: string) {
+    if (!conversationMode && entry) {
+      entry.response = response;
+    }
+  }
+
+  /**
    * Start AI conversation.
    *
    * @param message - optional user message
+   * @param regenerate - whether to regenerate an existing assistant turn
+   * @returns promise that resolves after the assistant request finishes
    */
-  async function chat(message?: string) {
+  async function chat(message?: string, regenerate = false) {
     if (streaming || !entry?.model || !entry?.provider) {
       return;
     }
 
-    // determine user message
-    const userMessage = message || entry?.result;
-    if (!userMessage) {
-      return;
+    const userMessage = message ?? entry.result;
+    if (regenerate && conversationMode) {
+      if (chatMessages.length === 0) {
+        return;
+      }
+      chatMessages = startAssistantTurn(chatMessages);
+    } else {
+      if (!userMessage) {
+        return;
+      }
+      chatMessages = startAssistantTurn(regenerate ? [] : chatMessages, userMessage);
     }
 
-    let aborted = false;
+    const requestId = ++chatRequestId;
+    syncInitialResponse('');
+    streaming = true;
+    startAutoScroll();
+
     try {
       const { createLLMClient } = await import('$lib/llm');
-      // create or update LLM client based on provider
+      if (requestId !== chatRequestId) {
+        return;
+      }
       llmClient = createLLMClient(entry.provider);
-
-      // start streaming
-      streaming = true;
-      // start auto scroll
-      startAutoScroll();
 
       // build messages array
       const messages: ChatMessage[] = [];
@@ -160,13 +257,11 @@
         messages.push({ role: 'system', content: systemPrompt });
       }
 
-      // add chat history if exists
-      if (chatMessages.length > 0) {
-        messages.push(...chatMessages);
-      }
-
-      // add current user message
-      messages.push({ role: 'user', content: userMessage });
+      messages.push(
+        ...chatMessages
+          .filter((message) => message.content.length > 0 && !message.error)
+          .map(({ role, content }) => ({ role, content }) as ChatMessage)
+      );
 
       const response = llmClient.chat({
         model: entry.model,
@@ -176,35 +271,36 @@
         top_p: entry.topP
       });
 
-      // save reply content
-      entry.response = '';
       for await (const chunk of response) {
-        if (!streaming) {
-          // abort streaming
+        if (requestId !== chatRequestId || !streaming) {
           break;
         }
-        entry.response += chunk;
-      }
-
-      // save to chat history
-      if (entry.response) {
-        chatMessages.push({ role: 'user', content: userMessage });
-        chatMessages.push({ role: 'assistant', content: entry.response });
+        chatMessages = updateLatestAssistant(chatMessages, (message) => ({
+          ...message,
+          content: message.content + chunk
+        }));
+        syncInitialResponse(latestAssistant?.content ?? '');
       }
     } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          aborted = true;
-        } else {
-          entry.response = error.message || 'An unknown error occurred';
-        }
+      if (requestId !== chatRequestId) {
+        return;
       }
+      if (error instanceof Error && error.name === 'AbortError') {
+        chatMessages = abortAssistantMessage(chatMessages);
+      } else {
+        const errorMessage = error instanceof Error ? error.message : '';
+        chatMessages = updateLatestAssistant(chatMessages, (message) => ({
+          ...message,
+          content: errorMessage || 'An unknown error occurred',
+          error: true
+        }));
+      }
+      syncInitialResponse(latestAssistant?.content ?? '');
     } finally {
-      if (!aborted) {
-        // stop auto scroll
+      if (requestId === chatRequestId) {
         stopAutoScroll();
-        // end streaming
         streaming = false;
+        llmClient = null;
       }
     }
   }
@@ -226,8 +322,15 @@
    * Abort AI conversation.
    */
   function abort() {
-    autoScroll && stopAutoScroll();
-    streaming && llmClient?.abort();
+    if (!streaming) {
+      return;
+    }
+    chatRequestId += 1;
+    stopAutoScroll();
+    llmClient?.abort();
+    llmClient = null;
+    chatMessages = abortAssistantMessage(chatMessages);
+    syncInitialResponse(latestAssistant?.content ?? '');
     streaming = false;
   }
 
@@ -266,7 +369,7 @@
    * @param event - scroll event
    */
   function handleScroll(event: Event) {
-    if (streaming && entry?.response) {
+    if (streaming) {
       const target = event.target as HTMLElement;
       if (autoScroll) {
         // if user scrolls up, stop auto scroll
@@ -356,8 +459,8 @@
 
   onMount(() => {
     const setup = (data: Entry | null) => {
-      entry = data;
       abort();
+      entry = data;
       codeMirror = null;
       // reset chat history
       chatMessages = [];
@@ -428,15 +531,19 @@
               icon={StopCircleIcon}
               iconWeight="bold"
               iconClass="opacity-80"
-              disabled={!(streaming && entry?.response)}
+              disabled={!streaming}
               onclick={() => abort()}
             />
             <Button
               icon={ArrowClockwiseIcon}
               iconWeight="bold"
               iconClass="opacity-80"
-              disabled={streaming || !entry?.response}
-              onclick={() => chat()}
+              disabled={streaming || !canRegenerate}
+              onclick={() => {
+                replyBox = false;
+                userMessage = '';
+                chat(undefined, true);
+              }}
             />
           {:else}
             <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
@@ -450,20 +557,47 @@
       <!-- popup window body -->
       <div class="min-h-0 flex-1 overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
         {#if promptMode}
-          <div class="px-4 pt-2 pb-10">
-            {#if streaming && !entry?.response}
-              <div class="loading loading-sm loading-dots opacity-70"></div>
-            {:else if entry?.response}
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                {@html marked(entry.response + (streaming ? ' |' : ''))}
-              </div>
-            {/if}
-          </div>
+          {#if conversationMode}
+            <div class="space-y-4 px-4 pt-3 pb-20">
+              {#each chatMessages as message, index (index)}
+                {#if message.role === 'user'}
+                  <div class="flex justify-end">
+                    <div class="max-w-[85%] rounded-box gradient bg-emphasis/15 px-3 py-2 text-sm whitespace-pre-wrap">
+                      {message.content}
+                    </div>
+                  </div>
+                {:else if message.error}
+                  <div class="text-sm whitespace-pre-wrap text-error">{message.content}</div>
+                {:else if streaming && index === chatMessages.length - 1 && !message.content}
+                  <div class="loading loading-sm loading-dots opacity-70"></div>
+                {:else if message.content}
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                    {@html marked(message.content + (streaming && index === chatMessages.length - 1 ? ' |' : ''))}
+                  </div>
+                {/if}
+              {/each}
+            </div>
+          {:else}
+            <div class="px-4 pt-2 pb-10">
+              {#if streaming && !latestAssistant?.content}
+                <div class="loading loading-sm loading-dots opacity-70"></div>
+              {:else if latestAssistant?.error}
+                <div class="text-sm whitespace-pre-wrap text-error">{latestAssistant.content}</div>
+              {:else if latestAssistant?.content}
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
+                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                  {@html marked(latestAssistant.content + (streaming ? ' |' : ''))}
+                </div>
+              {/if}
+            </div>
+          {/if}
           <!-- continue chat button -->
-          {#if !streaming && entry?.response && !replyBox}
+          {#if !conversationMode && !streaming && latestAssistant?.content && !replyBox}
             <button
               class="btn fixed right-3 bottom-3 btn-circle bg-base-300/80 btn-ghost btn-sm hover:bg-base-300"
               onclick={() => {
@@ -478,7 +612,7 @@
             </button>
           {/if}
           <!-- continue chat input -->
-          {#if replyBox}
+          {#if !conversationMode && replyBox}
             <div
               class="fixed inset-x-0.5 top-8.5 bottom-0.75 z-50 flex items-end justify-center rounded-b-box bg-black/20"
               transition:fade={{ duration: 150 }}
@@ -495,9 +629,31 @@
                   bind:value={userMessage}
                   bind:this={userMessageInput}
                   onblur={() => setTimeout(() => (replyBox = false), 200)}
-                  onkeydown={(event) => event.key === 'Enter' && reply()}
+                  onkeydown={(event) => event.key === 'Enter' && !event.isComposing && reply()}
                 />
                 <Button size="sm" icon={ArrowCircleRightIcon} onclick={reply} disabled={!userMessage.trim()} />
+              </label>
+            </div>
+          {/if}
+          <!-- fixed composer in continuous chat mode -->
+          {#if conversationMode}
+            <div class="fixed inset-x-0.5 bottom-0.75 z-40 flex items-end justify-center">
+              <label class="input mx-4 mb-3 w-full rounded-box border bg-base-100/95 shadow-lg">
+                <input
+                  type="text"
+                  class="grow"
+                  spellcheck="false"
+                  placeholder={m.continue_chat()}
+                  bind:value={userMessage}
+                  bind:this={userMessageInput}
+                  onkeydown={(event) => event.key === 'Enter' && !event.isComposing && !streaming && reply()}
+                />
+                <Button
+                  size="sm"
+                  icon={ArrowCircleRightIcon}
+                  onclick={reply}
+                  disabled={streaming || !userMessage.trim()}
+                />
               </label>
             </div>
           {/if}
