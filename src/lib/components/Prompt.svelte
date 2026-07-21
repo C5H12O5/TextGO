@@ -224,7 +224,7 @@ ${m.prompt_variables_tip()}
         placeholder={PROMPT_PLACEHOLDER}
         bind:document={promptText}
       />
-      <div class="collapse-arrow collapse mt-2 border">
+      <div class="collapse-arrow collapse mt-2 overflow-hidden border">
         <input type="checkbox" class="peer" />
         <div class="collapse-title border-b-transparent transition-all duration-200 peer-checked:border-b">
           <SlidersHorizontalIcon class="size-5" />
