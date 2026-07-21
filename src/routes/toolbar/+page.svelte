@@ -9,6 +9,7 @@
     TOOLBAR_OPACITY
   } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import { resolvePhosphorIcon } from '$lib/phosphor';
   import {
     prompts,
     scripts,
@@ -378,6 +379,13 @@
   async function iconToImage(icon: Component<IconComponentProps> | string | undefined): Promise<Image | undefined> {
     if (!icon) {
       return undefined;
+    }
+
+    if (typeof icon === 'string' && !icon.startsWith('data:image/svg+xml;base64,')) {
+      icon = await resolvePhosphorIcon(icon);
+      if (!icon) {
+        return undefined;
+      }
     }
 
     // create a temporary container to render the icon
