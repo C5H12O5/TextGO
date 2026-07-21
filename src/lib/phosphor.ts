@@ -1517,3 +1517,7 @@ export const phosphorIcons: Record<string, () => Promise<PhosphorIconModule>> = 
   YinYang: () => import('phosphor-svelte/lib/YinYangIcon'),
   YoutubeLogo: () => import('phosphor-svelte/lib/YoutubeLogoIcon')
 };
+
+export async function resolvePhosphorIcon(name: string): Promise<Component<IconComponentProps> | undefined> {
+  return (await phosphorIcons[name]?.())?.default;
+}
