@@ -20,6 +20,7 @@
         "height": 648,
         "minWidth": 600,
         "minHeight": 300,
+        "center": true,
         "visible": false,
         "skipTaskbar": true,
         "hiddenTitle": true,
