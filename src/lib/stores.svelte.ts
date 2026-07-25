@@ -2,6 +2,7 @@ import {
   DEFAULT_POPUP_WINDOW_SIZE,
   POPUP_CORNER_RADIUS,
   TOOLBAR_ACTION_COUNT,
+  TOOLBAR_AUTO_HIDE_DELAY,
   TOOLBAR_CORNER_RADIUS,
   TOOLBAR_OPACITY
 } from '$lib/constants';
@@ -186,6 +187,12 @@ export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOL
 
 // toolbar background opacity percentage
 export const toolbarOpacity = persisted<number>('toolbarOpacity', TOOLBAR_OPACITY.default);
+
+// whether to hide the toolbar automatically after inactivity
+export const toolbarAutoHide = persisted<boolean>('toolbarAutoHide', false);
+
+// toolbar auto-hide delay in seconds
+export const toolbarAutoHideDelay = persisted<number>('toolbarAutoHideDelay', TOOLBAR_AUTO_HIDE_DELAY.default);
 
 // popup corner radius in pixels
 export const popupCornerRadius = persisted<number>('popupCornerRadius', POPUP_CORNER_RADIUS.default);

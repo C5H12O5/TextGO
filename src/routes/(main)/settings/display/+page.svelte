@@ -2,9 +2,23 @@
   import Label from '$lib/components/Label.svelte';
   import Select from '$lib/components/Select.svelte';
   import Setting from '$lib/components/Setting.svelte';
-  import { POPUP_CORNER_RADIUS, TOOLBAR_ACTION_COUNT, TOOLBAR_CORNER_RADIUS, TOOLBAR_OPACITY } from '$lib/constants';
+  import Toggle from '$lib/components/Toggle.svelte';
+  import {
+    POPUP_CORNER_RADIUS,
+    TOOLBAR_ACTION_COUNT,
+    TOOLBAR_AUTO_HIDE_DELAY,
+    TOOLBAR_CORNER_RADIUS,
+    TOOLBAR_OPACITY
+  } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
-  import { popupCornerRadius, toolbarCornerRadius, toolbarMaxActions, toolbarOpacity } from '$lib/stores.svelte';
+  import {
+    popupCornerRadius,
+    toolbarAutoHide,
+    toolbarAutoHideDelay,
+    toolbarCornerRadius,
+    toolbarMaxActions,
+    toolbarOpacity
+  } from '$lib/stores.svelte';
   import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
   import DeviceMobileSpeakerIcon from 'phosphor-svelte/lib/DeviceMobileSpeakerIcon';
 
@@ -23,6 +37,7 @@
   const toolbarCornerRadiusMarks = createRangeMarks(TOOLBAR_CORNER_RADIUS, 4);
   const popupCornerRadiusMarks = createRangeMarks(POPUP_CORNER_RADIUS, 4);
   const toolbarOpacityMarks = createRangeMarks(TOOLBAR_OPACITY, 3);
+  const toolbarAutoHideDelayMarks = createRangeMarks(TOOLBAR_AUTO_HIDE_DELAY, 4);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -65,6 +80,31 @@
         <div class="flex justify-between text-xs opacity-70">
           {#each toolbarOpacityMarks as opacity (opacity)}
             <span>{opacity}%</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.toolbar_auto_hide_explain()} tipPlacement="duplex">{m.toolbar_auto_hide()}</Label>
+      <Toggle bind:value={toolbarAutoHide.current} />
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label>{m.toolbar_auto_hide_delay()}</Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2" class:opacity-50={!toolbarAutoHide.current}>
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={TOOLBAR_AUTO_HIDE_DELAY.min}
+          max={TOOLBAR_AUTO_HIDE_DELAY.max}
+          step={TOOLBAR_AUTO_HIDE_DELAY.step}
+          bind:value={toolbarAutoHideDelay.current}
+          disabled={!toolbarAutoHide.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each toolbarAutoHideDelayMarks as delay (delay)}
+            <span>{delay}s</span>
           {/each}
         </div>
       </label>

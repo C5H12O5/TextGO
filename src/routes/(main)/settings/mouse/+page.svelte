@@ -26,6 +26,7 @@
         <Select
           options={[{ value: 'command_c', label: m.command_c() }]}
           bind:value={copyKey.current}
+          disabled={!forceGetSelection.current}
           class="w-36 select-sm"
         />
       {:else}
@@ -35,6 +36,7 @@
             { value: 'ctrl_c', label: m.ctrl_c() }
           ]}
           bind:value={copyKey.current}
+          disabled={!forceGetSelection.current}
           class="w-36 select-sm"
         />
       {/if}
@@ -62,6 +64,7 @@
           max="2000"
           step="100"
           bind:value={longPressDuration.current}
+          disabled={!longPress.current}
         />
         <div class="flex justify-between text-xs opacity-70">
           <span>0.5s</span>

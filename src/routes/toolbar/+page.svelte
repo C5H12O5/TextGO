@@ -5,6 +5,7 @@
     SCRIPT_MARK,
     SEARCHER_MARK,
     TOOLBAR_ACTION_COUNT,
+    TOOLBAR_AUTO_HIDE_DELAY,
     TOOLBAR_CORNER_RADIUS,
     TOOLBAR_OPACITY
   } from '$lib/constants';
@@ -14,6 +15,8 @@
     prompts,
     scripts,
     searchers,
+    toolbarAutoHide,
+    toolbarAutoHideDelay,
     toolbarCornerRadius,
     toolbarMaxActions,
     toolbarOpacity
@@ -57,10 +60,16 @@
   let selection: string = $state('');
 
   // track if mouse is inside toolbar
-  let mouseEntered = $state(true);
+  let pointerInside = $state(false);
+  let hoverEnabled = $state(true);
 
   // whether the toolbar is rendering as an HTML menu
   let menuMode = $state(false);
+
+  // toolbar auto-hide state
+  let autoHideReady = $state(false);
+  let nativeMenuOpen = $state(false);
+  let autoHideTimer: ReturnType<typeof setTimeout> | null = null;
 
   // toolbar action type
   type Action = {
@@ -125,6 +134,62 @@
       'transparent 78%)'
     ].join(', ');
     return `${highlightGradient}, ${actionGlowGradient}`;
+  });
+
+  /**
+   * Clear the pending toolbar auto-hide timer.
+   */
+  function clearAutoHideTimer() {
+    if (autoHideTimer) {
+      clearTimeout(autoHideTimer);
+      autoHideTimer = null;
+    }
+  }
+
+  /**
+   * Hide the toolbar after the configured inactivity delay.
+   */
+  function startAutoHideTimer(value = toolbarAutoHideDelay.current) {
+    clearAutoHideTimer();
+
+    if (!toolbarAutoHide.current || !autoHideReady || pointerInside || nativeMenuOpen) {
+      return;
+    }
+
+    const delay = Number.isFinite(value)
+      ? Math.min(TOOLBAR_AUTO_HIDE_DELAY.max, Math.max(TOOLBAR_AUTO_HIDE_DELAY.min, Math.trunc(value)))
+      : TOOLBAR_AUTO_HIDE_DELAY.default;
+
+    autoHideTimer = setTimeout(async () => {
+      autoHideTimer = null;
+      if (!toolbarAutoHide.current || !autoHideReady || pointerInside || nativeMenuOpen) {
+        return;
+      }
+
+      try {
+        await currentWindow.hide();
+        autoHideReady = false;
+        initialized = false;
+        menuMode = false;
+      } catch (error) {
+        console.error(`Failed to auto-hide toolbar: ${error}`);
+      }
+    }, delay * 1000);
+  }
+
+  $effect(() => {
+    const enabled = toolbarAutoHide.current;
+    const delay = toolbarAutoHideDelay.current;
+    const ready = autoHideReady;
+    const hovering = pointerInside;
+    const menuOpen = nativeMenuOpen;
+
+    if (!enabled || !ready || hovering || menuOpen) {
+      clearAutoHideTimer();
+      return;
+    }
+
+    startAutoHideTimer(delay);
   });
 
   // custom action types
@@ -310,6 +375,9 @@
    */
   async function showNativeMenu(menuActions: Action[], position?: LogicalPosition) {
     let menu: Menu | undefined;
+    nativeMenuOpen = true;
+    clearAutoHideTimer();
+
     try {
       // create menu items with icons
       menu = await Menu.new({
@@ -342,6 +410,8 @@
         await menu?.close();
       } catch (error) {
         console.error(`Failed to cleanup actions menu: ${error}`);
+      } finally {
+        nativeMenuOpen = false;
       }
     }
   }
@@ -496,6 +566,9 @@
    */
   async function executeAction(action: Action) {
     try {
+      autoHideReady = false;
+      clearAutoHideTimer();
+
       // get current window placement
       const placement = await windowPlacement();
       // hide the toolbar window
@@ -539,6 +612,9 @@
   onMount(() => {
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
+      autoHideReady = false;
+      pointerInside = false;
+      clearAutoHideTimer();
       initialized = false;
       setup(JSON.parse(event.payload)).then(async (showToolbar) => {
         if (!showToolbar) {
@@ -550,22 +626,29 @@
         if (!visible) {
           await invoke('show_toolbar_regardless');
         }
+        autoHideReady = true;
       });
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
+      autoHideReady = false;
+      pointerInside = false;
+      clearAutoHideTimer();
       initialized = false;
       menuMode = false;
     });
 
     // listen to mouse enter/exit events
     const unlistenMouseEntered = listen('toolbar-entered', () => {
-      mouseEntered = true;
+      pointerInside = true;
+      hoverEnabled = true;
     });
     const unlistenMouseExited = listen('toolbar-exited', () => {
-      mouseEntered = false;
+      pointerInside = false;
+      hoverEnabled = false;
     });
 
     return () => {
+      clearAutoHideTimer();
       unlistenWindowShow.then((fn) => fn());
       unlistenWindowHide.then((fn) => fn());
       unlistenMouseExited.then((fn) => fn());
@@ -574,7 +657,11 @@
   });
 </script>
 
-<main class="bg-transparent p-1 select-none">
+<main
+  class="bg-transparent p-1 select-none"
+  onpointerenter={() => (pointerInside = true)}
+  onpointerleave={() => (pointerInside = false)}
+>
   {#if initialized && menuMode && actions.length > 0}
     <div
       class="w-fit overflow-hidden border shadow-sm"
@@ -585,8 +672,8 @@
         {#each actions as action (action.id)}
           <button
             class="flex h-8 w-full cursor-pointer items-center gap-2 px-2 text-left transition-colors"
-            class:hover:bg-btn-hover={mouseEntered}
-            class:hover:text-primary={mouseEntered}
+            class:hover:bg-btn-hover={hoverEnabled}
+            class:hover:text-primary={hoverEnabled}
             onclick={() => executeAction(action)}
             title={action.label}
           >
@@ -609,7 +696,7 @@
       <div class="flex h-8 w-max min-w-max" style:background-color={toolbarBackgroundStyle} bind:this={container}>
         <span
           class="flex shrink-0 cursor-grab items-center opacity-20 transition-opacity active:cursor-grabbing"
-          class:hover:opacity-90={mouseEntered}
+          class:hover:opacity-90={hoverEnabled}
           style:background-image={actionBackgroundStyle}
           data-tauri-drag-region
         >
@@ -620,8 +707,8 @@
           {@const showLabel = action.rule.displayMode !== 'icon'}
           <button
             class="flex shrink-0 cursor-pointer items-center gap-0.5 px-1.75 transition-colors"
-            class:hover:bg-btn-hover={mouseEntered}
-            class:hover:text-primary={mouseEntered}
+            class:hover:bg-btn-hover={hoverEnabled}
+            class:hover:text-primary={hoverEnabled}
             style:background-image={actionBackgroundStyle}
             onclick={() => executeAction(action)}
             title={action.label}
@@ -637,8 +724,8 @@
         {#if overflowActions.length > 0}
           <button
             class="h-8 shrink-0 cursor-pointer opacity-30 transition-all"
-            class:hover:bg-btn-hover={mouseEntered}
-            class:hover:opacity-100={mouseEntered}
+            class:hover:bg-btn-hover={hoverEnabled}
+            class:hover:opacity-100={hoverEnabled}
             style:background-image={actionBackgroundStyle}
             onclick={showMoreActions}
           >

@@ -58,6 +58,16 @@ export const TOOLBAR_ACTION_COUNT = {
 };
 
 /**
+ * Toolbar auto-hide delay in seconds.
+ */
+export const TOOLBAR_AUTO_HIDE_DELAY = {
+  min: 1,
+  default: 5,
+  max: 10,
+  step: 1
+};
+
+/**
  * Toolbar corner radius in pixels.
  */
 export const TOOLBAR_CORNER_RADIUS = {
