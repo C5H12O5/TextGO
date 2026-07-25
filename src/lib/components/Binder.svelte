@@ -16,6 +16,38 @@
     const size = Math.max(12, Math.min(14, 14 - ((length - 5) / 10) * 2));
     return `${size}px`;
   };
+
+  /**
+   * Remove category options that have no selectable items.
+   *
+   * @param options - flat option list with disabled category items
+   * @returns option list without empty categories
+   */
+  const removeEmptyCategories = <T extends Option>(options: T[]): T[] => {
+    const isCategory = (option: Option) =>
+      option.disabled &&
+      typeof option.value === 'string' &&
+      option.value.startsWith('--') &&
+      option.value.endsWith('--');
+
+    return options.filter((option, index) => {
+      if (!isCategory(option)) {
+        return true;
+      }
+
+      for (let i = index + 1; i < options.length; i++) {
+        const nextOption = options[i];
+        if (isCategory(nextOption)) {
+          return false;
+        }
+        if (!nextOption.disabled) {
+          return true;
+        }
+      }
+
+      return false;
+    });
+  };
 </script>
 
 <script lang="ts">
@@ -202,15 +234,15 @@
     // helper function to get unused actions
     const getUnusedActions = (value: string) => {
       const usedActions = getUsedActions(value);
-      return actions.filter((a) => !usedActions.has(a.value as string));
+      return removeEmptyCategories(actions.filter((a) => !usedActions.has(a.value as string)));
     };
 
     // calculate total available actions
     const totalAvailableActions = actions.filter((a) => !a.disabled).length;
 
     // get unused cases
-    const unusedCases = cases.filter(
-      (c) => c.disabled || getUsedActions(c.value as string).size < totalAvailableActions
+    const unusedCases = removeEmptyCategories(
+      cases.filter((c) => c.disabled || getUsedActions(c.value as string).size < totalAvailableActions)
     );
 
     // check if current case is still available
