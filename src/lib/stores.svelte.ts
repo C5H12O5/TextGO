@@ -198,6 +198,20 @@ export const popupWindowSize = persisted<WindowSize>('popupWindowSize', DEFAULT_
 // number of history records to retain
 export const historySize = persisted<number>('historySize', 5);
 
+// whether to enable clipboard fallback for text selection
+export const forceGetSelection = persisted<boolean>('forceGetSelection', true, {
+  onchange: (enabled) => {
+    invoke('set_force_get_selection', { enabled });
+  }
+});
+
+// copy key combination (Windows only: 'ctrl_insert' | 'ctrl_c')
+export const copyKey = persisted<string>('copyKey', 'ctrl_insert', {
+  onchange: (key) => {
+    invoke('set_copy_key', { key });
+  }
+});
+
 // whether to enable long press trigger
 export const longPress = persisted<boolean>('longPress', false, {
   onchange: (enabled) => {

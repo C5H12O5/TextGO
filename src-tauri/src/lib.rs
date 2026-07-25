@@ -62,6 +62,12 @@ pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
 pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
     LazyLock::new(|| Mutex::new(None));
 
+// global force get selection state (clipboard fallback)
+pub static FORCE_GET_SELECTION: AtomicBool = AtomicBool::new(true);
+
+// global copy key setting (true = Ctrl+C, false = Ctrl+Insert)
+pub static USE_CTRL_C: AtomicBool = AtomicBool::new(false);
+
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
     tauri_panel, CollectionBehavior, ManagerExt, PanelLevel, StyleMask, TrackingAreaOptions,
@@ -175,6 +181,8 @@ pub fn run() {
             set_long_press_enabled,
             set_long_press_duration,
             set_ibeam_cursor_enabled,
+            set_force_get_selection,
+            set_copy_key,
             get_selection,
             get_clipboard_text,
             set_clipboard_text,

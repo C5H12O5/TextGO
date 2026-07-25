@@ -2,6 +2,7 @@ use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
+use std::sync::atomic::Ordering;
 
 /// Send cut shortcut keys.
 #[tauri::command]
@@ -54,11 +55,17 @@ pub fn send_copy_keys(
         release_modifier_keys(enigo)?;
     }
 
-    // send Cmd+C or Ctrl+Insert
+    // send Cmd+C or Ctrl+Insert/Ctrl+C based on setting
     #[cfg(target_os = "macos")]
     let (modifier, key) = (Key::Meta, Key::Unicode('c'));
     #[cfg(not(target_os = "macos"))]
-    let (modifier, key) = (Key::Control, Key::Insert);
+    let (modifier, key) = {
+        if crate::USE_CTRL_C.load(Ordering::Relaxed) {
+            (Key::Control, Key::Unicode('c'))
+        } else {
+            (Key::Control, Key::Insert)
+        }
+    };
 
     enigo.key(modifier, Direction::Press)?;
     enigo.key(key, Direction::Click)?;

@@ -142,6 +142,20 @@ pub fn is_shortcut_registered(shortcut: String) -> Result<bool, AppError> {
     Ok(is_registered)
 }
 
+/// Set the force get selection state (clipboard fallback).
+#[tauri::command]
+pub fn set_force_get_selection(enabled: bool) -> Result<(), AppError> {
+    crate::FORCE_GET_SELECTION.store(enabled, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set the copy key combination.
+#[tauri::command]
+pub fn set_copy_key(key: String) -> Result<(), AppError> {
+    crate::USE_CTRL_C.store(key == "ctrl_c", Ordering::Relaxed);
+    Ok(())
+}
+
 /// Set the long press enabled state.
 #[tauri::command]
 pub fn set_long_press_enabled(enabled: bool) -> Result<(), AppError> {

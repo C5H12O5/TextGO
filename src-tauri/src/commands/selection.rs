@@ -8,6 +8,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
 
+use crate::FORCE_GET_SELECTION;
 use crate::SELECTION_TEXT_CACHE;
 
 // maximum wait time in milliseconds for clipboard to update
@@ -29,6 +30,11 @@ pub async fn get_selection(app: AppHandle, mouse: Option<bool>) -> Result<String
 
             return Ok(text);
         }
+    }
+
+    // if force get selection is disabled, skip clipboard fallback
+    if !FORCE_GET_SELECTION.load(Ordering::Relaxed) {
+        return Err("Native API failed and clipboard fallback is disabled".into());
     }
 
     // if native API fails, fall back to clipboard method
