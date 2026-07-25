@@ -1,6 +1,12 @@
 <script lang="ts" module>
   import type CodeMirror from '$lib/components/CodeMirror.svelte';
-  import { DEFAULT_POPUP_WINDOW_SIZE, MIN_POPUP_WINDOW_SIZE, POPUP_CORNER_RADIUS } from '$lib/constants';
+  import {
+    DEFAULT_POPUP_WINDOW_SIZE,
+    MIN_POPUP_WINDOW_SIZE,
+    POPUP_CORNER_RADIUS,
+    POPUP_FONT_SIZE,
+    POPUP_OPACITY
+  } from '$lib/constants';
   import type { ChatMessage, LLMClient } from '$lib/llm';
   import type { Entry, WindowSize } from '$lib/types';
 
@@ -106,7 +112,14 @@
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
-  import { popupCornerRadius, popupPinned, popupWindowSize, prompts } from '$lib/stores.svelte';
+  import {
+    popupCornerRadius,
+    popupFontSize,
+    popupOpacity,
+    popupPinned,
+    popupWindowSize,
+    prompts
+  } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { LogicalSize } from '@tauri-apps/api/dpi';
   import { listen } from '@tauri-apps/api/event';
@@ -133,12 +146,33 @@
   // popup corner radius style
   let cornerRadiusStyle = $derived.by(() => {
     const value = popupCornerRadius.current;
-    if (!Number.isFinite(value)) {
-      return `${POPUP_CORNER_RADIUS.default}px`;
-    }
-    const cornerRadius = Math.min(POPUP_CORNER_RADIUS.max, Math.max(POPUP_CORNER_RADIUS.min, Math.trunc(value)));
+    const cornerRadius = Number.isFinite(value)
+      ? Math.min(POPUP_CORNER_RADIUS.max, Math.max(POPUP_CORNER_RADIUS.min, Math.trunc(value)))
+      : POPUP_CORNER_RADIUS.default;
     return `${cornerRadius}px`;
   });
+
+  // popup result font size
+  let fontSizeStyle = $derived.by(() => {
+    const value = popupFontSize.current;
+    const fontSize = Number.isFinite(value)
+      ? Math.min(POPUP_FONT_SIZE.max, Math.max(POPUP_FONT_SIZE.min, Math.trunc(value)))
+      : POPUP_FONT_SIZE.default;
+    return `${fontSize}px`;
+  });
+
+  // popup background opacity styles
+  let popupOpacityValue = $derived.by(() => {
+    const value = popupOpacity.current;
+    return Number.isFinite(value)
+      ? Math.min(POPUP_OPACITY.max, Math.max(POPUP_OPACITY.min, Math.trunc(value)))
+      : POPUP_OPACITY.default;
+  });
+  let titleBackgroundStyle = $derived(`color-mix(in oklab, var(--color-base-300) ${popupOpacityValue}%, transparent)`);
+  let gutterBackgroundStyle = $derived(`color-mix(in oklab, var(--color-base-200) ${popupOpacityValue}%, transparent)`);
+  let contentBackgroundStyle = $derived(
+    `color-mix(in oklab, var(--color-base-100) ${popupOpacityValue}%, transparent)`
+  );
 
   // shortcut trigger record
   let entry: Entry | null = $state(null);
@@ -509,7 +543,7 @@
   <main class="h-screen bg-transparent p-0.5 pb-0.75">
     <div class="flex h-full flex-col overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle}>
       <!-- popup window title -->
-      <div class="flex h-8 shrink-0 items-center bg-base-300 p-1">
+      <div class="flex h-8 shrink-0 items-center bg-base-300 p-1" style:background-color={titleBackgroundStyle}>
         <Button
           icon={PushPinIcon}
           iconWeight="fill"
@@ -555,25 +589,39 @@
         </div>
       </div>
       <!-- popup window body -->
-      <div class="min-h-0 flex-1 overflow-auto bg-base-100" bind:this={scrollElement} onscroll={handleScroll}>
+      <div
+        class="min-h-0 flex-1 overflow-auto bg-base-100"
+        style="background-color: {contentBackgroundStyle}; --popup-gutter-background: {gutterBackgroundStyle}"
+        bind:this={scrollElement}
+        onscroll={handleScroll}
+      >
         {#if promptMode}
           {#if conversationMode}
             <div class="space-y-4 px-4 pt-3 pb-20">
               {#each chatMessages as message, index (index)}
                 {#if message.role === 'user'}
                   <div class="flex justify-end">
-                    <div class="max-w-[85%] rounded-box gradient bg-emphasis/15 px-3 py-2 text-sm whitespace-pre-wrap">
+                    <div
+                      class="max-w-[85%] rounded-box gradient bg-emphasis/15 px-3 py-2 text-sm whitespace-pre-wrap"
+                      style:font-size={fontSizeStyle}
+                    >
                       {message.content}
                     </div>
                   </div>
                 {:else if message.error}
-                  <div class="text-sm whitespace-pre-wrap text-error">{message.content}</div>
+                  <div class="text-sm whitespace-pre-wrap text-error" style:font-size={fontSizeStyle}>
+                    {message.content}
+                  </div>
                 {:else if streaming && index === chatMessages.length - 1 && !message.content}
                   <div class="loading loading-sm loading-dots opacity-70"></div>
                 {:else if message.content}
                   <!-- svelte-ignore a11y_click_events_have_key_events -->
                   <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
+                  <div
+                    class="prose prose-sm max-w-none text-base-content/90"
+                    style:font-size={fontSizeStyle}
+                    onclick={handleLinkClick}
+                  >
                     <!-- eslint-disable-next-line svelte/no-at-html-tags -->
                     {@html marked(message.content + (streaming && index === chatMessages.length - 1 ? ' |' : ''))}
                   </div>
@@ -585,11 +633,17 @@
               {#if streaming && !latestAssistant?.content}
                 <div class="loading loading-sm loading-dots opacity-70"></div>
               {:else if latestAssistant?.error}
-                <div class="text-sm whitespace-pre-wrap text-error">{latestAssistant.content}</div>
+                <div class="text-sm whitespace-pre-wrap text-error" style:font-size={fontSizeStyle}>
+                  {latestAssistant.content}
+                </div>
               {:else if latestAssistant?.content}
                 <!-- svelte-ignore a11y_click_events_have_key_events -->
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="prose prose-sm max-w-none text-base-content/90" onclick={handleLinkClick}>
+                <div
+                  class="prose prose-sm max-w-none text-base-content/90"
+                  style:font-size={fontSizeStyle}
+                  onclick={handleLinkClick}
+                >
                   <!-- eslint-disable-next-line svelte/no-at-html-tags -->
                   {@html marked(latestAssistant.content + (streaming ? ' |' : ''))}
                 </div>
@@ -670,7 +724,8 @@
               minHeight="100%"
               maxHeight="100%"
               panelClass="hidden"
-              class="h-full rounded-none border-none"
+              class="popup-result h-full rounded-none border-none"
+              fontSize={fontSizeStyle}
             />
           {/await}
         {:else}
@@ -688,6 +743,14 @@
     html,
     body {
       background: transparent;
+    }
+
+    .popup-result .cm-editor {
+      background-color: transparent !important;
+    }
+
+    .popup-result .cm-gutters {
+      background-color: var(--popup-gutter-background) !important;
     }
   }
 </style>

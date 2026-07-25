@@ -5,6 +5,8 @@
   import Toggle from '$lib/components/Toggle.svelte';
   import {
     POPUP_CORNER_RADIUS,
+    POPUP_FONT_SIZE,
+    POPUP_OPACITY,
     TOOLBAR_ACTION_COUNT,
     TOOLBAR_AUTO_HIDE_DELAY,
     TOOLBAR_CORNER_RADIUS,
@@ -13,6 +15,8 @@
   import { m } from '$lib/paraglide/messages';
   import {
     popupCornerRadius,
+    popupFontSize,
+    popupOpacity,
     toolbarAutoHide,
     toolbarAutoHideDelay,
     toolbarCornerRadius,
@@ -35,10 +39,14 @@
   // generate range marks
   const createRangeMarks = ({ min, max }: { min: number; max: number }, count: number) =>
     Array.from({ length: count }, (_, index) => Math.round(min + ((max - min) * index) / (count - 1)));
+
   const toolbarCornerRadiusMarks = createRangeMarks(TOOLBAR_CORNER_RADIUS, 4);
-  const popupCornerRadiusMarks = createRangeMarks(POPUP_CORNER_RADIUS, 4);
   const toolbarOpacityMarks = createRangeMarks(TOOLBAR_OPACITY, 3);
   const toolbarAutoHideDelayMarks = createRangeMarks(TOOLBAR_AUTO_HIDE_DELAY, 4);
+
+  const popupCornerRadiusMarks = createRangeMarks(POPUP_CORNER_RADIUS, 4);
+  const popupOpacityMarks = createRangeMarks(POPUP_OPACITY, 3);
+  const popupFontSizeMarks = createRangeMarks(POPUP_FONT_SIZE, 4);
 </script>
 
 <div class="flex flex-col gap-2">
@@ -131,6 +139,44 @@
         <div class="flex justify-between text-xs opacity-70">
           {#each popupCornerRadiusMarks as radius (radius)}
             <span>{radius}px</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.popup_opacity_explain()} tipPlacement="duplex">{m.popup_opacity()}</Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={POPUP_OPACITY.min}
+          max={POPUP_OPACITY.max}
+          step={POPUP_OPACITY.step}
+          bind:value={popupOpacity.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each popupOpacityMarks as opacity (opacity)}
+            <span>{opacity}%</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.popup_font_size_explain()} tipPlacement="duplex">{m.popup_font_size()}</Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={POPUP_FONT_SIZE.min}
+          max={POPUP_FONT_SIZE.max}
+          step={POPUP_FONT_SIZE.step}
+          bind:value={popupFontSize.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each popupFontSizeMarks as size (size)}
+            <span>{size}px</span>
           {/each}
         </div>
       </label>

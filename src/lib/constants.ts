@@ -98,6 +98,26 @@ export const POPUP_CORNER_RADIUS = {
 };
 
 /**
+ * Popup background opacity percentage.
+ */
+export const POPUP_OPACITY = {
+  min: 80,
+  default: 100,
+  max: 100,
+  step: 5
+};
+
+/**
+ * Popup font size in pixels.
+ */
+export const POPUP_FONT_SIZE = {
+  min: 12,
+  default: 14,
+  max: 18,
+  step: 1
+};
+
+/**
  * Popup window default size.
  */
 export const DEFAULT_POPUP_WINDOW_SIZE = {

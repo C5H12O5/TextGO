@@ -1,6 +1,8 @@
 import {
   DEFAULT_POPUP_WINDOW_SIZE,
   POPUP_CORNER_RADIUS,
+  POPUP_FONT_SIZE,
+  POPUP_OPACITY,
   TOOLBAR_ACTION_COUNT,
   TOOLBAR_AUTO_HIDE_DELAY,
   TOOLBAR_CORNER_RADIUS,
@@ -203,6 +205,12 @@ export const toolbarHideOnScroll = persisted<boolean>('toolbarHideOnScroll', tru
 
 // popup corner radius in pixels
 export const popupCornerRadius = persisted<number>('popupCornerRadius', POPUP_CORNER_RADIUS.default);
+
+// popup background opacity percentage
+export const popupOpacity = persisted<number>('popupOpacity', POPUP_OPACITY.default);
+
+// popup font size in pixels
+export const popupFontSize = persisted<number>('popupFontSize', POPUP_FONT_SIZE.default);
 
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);

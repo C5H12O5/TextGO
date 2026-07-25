@@ -21,6 +21,8 @@
     readOnly: boolean;
     /** Whether to use dark theme. */
     darkMode: boolean | 'auto';
+    /** Editor font size. */
+    fontSize: string | null;
 
     /** Container class name. */
     class: string;
@@ -244,6 +246,7 @@
     lineLength = 80,
     readOnly = false,
     darkMode = 'auto',
+    fontSize = null,
 
     class: _class,
     panelClass,
@@ -462,7 +465,7 @@
   });
 </script>
 
-<div class="shrink-0 overflow-auto rounded-box border {_class}">
+<div class="shrink-0 overflow-auto rounded-box border {_class}" style:font-size={fontSize}>
   <div class={editorClass} bind:this={editor}></div>
   <div class="flex items-center justify-between border-t px-2 py-1 {panelClass}">
     <span class="flex items-center gap-2">
@@ -499,6 +502,7 @@
       {lineLength}
       {readOnly}
       {darkMode}
+      {fontSize}
       minHeight="60dvh"
       maxHeight="calc(90dvh - 10rem)"
       minWidth="100%"
