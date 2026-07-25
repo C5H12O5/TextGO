@@ -176,6 +176,8 @@
   "toolbar_auto_hide": "自动隐藏",
   "toolbar_auto_hide_explain": "无操作一段时间后自动隐藏工具栏",
   "toolbar_auto_hide_delay": "自动隐藏延时",
+  "toolbar_hide_on_scroll": "滚轮滚动时隐藏",
+  "toolbar_hide_on_scroll_explain": "鼠标滚轮滚动时隐藏工具栏",
   "popup_settings": "弹窗设置",
   "popup_corner_radius": "圆角半径",
   "popup_corner_radius_explain": "调整弹窗圆角大小，单位为像素",

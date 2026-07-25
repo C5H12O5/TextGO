@@ -43,6 +43,9 @@ pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
 // global toolbar native menu open state
 pub static TOOLBAR_MENU_OPEN: AtomicBool = AtomicBool::new(false);
 
+// whether mouse wheel scrolling hides the toolbar
+pub static TOOLBAR_HIDE_ON_SCROLL: AtomicBool = AtomicBool::new(true);
+
 // global registered shortcuts mapping
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
@@ -181,6 +184,7 @@ pub fn run() {
             set_long_press_enabled,
             set_long_press_duration,
             set_ibeam_cursor_enabled,
+            set_toolbar_hide_on_scroll,
             set_force_get_selection,
             set_copy_key,
             get_selection,

@@ -194,6 +194,13 @@ export const toolbarAutoHide = persisted<boolean>('toolbarAutoHide', false);
 // toolbar auto-hide delay in seconds
 export const toolbarAutoHideDelay = persisted<number>('toolbarAutoHideDelay', TOOLBAR_AUTO_HIDE_DELAY.default);
 
+// whether mouse wheel scrolling hides the toolbar
+export const toolbarHideOnScroll = persisted<boolean>('toolbarHideOnScroll', true, {
+  onchange: (enabled) => {
+    invoke('set_toolbar_hide_on_scroll', { enabled });
+  }
+});
+
 // popup corner radius in pixels
 export const popupCornerRadius = persisted<number>('popupCornerRadius', POPUP_CORNER_RADIUS.default);
 

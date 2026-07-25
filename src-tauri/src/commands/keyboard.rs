@@ -2,6 +2,7 @@ use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
+#[cfg(not(target_os = "macos"))]
 use std::sync::atomic::Ordering;
 
 /// Send cut shortcut keys.

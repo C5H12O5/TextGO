@@ -1,7 +1,6 @@
 use crate::error::AppError;
 use crate::{CLIPBOARD, CLIPBOARD_RESTORE_INTERRUPTED};
-use clipboard_rs::Clipboard;
-use clipboard_rs::ContentFormat;
+use clipboard_rs::{Clipboard, ContentFormat};
 use log::debug;
 use std::sync::atomic::Ordering;
 

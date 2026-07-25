@@ -3,13 +3,11 @@ use crate::commands::keyboard::send_copy_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::platform;
+use crate::{FORCE_GET_SELECTION, SELECTION_TEXT_CACHE};
 use log::warn;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
 use tauri::AppHandle;
-
-use crate::FORCE_GET_SELECTION;
-use crate::SELECTION_TEXT_CACHE;
 
 // maximum wait time in milliseconds for clipboard to update
 static MAX_WAIT_TIME: AtomicU64 = AtomicU64::new(1000);

@@ -16,6 +16,7 @@
     toolbarAutoHide,
     toolbarAutoHideDelay,
     toolbarCornerRadius,
+    toolbarHideOnScroll,
     toolbarMaxActions,
     toolbarOpacity
   } from '$lib/stores.svelte';
@@ -108,6 +109,11 @@
           {/each}
         </div>
       </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.toolbar_hide_on_scroll_explain()} tipPlacement="duplex">{m.toolbar_hide_on_scroll()}</Label>
+      <Toggle bind:value={toolbarHideOnScroll.current} />
     </fieldset>
   </Setting>
   <Setting icon={AppWindowIcon} title={m.popup_settings()}>

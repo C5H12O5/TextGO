@@ -1,9 +1,12 @@
-use crate::commands::{get_selection, is_blocked};
+use crate::commands::{
+    get_clipboard_text, get_selection, is_blocked, send_copy_keys, set_clipboard_text,
+};
 use crate::error::AppError;
 use crate::platform;
 use crate::{
-    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND, TOOLBAR_MENU_OPEN,
+    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
+    LONG_PRESS_DURATION, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+    TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
@@ -12,9 +15,6 @@ use std::cell::Cell;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
-
-use crate::commands::{get_clipboard_text, send_copy_keys, set_clipboard_text};
-use crate::{CLIPBOARD_RESTORE_INTERRUPTED, SELECTION_TEXT_CACHE};
 
 #[cfg(target_os = "windows")]
 const WINDOWS_KEY_C: u32 = 0x43;
@@ -133,7 +133,7 @@ pub fn handle_mouse_event(event: Event) {
         EventType::KeyRelease(Key::ShiftLeft) | EventType::KeyRelease(Key::ShiftRight) => {
             SHIFT_PRESSED.set(false);
         }
-        EventType::Wheel { .. } => {
+        EventType::Wheel { .. } if TOOLBAR_HIDE_ON_SCROLL.load(Ordering::Relaxed) => {
             // hide toolbar on wheel scroll
             let _ = hide_toolbar(false);
         }
