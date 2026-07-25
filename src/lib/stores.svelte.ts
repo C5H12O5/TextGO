@@ -19,6 +19,7 @@ import type {
 import { decrypt, encrypt } from '$lib/utils';
 import { invoke } from '@tauri-apps/api/core';
 import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
+import { type } from '@tauri-apps/plugin-os';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { debounce } from 'es-toolkit/function';
 import { tick, untrack } from 'svelte';
@@ -205,8 +206,8 @@ export const forceGetSelection = persisted<boolean>('forceGetSelection', true, {
   }
 });
 
-// copy key combination (Windows only: 'ctrl_insert' | 'ctrl_c')
-export const copyKey = persisted<string>('copyKey', 'ctrl_insert', {
+// copy key combination (macOS: 'command_c'; Windows: 'ctrl_insert' | 'ctrl_c')
+export const copyKey = persisted<string>('copyKey', type() === 'macos' ? 'command_c' : 'ctrl_insert', {
   onchange: (key) => {
     invoke('set_copy_key', { key });
   }
