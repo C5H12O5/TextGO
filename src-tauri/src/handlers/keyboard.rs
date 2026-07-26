@@ -7,7 +7,7 @@ use tauri_plugin_global_shortcut::{Shortcut, ShortcutEvent, ShortcutState};
 /// Handle keyboard shortcut event.
 pub fn handle_keyboard_event(app: &AppHandle, hotkey: &Shortcut, event: ShortcutEvent) {
     // check if shortcut handling is suspended or paused
-    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) > 0 || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
     }
 

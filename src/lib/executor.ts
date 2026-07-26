@@ -1,5 +1,5 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
-import { evalAsync, evalSync } from '$lib/evaluator';
+import { evalAsync } from '$lib/evaluator';
 import { isMouseShortcut } from '$lib/helpers';
 import { m } from '$lib/paraglide/messages';
 import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
@@ -54,6 +54,22 @@ const URL_REGEX =
   /https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b[-a-zA-Z0-9()@:%_+.~#?&/=]*/gm;
 const PATH_REGEX =
   /(?:[a-zA-Z]:\\[^<>:"|?*\n\r/]+(?:\\[^<>:"|?*\n\r/]+)*|~?\/[^<>:"|?*\n\r\\]+(?:\/[^<>:"|?*\n\r\\]+)*)/gm;
+
+/**
+ * Check whether JavaScript code references the keyboard API.
+ */
+async function usesKeyboardApi(code: string): Promise<boolean> {
+  const { javascriptLanguage } = await import('@codemirror/lang-javascript');
+  const cursor = javascriptLanguage.parser.parse(code).cursor();
+
+  while (cursor.next()) {
+    if (cursor.name === 'VariableName' && code.slice(cursor.from, cursor.to) === '_keyboard') {
+      return true;
+    }
+  }
+
+  return false;
+}
 
 /**
  * Default actions.
@@ -260,6 +276,11 @@ const scriptExecutor: Executor = async (rule, entry, placement) => {
     return false;
   }
 
+  // keyboard scripts are side-effectful and must not run while generating previews
+  if (rule.preview && script.lang === 'javascript' && (await usesKeyboardApi(script.script))) {
+    return true;
+  }
+
   console.debug(`Executing script: ${scriptId}`);
   const result = await executeScript(script, entry);
   // save history record
@@ -450,18 +471,18 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
     };
 
     if (language === 'javascript') {
-      // if no custom path, try to execute in frontend first
-      if (!nodePath.current && !denoPath.current) {
+      // keyboard simulation is only available in the WebView environment
+      const hasKeyboardApi = await usesKeyboardApi(code);
+      const useWebView = hasKeyboardApi || (!nodePath.current && !denoPath.current);
+
+      if (useWebView) {
         try {
           console.debug('Executing JavaScript in WebView');
-          // check if code contains async process function
-          const asyncPattern = /^\s*async\s+function\s+process\s*\(/m;
-          if (asyncPattern.test(code)) {
-            return { text: await evalAsync(data, code) };
-          } else {
-            return { text: evalSync(data, code) };
-          }
+          return { text: await evalAsync(data, code) };
         } catch (error) {
+          if (hasKeyboardApi) {
+            throw new Error(`JavaScript execution failed in WebView: ${String(error)}`, { cause: error });
+          }
           console.error(`Failed to execute JavaScript in WebView: ${error}`);
         }
       }

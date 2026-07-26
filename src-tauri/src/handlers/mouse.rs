@@ -1,5 +1,6 @@
 use crate::commands::{
     get_clipboard_text, get_selection, is_blocked, send_copy_keys, set_clipboard_text,
+    ShortcutHandlerGuard,
 };
 use crate::error::AppError;
 use crate::platform;
@@ -95,7 +96,7 @@ const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
     // check if shortcut handling is suspended or paused
-    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+    if SHORTCUT_SUSPEND.load(Ordering::Relaxed) > 0 || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
     }
     detect_user_copy_operation(event.event_type);
@@ -425,13 +426,12 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
         tauri::async_runtime::spawn(async move {
             tokio::time::sleep(Duration::from_millis(10)).await;
 
-            let was_suspended = SHORTCUT_SUSPEND.swap(true, Ordering::Relaxed);
+            let _guard = ShortcutHandlerGuard::suspend();
             let escape_result = (|| -> Result<(), AppError> {
                 let mut enigo_guard = ENIGO.lock()?;
                 let enigo = enigo_guard.as_mut()?;
                 Ok(enigo.key(EnigoKey::Escape, Direction::Click)?)
             })();
-            SHORTCUT_SUSPEND.store(was_suspended, Ordering::Relaxed);
 
             if let Err(error) = escape_result {
                 debug!("Native menu close failed: {:?}", error);

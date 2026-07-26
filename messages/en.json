@@ -113,6 +113,7 @@
   "regexp_flag_s_tip": "Dot matches newline",
   "script": "Script",
   "script_type": "Script Type",
+  "javascript_runtime_tip": "JavaScript runs in the WebView by default or in the configured Node.js/Deno runtime. Scripts using _keyboard.press() automatically switch back to the WebView.",
   "script_content_empty": "Script content cannot be empty!",
   "script_added_success": "Script added successfully!",
   "script_updated_success": "Script updated successfully!",

@@ -215,7 +215,9 @@ def process(data):
         <IconSelector bind:icon={scriptIcon} />
         <input class="autofocus input grow input-sm" {...schema.name} bind:value={scriptName} />
       </div>
-      <Label required>{m.script_type()}</Label>
+      <Label required tip={scriptLang === 'javascript' ? m.javascript_runtime_tip() : undefined}>
+        {m.script_type()}
+      </Label>
       <Select
         value={scriptLang}
         options={[

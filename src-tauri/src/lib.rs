@@ -11,7 +11,7 @@ use handlers::{handle_keyboard_event, handle_mouse_event};
 use log::LevelFilter;
 use rdev::listen;
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize};
 use std::sync::{LazyLock, Mutex};
 use std::time::Instant;
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
@@ -28,8 +28,8 @@ pub static APP_HANDLE: LazyLock<Mutex<Option<AppHandle>>> = LazyLock::new(|| Mut
 // global shortcut paused state
 pub static SHORTCUT_PAUSED: AtomicBool = AtomicBool::new(false);
 
-// global shortcut suspend state
-pub static SHORTCUT_SUSPEND: AtomicBool = AtomicBool::new(false);
+// number of active shortcut suspension guards
+pub static SHORTCUT_SUSPEND: AtomicUsize = AtomicUsize::new(0);
 
 // global I-beam cursor check state
 pub static IBEAM_CURSOR: AtomicBool = AtomicBool::new(true);
@@ -196,6 +196,7 @@ pub fn run() {
             execute_shell,
             execute_powershell,
             enter_text,
+            send_key,
             send_cut_keys,
             send_copy_keys,
             send_paste_keys,

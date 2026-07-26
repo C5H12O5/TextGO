@@ -12,14 +12,15 @@ pub struct ShortcutHandlerGuard;
 
 impl ShortcutHandlerGuard {
     pub fn suspend() -> Self {
-        SHORTCUT_SUSPEND.store(true, Ordering::Relaxed);
+        SHORTCUT_SUSPEND.fetch_add(1, Ordering::Relaxed);
         ShortcutHandlerGuard
     }
 }
 
 impl Drop for ShortcutHandlerGuard {
     fn drop(&mut self) {
-        SHORTCUT_SUSPEND.store(false, Ordering::Relaxed);
+        let previous = SHORTCUT_SUSPEND.fetch_sub(1, Ordering::Relaxed);
+        debug_assert!(previous > 0, "shortcut suspension counter underflow");
     }
 }
 
@@ -214,4 +215,18 @@ fn parse_shortcut(shortcut: &str) -> Result<Shortcut, AppError> {
         .map_err(|_| format!("Unsupported key code: {}", code_str))?;
 
     Ok(Shortcut::new(Some(modifiers), code))
+}
+
+#[cfg(test)]
+#[test]
+fn suspension_guard_is_nest_safe() {
+    let initial = SHORTCUT_SUSPEND.load(Ordering::Relaxed);
+    let outer = ShortcutHandlerGuard::suspend();
+    {
+        let _inner = ShortcutHandlerGuard::suspend();
+        assert_eq!(SHORTCUT_SUSPEND.load(Ordering::Relaxed), initial + 2);
+    }
+    assert_eq!(SHORTCUT_SUSPEND.load(Ordering::Relaxed), initial + 1);
+    drop(outer);
+    assert_eq!(SHORTCUT_SUSPEND.load(Ordering::Relaxed), initial);
 }
