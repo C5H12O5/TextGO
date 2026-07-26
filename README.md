@@ -30,7 +30,7 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
 - **Customizable Icons**: Upload custom SVG icons to personalize the toolbar.
 - **Ready to Use**: Start quickly with built-in text types and processing actions.
-- **Highly Extensible**: Extend with regex, ML models, scripts, and local or cloud AI for custom recognition and processing.
+- **Highly Extensible**: Extend with regex, ML models, scripts, and local or cloud AI for recognition and processing.
 
 | <img align="center" src="screenshots/new_rule.png" /> | <img align="center" src="screenshots/model_providers.png" /> | <img align="center" src="screenshots/update_script.png" /> |
 | ----------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
