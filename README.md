@@ -17,7 +17,7 @@
 
 📖 English / [简体中文](README.zh-CN.md)
 
-_TextGO is a cross-platform text processing tool that recognizes text types and executes custom actions._
+_TextGO is a cross-platform text processing tool that recognizes text types and runs custom actions._
 
 </div>
 
@@ -26,11 +26,11 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 
 ## ✨ Core Features
 
-- **Multiple Triggers**: Hotkeys, double-click, or drag-select, each with independent rule configurations.
+- **Multiple Triggers**: Configure independent rules for hotkeys, double-click, Shift-click, and drag-select.
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
-- **Customizable Icons**: Upload custom SVG icons to create your personalized toolbar style.
-- **Ready to Use**: Built-in rich text types and processing actions, simple configuration for immediate use.
-- **Highly Extensible**: Extend with regex, ML models, scripts, or local/cloud AI for custom recognition and processing.
+- **Customizable Icons**: Upload custom SVG icons to personalize the toolbar.
+- **Ready to Use**: Start quickly with built-in text types and processing actions.
+- **Highly Extensible**: Extend with regex, ML models, scripts, and local or cloud AI for custom recognition and processing.
 
 | <img align="center" src="screenshots/new_rule.png" /> | <img align="center" src="screenshots/model_providers.png" /> | <img align="center" src="screenshots/update_script.png" /> |
 | ----------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -45,18 +45,18 @@ Download the installer for your platform from [**GitHub Releases**](https://gith
 
 TextGO requires the `Accessibility` permission on macOS to function properly.
 
-**Setup Steps**:
+**Setup steps:**
 
 1. Open "System Settings" > "Privacy & Security" > "Accessibility"
-2. Find TextGO and check it
-3. If not listed, click the "+" button to manually add TextGO
+2. Find TextGO and enable it
+3. If TextGO is not listed, click the "+" button to add it manually
 
 > [!TIP]
-> The system will automatically prompt for authorization when the app is used for the first time.
+> The system prompts for authorization when the app is first used.
 
 ### Extensions
 
-Visit the [**Extensions**](https://textgo.xylitol.top/extensions) page on the official website to browse and install various extensions that enhance the app's functionality:
+Browse and install extensions from the official [**Extensions**](https://textgo.xylitol.top/extensions) page:
 
 | <img align="center" src="screenshots/scripts.png" /> | <img align="center" src="screenshots/websites.png" /> |
 | ---------------------------------------------------- | ----------------------------------------------------- |
@@ -64,11 +64,11 @@ Visit the [**Extensions**](https://textgo.xylitol.top/extensions) page on the of
 ### FAQ
 
 <details>
-<summary>1. macOS shows "App is damaged and can't be opened."</summary>
+<summary>1. macOS says the app is damaged and cannot be opened.</summary>
 
 <br>
 
-_Run the following command in the terminal to resolve:_
+_Run this command in Terminal:_
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/TextGO.app
@@ -77,11 +77,11 @@ sudo xattr -r -d com.apple.quarantine /Applications/TextGO.app
 </details>
 
 <details>
-<summary>2. macOS shows "Apple can't check app for malicious software."</summary>
+<summary>2. macOS says Apple cannot check the app for malicious software.</summary>
 
 <br>
 
-_Follow these steps to resolve:_
+_Follow these steps:_
 
 1. Open "System Settings" > "Privacy & Security"
 2. Find the blocked application in the "Security" section
@@ -91,13 +91,13 @@ _Follow these steps to resolve:_
 </details>
 
 <details>
-<summary>3. macOS accessibility permission not working after update.</summary>
+<summary>3. Accessibility permission stops working after a TextGO update.</summary>
 
 <br>
 
-_TextGO is not a signed app, so macOS binds the accessibility permission to the current binary. After each update, the new binary has a different identity, and the permission no longer applies — even though it still appears checked in System Settings._
+_TextGO is unsigned, so macOS binds Accessibility permission to its current binary. An update changes the binary identity and invalidates the permission, even if System Settings still shows it as enabled._
 
-_To fix this:_
+_To restore permission:_
 
 1. Open "System Settings" > "Privacy & Security" > "Accessibility"
 2. Select TextGO from the list and remove it with the "−" button
@@ -110,14 +110,14 @@ _To fix this:_
 
 ## 🛠️ Development
 
-1. Refer to [Tauri official documentation](https://v2.tauri.app/start/prerequisites/) to install Rust and Node.js (use [pnpm](https://pnpm.io/) as the package manager)
-2. Clone and setup:
+1. Follow the [official Tauri documentation](https://v2.tauri.app/start/prerequisites/) to install Rust and Node.js; use [pnpm](https://pnpm.io/) as the package manager
+2. Clone and set up the project:
    ```bash
    git clone https://github.com/C5H12O5/TextGO.git
    cd TextGO
    pnpm install
    ```
-3. Run development mode:
+3. Start development mode:
 
    ```bash
    pnpm tauri dev
@@ -136,10 +136,10 @@ _To fix this:_
 
 ## 🎉 Acknowledgments
 
-This project is built upon many excellent open source projects. We would like to express our sincere gratitude to all the developers and contributors of these projects.
+This project builds on many excellent open-source projects. We thank their developers and contributors.
 
-For a complete list of third-party dependencies and their licenses, please see [LICENSES.md](LICENSES.md) file.
+For a complete list of third-party dependencies and licenses, see [LICENSES.md](LICENSES.md).
 
 ## 📄 License
 
-This project is released under the [GPLv3](LICENSE) open source license.
+This project is licensed under [GPLv3](LICENSE).
