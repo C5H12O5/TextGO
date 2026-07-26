@@ -8,6 +8,10 @@ use std::time::Duration;
 use tauri::AppHandle;
 
 const SHORTCUT_RESUME_DELAY: Duration = Duration::from_millis(100);
+#[cfg(target_os = "macos")]
+const COMMAND_OR_CONTROL: Key = Key::Meta;
+#[cfg(not(target_os = "macos"))]
+const COMMAND_OR_CONTROL: Key = Key::Control;
 
 /// Send a keyboard key with optional modifiers.
 #[tauri::command]
@@ -183,13 +187,25 @@ fn release_keys(enigo: &mut dyn Keyboard, keys: &[Key]) -> Result<(), AppError> 
 
 /// Parse a cross-platform modifier name.
 fn parse_modifier(modifier: &str) -> Result<Key, AppError> {
-    match modifier.trim().to_ascii_lowercase().as_str() {
-        "meta" | "cmd" | "command" | "super" | "win" | "windows" => Ok(Key::Meta),
-        "control" | "ctrl" => Ok(Key::Control),
-        "alt" | "option" => Ok(Key::Alt),
-        "shift" => Ok(Key::Shift),
-        _ => Err(format!("Unsupported modifier key: {}", modifier).into()),
+    let alias = |modifier| match modifier {
+        "meta" | "cmd" | "command" | "super" | "win" | "windows" => Some(Key::Meta),
+        "control" | "ctrl" => Some(Key::Control),
+        "alt" | "option" => Some(Key::Alt),
+        "shift" => Some(Key::Shift),
+        _ => None,
+    };
+    let normalized = modifier.trim().to_ascii_lowercase();
+
+    if let Some((left, right)) = normalized.split_once("or") {
+        if matches!(
+            (alias(left), alias(right)),
+            (Some(Key::Meta), Some(Key::Control)) | (Some(Key::Control), Some(Key::Meta))
+        ) {
+            return Ok(COMMAND_OR_CONTROL);
+        }
     }
+
+    alias(&normalized).ok_or_else(|| format!("Unsupported modifier key: {}", modifier).into())
 }
 
 /// Parse a character or a supported cross-platform key name.
@@ -244,6 +260,11 @@ fn parses_supported_keys() {
     assert_eq!(parse_modifier("Command").unwrap(), Key::Meta);
     assert_eq!(parse_modifier("Ctrl").unwrap(), Key::Control);
     assert_eq!(parse_modifier("Option").unwrap(), Key::Alt);
+    for modifier in ["CmdOrControl", "CommandOrCtrl", "ControlOrWindows"] {
+        assert_eq!(parse_modifier(modifier).unwrap(), COMMAND_OR_CONTROL);
+    }
+
     assert!(parse_key("UnknownKey").is_err());
     assert!(parse_modifier("Fn").is_err());
+    assert!(parse_modifier("ShiftOrCtrl").is_err());
 }
