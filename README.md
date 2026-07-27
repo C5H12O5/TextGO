@@ -26,7 +26,7 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 
 ## ✨ Core Features
 
-- **Multiple Triggers**: Configure independent rules for hotkeys, double-click, Shift-click, and drag-select.
+- **Multiple Triggers**: Configure independent rules for hotkeys, double-click, shift-click, and drag-select.
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
 - **Customizable Icons**: Upload custom SVG icons to personalize the toolbar.
 - **Ready to Use**: Start quickly with built-in text types and processing actions.
@@ -142,4 +142,4 @@ For a complete list of third-party dependencies and licenses, see [LICENSES.md](
 
 ## 📄 License
 
-This project is licensed under [GPLv3](LICENSE).
+This project is licensed under the [GPLv3 License](LICENSE).
