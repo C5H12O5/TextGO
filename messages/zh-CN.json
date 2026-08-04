@@ -13,7 +13,7 @@
   "export_failed": "导出失败！",
   "export_success": "导出成功！",
   "import_all_settings": "导入全部设置",
-  "import_overwrite_message": "导入后将覆盖全部数据并重启应用，是否继续？",
+  "import_overwrite_message": "导入有风险，请仅导入可信数据。是否覆盖全部数据并重启？",
   "import_file_invalid": "所选文件无效或不受支持！",
   "import_failed": "导入失败！",
   "import_restore_failed": "导入失败，且无法恢复当前数据！",

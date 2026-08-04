@@ -53,6 +53,85 @@
   }
 
   /**
+   * Clean imported settings when moving between operating systems.
+   *
+   * @param settings - imported settings
+   * @param sourceOsType - operating system recorded in the import file
+   * @param targetOsType - current operating system
+   * @param currentSettings - settings that belong to the current machine
+   * @returns settings ready to import
+   */
+  function cleanImportedSettings(
+    settings: Settings,
+    sourceOsType: string,
+    targetOsType: string,
+    currentSettings: Settings
+  ): Settings {
+    if (sourceOsType === targetOsType) {
+      return settings;
+    }
+
+    const cleaned = { ...settings };
+    cleaned.copyKey = targetOsType === 'macos' ? 'command_c' : 'ctrl_insert';
+    cleaned.nodePath = '';
+    cleaned.denoPath = '';
+    cleaned.pythonPath = '';
+    delete cleaned.popupWindowSize;
+
+    for (const key of ['autoStart', 'accessibility']) {
+      if (Object.hasOwn(currentSettings, key)) {
+        cleaned[key] = currentSettings[key];
+      } else {
+        delete cleaned[key];
+      }
+    }
+
+    if (Array.isArray(settings.searchers)) {
+      cleaned.searchers = settings.searchers.map((value) => {
+        if (!isObject(value)) {
+          return value;
+        }
+        const searcher = { ...value };
+        delete searcher.browser;
+        return searcher;
+      });
+    }
+
+    cleaned.blacklist = Array.isArray(settings.blacklist)
+      ? settings.blacklist.filter((value) => typeof value === 'string' && /^https?:\/\//i.test(value))
+      : [];
+
+    const ignoredActions: string[] = [];
+    if (Array.isArray(settings.scripts)) {
+      cleaned.scripts = settings.scripts.filter((value) => {
+        if (!isObject(value) || (value.lang !== 'shell' && value.lang !== 'powershell')) {
+          return true;
+        }
+        if (typeof value.id === 'string') {
+          ignoredActions.push(`script-${value.id}`);
+        }
+        return false;
+      });
+    }
+
+    if (ignoredActions.length > 0 && isObject(settings.shortcuts)) {
+      cleaned.shortcuts = Object.fromEntries(
+        Object.entries(settings.shortcuts).map(([shortcut, value]) => {
+          if (!isObject(value) || !Array.isArray(value.rules)) {
+            return [shortcut, value];
+          }
+          const rules = value.rules.filter(
+            (rule) => !isObject(rule) || typeof rule.action !== 'string' || !ignoredActions.includes(rule.action)
+          );
+          return [shortcut, { ...value, rules }];
+        })
+      );
+    }
+
+    return cleaned;
+  }
+
+  /**
    * Check whether settings contain a non-empty API key.
    *
    * @param settings - settings to inspect
@@ -108,9 +187,9 @@
    * Replace current settings and restore their backup if writing fails.
    *
    * @param settings - settings to import
+   * @param backup - current settings to restore if writing fails
    */
-  async function replaceSettings(settings: Settings) {
-    const backup = Object.fromEntries(await settingsStore.entries<unknown>());
+  async function replaceSettings(settings: Settings, backup: Settings) {
     try {
       await writeSettings(settings);
     } catch (error) {
@@ -177,11 +256,13 @@
   /**
    * Replace current settings and relaunch the app after a successful import.
    *
-   * @param settings - validated settings to import
+   * @param config - validated configuration to import
    */
-  async function importConfig(settings: Settings) {
+  async function importConfig(config: Config) {
     try {
-      await replaceSettings(settings);
+      const backup = Object.fromEntries(await settingsStore.entries<unknown>());
+      const settings = cleanImportedSettings(config.settings, config.osType, getOsType(), backup);
+      await replaceSettings(settings, backup);
     } catch (error) {
       console.error('Failed to import configuration:', error);
       alert({
@@ -232,7 +313,7 @@
     confirm({
       title: `${m.import_all_settings()} [${config.osType}/v${config.appVersion}]`,
       message: m.import_overwrite_message(),
-      onconfirm: () => void importConfig(config.settings)
+      onconfirm: () => void importConfig(config)
     });
   }
 </script>

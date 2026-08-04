@@ -13,7 +13,7 @@
   "export_failed": "Export failed!",
   "export_success": "Exported successfully!",
   "import_all_settings": "Import all settings",
-  "import_overwrite_message": "Importing will overwrite all current data and restart the app. Continue?",
+  "import_overwrite_message": "Importing is risky. Only import trusted data. Overwrite all data and restart?",
   "import_file_invalid": "The selected file is invalid or unsupported!",
   "import_failed": "Import failed!",
   "import_restore_failed": "Import failed, and current data could not be restored!",
