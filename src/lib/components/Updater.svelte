@@ -5,7 +5,7 @@
   import type { Update } from '@tauri-apps/plugin-updater';
   import { check } from '@tauri-apps/plugin-updater';
   import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
-  import DownloadIcon from 'phosphor-svelte/lib/DownloadIcon';
+  import CloudArrowDownIcon from 'phosphor-svelte/lib/CloudArrowDownIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
   import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
 
@@ -145,7 +145,7 @@
       </div>
     {:else if versionHovering}
       <div class="flex cursor-pointer gap-1" in:fade={{ duration: 200 }}>
-        <DownloadIcon class="size-3.5" />{m.check_for_updates()}
+        <CloudArrowDownIcon class="size-3.5" />{m.check_for_updates()}
       </div>
     {:else}
       <div class="tracking-wider" in:fade={{ duration: 200 }}>v{version}</div>
