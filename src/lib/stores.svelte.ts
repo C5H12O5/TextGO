@@ -28,7 +28,7 @@ import { debounce } from 'es-toolkit/function';
 import { tick, untrack } from 'svelte';
 
 // create a global LazyStore instance
-const store = new LazyStore('.settings.dat');
+export const settings = new LazyStore('.settings.dat');
 
 // the type of snapshot of a state
 type Snapshot<T> = ReturnType<typeof $state.snapshot<T>>;
@@ -62,7 +62,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   const currentWindow = getCurrentWindow().label;
 
   // load data from store
-  const ready = store.get<T>(key).then(async (item) => {
+  const ready = settings.get<T>(key).then(async (item) => {
     if (item !== undefined) {
       state = options?.decrypt?.(item) ?? item;
       options?.onload?.(state);
@@ -83,7 +83,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
           return;
         }
         // persist to store
-        store.set(key, options?.encrypt?.(snapshot) ?? snapshot).then(() => {
+        settings.set(key, options?.encrypt?.(snapshot) ?? snapshot).then(() => {
           options?.onchange?.(snapshot);
           // use localStorage to notify other windows
           localStorage.removeItem(key);
@@ -101,7 +101,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   const reloadFromStore = debounce(() => {
     console.info(`[${currentWindow}] Detected external change for key "${key}", reloading from store.`);
     syncing = true;
-    store.get<T>(key).then((item) => {
+    settings.get<T>(key).then((item) => {
       if (item !== undefined) {
         state = options?.decrypt?.(item) ?? item;
         options?.onchange?.(state);

@@ -22,7 +22,7 @@ export const load: LayoutLoad = async () => {
   // set default properties for Tippy.js globally
   // https://atomiks.github.io/tippyjs/v6/methods/#setdefaultprops
   tippy.setDefaultProps({
-    zIndex: 100,
+    zIndex: 102,
     maxWidth: 300,
     arrow: false,
     theme: 'default',

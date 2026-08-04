@@ -65,7 +65,7 @@
         });
         if (path) {
           await writeTextFile(path, dumpExtension(item));
-          alert(m.exported_success());
+          alert(m.export_success());
         }
       } catch (error) {
         console.error(`Failed to export regexp: ${error}`);
