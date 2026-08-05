@@ -41,6 +41,7 @@
     "@tensorflow/tfjs": "^4.22.0",
     "@vscode/vscode-languagedetection": "^1.0.23",
     "codemirror": "^6.0.2",
+    "dompurify": "^3.4.12",
     "es-toolkit": "^1.50.0",
     "franc-min": "^6.2.0",
     "marked": "^18.0.7",
