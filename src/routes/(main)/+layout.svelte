@@ -143,8 +143,8 @@
                 theme.current = checked ? 'light' : 'dark';
               }}
             />
-            <Moon class="swap-off size-5" />
-            <Sun class="swap-on size-5" />
+            <Moon class="size-5 swap-off" />
+            <Sun class="size-5 swap-on" />
           </label>
         {/if}
         <!-- histories -->

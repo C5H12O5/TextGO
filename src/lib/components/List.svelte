@@ -95,8 +95,8 @@
       <!-- collapse/expand button -->
       {#if collapsible}
         <Button class="swap swap-rotate {collapsed ? '' : 'swap-active'}" onclick={() => (collapsed = !collapsed)}>
-          <CaretDownIcon class="swap-on size-4.5" />
-          <CaretRightIcon class="swap-off size-4.5" />
+          <CaretDownIcon class="size-4.5 swap-on" />
+          <CaretRightIcon class="size-4.5 swap-off" />
         </Button>
       {/if}
       <!-- icon and title -->

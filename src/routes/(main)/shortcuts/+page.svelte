@@ -161,7 +161,7 @@
       >
         <StackPlusIcon class="size-5" />{m.register_shortcut()}
       </summary>
-      <ul class="dropdown-content menu z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
+      <ul class="menu dropdown-content z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
         <!-- mouse drag-select option -->
         <li class={shortcuts.current[DRAG_SHORTCUT] ? 'hidden' : ''}>
           <button
@@ -253,8 +253,8 @@
           }}
         >
           <label class="swap swap-rotate group-hover:swap-active">
-            <ArrowsClockwiseIcon weight="bold" class="swap-on size-4" />
-            <ArrowCircleRightIcon weight="bold" class="swap-off size-4" />
+            <ArrowsClockwiseIcon weight="bold" class="size-4 swap-on" />
+            <ArrowCircleRightIcon weight="bold" class="size-4 swap-off" />
           </label>
           <span class="text-sm">
             {#if mode === 'toolbar'}
@@ -316,7 +316,7 @@
         {#snippet row(item)}
           {@const { label: caseLabel, icon: caseIcon } = ruleBinder?.getCaseOption(item.case) ?? {}}
           {@const { label: actionLabel, icon: actionIcon } = ruleBinder?.getActionOption(item.action) ?? {}}
-          <div class="list-col-grow grid grid-cols-12 items-center gap-4 pl-4">
+          <div class="grid grid-cols-12 items-center gap-4 pl-4 list-col-grow">
             <div class="col-span-5 flex items-center gap-1.5" title={caseLabel}>
               {#if item.case === ''}
                 <!-- default type -->

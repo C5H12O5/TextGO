@@ -75,7 +75,7 @@
   >
     {#snippet row(item)}
       <Icon icon={item.icon || 'MagnifyingGlass'} class="size-5" />
-      <div class="list-col-grow flex items-center gap-4 truncate" title={item.id}>
+      <div class="flex items-center gap-4 truncate list-col-grow" title={item.id}>
         <span class="min-w-8 truncate text-base font-light">{item.id}</span>
         {#if item.browser}
           <span class="badge min-w-14 truncate badge-ghost badge-sm" title={item.browser}>
