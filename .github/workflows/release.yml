@@ -33,8 +33,11 @@ jobs:
         uses: mikepenz/release-changelog-builder-action@v6
         with:
           mode: COMMIT
+          failOnError: true
           configurationJson: |
             {
+              "template": "#{{CHANGELOG}}\n\n<details>\n<summary>:gear: Maintenance changes</summary>\n\n#{{UNCATEGORIZED}}\n</details>\n\n#{{RELEASE_DIFF}}",
+              "empty_template": "No changes were detected.\n\n#{{RELEASE_DIFF}}",
               "categories": [
                 {
                   "title": "### :sparkles: New Features",
@@ -45,8 +48,23 @@ jobs:
                   "labels": ["fix"]
                 },
                 {
-                  "title": "### :rocket: Refactors",
+                  "title": "### :rocket: Performance",
+                  "labels": ["perf"]
+                },
+                {
+                  "title": "### :recycle: Refactors",
                   "labels": ["refactor"]
+                },
+                {
+                  "title": "### :art: UI & Style",
+                  "labels": ["style"]
+                }
+              ],
+              "label_extractor": [
+                {
+                  "pattern": "^(build|bump|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)([(][A-Za-z0-9_./-]+[)])?!?: .+",
+                  "on_property": "title",
+                  "target": "$1"
                 }
               ],
               "commit_template": "- #{{TITLE}} (by [@#{{AUTHOR}}](https://github.com/#{{AUTHOR}}))"
