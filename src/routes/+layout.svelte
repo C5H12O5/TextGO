@@ -3,6 +3,7 @@
   import Alert from '$lib/components/Alert.svelte';
   import Confirm from '$lib/components/Confirm.svelte';
   import { theme } from '$lib/stores.svelte';
+  import { isSystemTheme, resolveTheme } from '$lib/theme';
   import { platform } from '@tauri-apps/plugin-os';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
@@ -20,9 +21,9 @@
   // auto switch theme when system theme changes
   const prefersDark = new MediaQuery('(prefers-color-scheme: dark)');
   $effect(() => {
-    if (theme.current === 'system') {
+    if (isSystemTheme(theme.current)) {
       const root = document.documentElement;
-      root.setAttribute('data-theme', prefersDark.current ? 'dark' : 'light');
+      root.setAttribute('data-theme', resolveTheme(theme.current, prefersDark.current));
     }
   });
 

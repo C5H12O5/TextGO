@@ -8,6 +8,7 @@ import {
   TOOLBAR_CORNER_RADIUS,
   TOOLBAR_OPACITY
 } from '$lib/constants';
+import { isSystemTheme, type Theme } from '$lib/theme';
 import type {
   CustomLLMProvider,
   Entry,
@@ -21,7 +22,7 @@ import type {
 } from '$lib/types';
 import { decrypt, encrypt } from '$lib/utils';
 import { invoke } from '@tauri-apps/api/core';
-import { getCurrentWindow, type Theme } from '@tauri-apps/api/window';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { type } from '@tauri-apps/plugin-os';
 import { LazyStore } from '@tauri-apps/plugin-store';
 import { debounce } from 'es-toolkit/function';
@@ -131,18 +132,18 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   };
 }
 
-// theme (light / dark / system)
-export const theme = persisted<string>('theme', 'light', {
-  onchange: (theme) => {
-    if (theme === 'system') {
+// theme (light / dark / system / system inverse)
+export const theme = persisted<Theme>('theme', 'light', {
+  onchange: (setting) => {
+    if (isSystemTheme(setting)) {
       // follow system theme
       getCurrentWindow().setTheme(null);
     } else {
       // set data-theme attribute on root element to switch theme
       const root = document.documentElement;
-      root.setAttribute('data-theme', theme);
+      root.setAttribute('data-theme', setting);
       // the theme set here is application-wide, not specific to the current window
-      getCurrentWindow().setTheme(theme as Theme);
+      getCurrentWindow().setTheme(setting);
     }
   }
 });

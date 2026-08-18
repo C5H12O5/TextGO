@@ -201,6 +201,8 @@
 <script lang="ts">
   import Button from '$lib/components/Button.svelte';
   import Modal from '$lib/components/Modal.svelte';
+  import { theme } from '$lib/stores.svelte';
+  import { resolveTheme } from '$lib/theme';
   import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
   import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
   import {
@@ -229,13 +231,13 @@
     placeholder,
     rectangularSelection
   } from '@codemirror/view';
-  import { getCurrentWindow } from '@tauri-apps/api/window';
   import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
   import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
   import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
   import FrameCornersIcon from 'phosphor-svelte/lib/FrameCornersIcon';
   import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
   import { onMount } from 'svelte';
+  import { MediaQuery } from 'svelte/reactivity';
   import CodeMirror from './CodeMirror.svelte';
 
   let {
@@ -414,12 +416,12 @@
    * Extension for editor theme.
    */
   const editorTheme = new Compartment();
+  const prefersDark = new MediaQuery('(prefers-color-scheme: dark)');
   const getEditorTheme = () => {
     if (darkMode === true) {
       return oneDark;
     } else if (darkMode === 'auto') {
-      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
+      if (resolveTheme(theme.current, prefersDark.current) === 'dark') {
         return oneDark;
       }
     }
@@ -427,16 +429,12 @@
   };
   const themeHandler: Extension = editorTheme.of(getEditorTheme());
 
-  // listen to theme change events
-  onMount(() => {
-    const unlisten = getCurrentWindow().onThemeChanged(() => {
-      if (editorView) {
-        editorView.dispatch({ effects: editorTheme.reconfigure(getEditorTheme()) });
-      }
-    });
-    return () => {
-      unlisten.then((fn) => fn());
-    };
+  // update the editor when the resolved application theme changes
+  $effect(() => {
+    const currentEditorTheme = getEditorTheme();
+    if (editorView) {
+      editorView.dispatch({ effects: editorTheme.reconfigure(currentEditorTheme) });
+    }
   });
 
   // create editor view

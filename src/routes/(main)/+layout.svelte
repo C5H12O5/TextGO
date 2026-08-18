@@ -7,6 +7,7 @@
   import { Moon, Sun } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { autoUpdate, theme } from '$lib/stores.svelte';
+  import { isSystemTheme } from '$lib/theme';
   import { invoke } from '@tauri-apps/api/core';
   import { listen } from '@tauri-apps/api/event';
   import { getCurrentWindow } from '@tauri-apps/api/window';
@@ -132,7 +133,7 @@
       </div>
       <div class="ml-auto flex items-center gap-2">
         <!-- themes -->
-        {#if theme.current !== 'system'}
+        {#if !isSystemTheme(theme.current)}
           <label class="swap swap-rotate opacity-50 transition-opacity hover:opacity-100">
             <input
               type="checkbox"
