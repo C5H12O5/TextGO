@@ -88,16 +88,16 @@
       />
     </fieldset>
   </Setting>
-  <Setting icon={ClockCounterClockwiseIcon} title={m.history_records()}>
+  <Setting icon={ClockCounterClockwiseIcon} title={m.history()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.history_records_retention()}</Label>
+      <Label>{m.history_limit()}</Label>
       <Select
         options={[
           { value: 0, label: m.history_none() },
-          { value: 3, label: m.history_recent_3() },
-          { value: 5, label: m.history_recent_5() },
-          { value: 10, label: m.history_recent_10() },
-          { value: 20, label: m.history_recent_20() }
+          { value: 3, label: m.history_limit_3() },
+          { value: 5, label: m.history_limit_5() },
+          { value: 10, label: m.history_limit_10() },
+          { value: 20, label: m.history_limit_20() }
         ]}
         bind:value={historySize.current}
         class="w-36 select-sm"

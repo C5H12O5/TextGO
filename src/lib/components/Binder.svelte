@@ -151,7 +151,7 @@
   // available cases
   const cases: Option[] = $derived.by(() => {
     // default
-    const options: Option[] = [{ value: '', label: m.skip() }];
+    const options: Option[] = [{ value: '', label: m.skip_recognition() }];
 
     // model
     if (models.current && models.current.length > 0) {

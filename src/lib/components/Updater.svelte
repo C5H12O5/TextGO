@@ -46,7 +46,7 @@
     } catch (error) {
       console.error(`Update check failed: ${error}`);
       failedFlag = true;
-      updateStatus = m.check_update_failed();
+      updateStatus = m.update_check_failed();
     } finally {
       updateChecking = false;
       if (latestFlag) {

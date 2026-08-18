@@ -119,7 +119,7 @@
 <ScriptModal bind:this={scriptCreator} scripts={scripts.current} />
 <ScriptModal bind:this={scriptUpdater} scripts={scripts.current} />
 
-<Modal icon={SlidersHorizontalIcon} title={m.script_options()} bind:this={scriptOptions}>
+<Modal icon={SlidersHorizontalIcon} title={m.script_execution_options()} bind:this={scriptOptions}>
   <form>
     <fieldset class="fieldset">
       <Label icon={NodeJS}>{m.nodejs_path()}</Label>

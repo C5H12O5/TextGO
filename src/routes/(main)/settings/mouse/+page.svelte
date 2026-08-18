@@ -16,7 +16,7 @@
 <div class="flex flex-col gap-2">
   <Setting icon={TextboxIcon} title={m.text_selection_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.force_get_selection_explain()} tipPlacement="duplex">{m.force_get_selection()}</Label>
+      <Label tip={m.clipboard_fallback_explain()} tipPlacement="duplex">{m.clipboard_fallback()}</Label>
       <Toggle bind:value={forceGetSelection.current} />
     </fieldset>
     <div class="divider my-0 opacity-60"></div>

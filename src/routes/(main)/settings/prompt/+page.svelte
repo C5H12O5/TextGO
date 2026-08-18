@@ -226,7 +226,7 @@
 <Prompt bind:this={promptCreator} prompts={prompts.current} />
 <Prompt bind:this={promptUpdater} prompts={prompts.current} />
 
-<Modal icon={SlidersHorizontalIcon} title={m.ai_options()} bind:this={promptOptions}>
+<Modal icon={SlidersHorizontalIcon} title={m.model_provider_options()} bind:this={promptOptions}>
   <form>
     <fieldset class="fieldset">
       <!-- Local LLM Providers -->

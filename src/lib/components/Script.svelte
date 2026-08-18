@@ -240,7 +240,7 @@ def process(data):
           } else {
             // confirm to change type
             confirm({
-              message: m.change_script_message(),
+              message: m.script_type_change_message(),
               oncancel: () => (target.value = scriptLang),
               onconfirm: onconfirm
             });
