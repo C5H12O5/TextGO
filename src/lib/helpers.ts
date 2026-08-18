@@ -169,7 +169,7 @@ export async function setupTray() {
     await invoke('setup_tray', {
       mainWindowText: m.tray_main_window(),
       shortcutsText: m.tray_shortcuts(),
-      historiesText: m.tray_histories(),
+      historyText: m.tray_history(),
       settingsText: m.tray_settings(),
       quitText: m.tray_quit()
     });

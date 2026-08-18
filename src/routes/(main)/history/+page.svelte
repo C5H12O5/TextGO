@@ -59,18 +59,20 @@
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1">
     <ClockCounterClockwiseIcon class="size-5 opacity-80" />
-    <span class="tracking-wider">{m.histories()}</span>
+    <span class="tracking-wider">{m.history()}</span>
   </div>
   <Button
     size="sm"
     icon={BroomIcon}
     iconWeight="duotone"
+    iconClass="opacity-80 size-5"
+    text={m.clear_history()}
     onclick={() => {
       if (entries.current.length === 0) {
         return;
       }
       confirm({
-        message: m.clear_histories_message(),
+        message: m.clear_history_message(),
         onconfirm: () => {
           entries.current = [];
         }

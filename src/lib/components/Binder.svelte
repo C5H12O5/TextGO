@@ -7,7 +7,7 @@
 
   // remember last choices for each shortcut
   type Binder = { caseId: string; actionId: string };
-  const histories = new SvelteMap<string, Binder>();
+  const lastChoices = new SvelteMap<string, Binder>();
 
   // dynamic font size based on text length
   const dynamicFontSize = (text: string) => {
@@ -106,11 +106,11 @@
       history = rule.history || false;
       clipboard = rule.clipboard || false;
     } else {
-      // load last choices from history
-      const history = histories.get(shortcut);
-      if (history) {
-        caseId = history.caseId;
-        actionId = history.actionId;
+      // load last choice
+      const lastChoice = lastChoices.get(shortcut);
+      if (lastChoice) {
+        caseId = lastChoice.caseId;
+        actionId = lastChoice.actionId;
       } else {
         caseId = '';
         actionId = 'copy';
@@ -349,8 +349,8 @@
         history: history,
         clipboard: clipboard
       });
-      // save history
-      histories.set(shortcut, { caseId, actionId });
+      // save last choice
+      lastChoices.set(shortcut, { caseId, actionId });
       alert(m.rule_added_success());
     } catch (error) {
       console.error(`Failed to bind rule: ${error}`);
@@ -388,8 +388,8 @@
     }
     // delete shortcut
     delete shortcuts.current[shortcut];
-    // delete history
-    histories.delete(shortcut);
+    // delete last choice
+    lastChoices.delete(shortcut);
   }
 </script>
 

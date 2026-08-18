@@ -147,10 +147,10 @@
             <Sun class="size-5 swap-on" />
           </label>
         {/if}
-        <!-- histories -->
+        <!-- history -->
         <button
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
-          onclick={() => goto(resolve('/histories'))}
+          onclick={() => goto(resolve('/history'))}
         >
           <ClockCounterClockwiseIcon class="size-5" />
         </button>

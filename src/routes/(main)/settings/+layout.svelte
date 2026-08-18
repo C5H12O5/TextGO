@@ -333,14 +333,14 @@
     <Button
       size="sm"
       icon={UploadIcon}
-      iconClass="opacity-80"
+      iconClass="opacity-80 size-5"
       text={m.export_all_settings()}
       onclick={() => handleExport()}
     />
     <Button
       size="sm"
       icon={DownloadIcon}
-      iconClass="opacity-80"
+      iconClass="opacity-80 size-5"
       text={m.import_all_settings()}
       onclick={() => handleImport()}
     />

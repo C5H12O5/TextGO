@@ -9,7 +9,7 @@ pub fn setup_tray(
     app: AppHandle,
     main_window_text: String,
     shortcuts_text: String,
-    histories_text: String,
+    history_text: String,
     settings_text: String,
     quit_text: String,
 ) -> Result<(), AppError> {
@@ -20,7 +20,7 @@ pub fn setup_tray(
             &MenuItem::with_id(&app, "main_window", main_window_text, true, None::<&str>)?,
             &PredefinedMenuItem::separator(&app)?,
             &MenuItem::with_id(&app, "shortcuts", shortcuts_text, true, None::<&str>)?,
-            &MenuItem::with_id(&app, "histories", histories_text, true, None::<&str>)?,
+            &MenuItem::with_id(&app, "history", history_text, true, None::<&str>)?,
             &MenuItem::with_id(&app, "settings", settings_text, true, Some("CmdOrCtrl+,"))?,
             // about
             &PredefinedMenuItem::separator(&app)?,
@@ -54,8 +54,8 @@ pub fn setup_tray(
                 "shortcuts" => {
                     crate::commands::navigate_to(app.clone(), "/shortcuts".to_string());
                 }
-                "histories" => {
-                    crate::commands::navigate_to(app.clone(), "/histories".to_string());
+                "history" => {
+                    crate::commands::navigate_to(app.clone(), "/history".to_string());
                 }
                 "settings" => {
                     crate::commands::navigate_to(app.clone(), "/settings".to_string());
