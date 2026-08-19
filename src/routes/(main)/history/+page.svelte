@@ -65,7 +65,7 @@
     size="sm"
     icon={BroomIcon}
     iconWeight="duotone"
-    iconClass="opacity-80 size-5"
+    iconClass="opacity-80"
     text={m.clear_history()}
     onclick={() => {
       if (entries.current.length === 0) {

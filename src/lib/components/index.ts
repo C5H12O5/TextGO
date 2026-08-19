@@ -18,6 +18,7 @@ export { default as Searcher } from './Searcher.svelte';
 export { default as Select } from './Select.svelte';
 export { default as Setting } from './Setting.svelte';
 export { default as Shortcut } from './Shortcut.svelte';
+export { default as ThemeEditor } from './ThemeEditor.svelte';
 export { default as Title } from './Title.svelte';
 export { default as Toggle } from './Toggle.svelte';
 export { default as Updater } from './Updater.svelte';

@@ -43,7 +43,7 @@
     },
     sm: {
       size: '1.6rem',
-      iconSize: '1.3rem',
+      iconSize: '1.25rem',
       textClass: 'text-sm'
     },
     md: {
@@ -85,7 +85,7 @@
 
 <button
   type="button"
-  class="btn relative truncate opacity-80 {subtleClass} {squareClass} {borderClass} {shadowClass} {_class}"
+  class="btn relative truncate rounded-sm opacity-80 {subtleClass} {squareClass} {borderClass} {shadowClass} {_class}"
   style:width={square ? preset.size : ''}
   style:height={preset.size}
   style:min-height={preset.size}

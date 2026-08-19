@@ -2,8 +2,8 @@
   import { dev } from '$app/environment';
   import Alert from '$lib/components/Alert.svelte';
   import Confirm from '$lib/components/Confirm.svelte';
-  import { theme } from '$lib/stores.svelte';
-  import { isSystemTheme, resolveTheme } from '$lib/theme';
+  import { customThemes, theme } from '$lib/stores.svelte';
+  import { buildRuntimeStyles, isSystemTheme, resolveTheme } from '$lib/theme';
   import { platform } from '@tauri-apps/plugin-os';
   import type { Snippet } from 'svelte';
   import { onMount } from 'svelte';
@@ -17,6 +17,21 @@
   import '../app.css';
 
   let { children }: { children: Snippet } = $props();
+
+  // runtime custom theme style element
+  let customThemeStyle: HTMLStyleElement | null = $state(null);
+
+  // apply custom theme styles to the current window
+  $effect(() => {
+    if (!customThemeStyle) {
+      return;
+    }
+    try {
+      customThemeStyle.textContent = buildRuntimeStyles(customThemes.current);
+    } catch {
+      customThemeStyle.textContent = '';
+    }
+  });
 
   // auto switch theme when system theme changes
   const prefersDark = new MediaQuery('(prefers-color-scheme: dark)');
@@ -45,6 +60,13 @@
   onMount(() => {
     const platformName = platform();
     document.documentElement.setAttribute('data-tauri-platform', platformName);
+  });
+
+  // create a style element for runtime custom themes
+  onMount(() => {
+    customThemeStyle = document.createElement('style');
+    document.head.appendChild(customThemeStyle);
+    return () => customThemeStyle?.remove();
   });
 </script>
 

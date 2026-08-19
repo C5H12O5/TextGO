@@ -668,7 +668,7 @@
           <!-- continue chat input -->
           {#if !conversationMode && replyBox}
             <div
-              class="fixed inset-x-0.5 top-8.5 bottom-0.75 z-50 flex items-end justify-center rounded-b-box bg-black/20"
+              class="fixed inset-x-0.5 top-8.5 bottom-0.75 z-50 flex items-end justify-center bg-black/20"
               transition:fade={{ duration: 150 }}
             >
               <label
@@ -685,14 +685,23 @@
                   onblur={() => setTimeout(() => (replyBox = false), 200)}
                   onkeydown={(event) => event.key === 'Enter' && !event.isComposing && reply()}
                 />
-                <Button size="sm" icon={ArrowCircleRightIcon} onclick={reply} disabled={!userMessage.trim()} />
+                <Button
+                  size="sm"
+                  class="border-0"
+                  icon={ArrowCircleRightIcon}
+                  onclick={reply}
+                  disabled={!userMessage.trim()}
+                />
               </label>
             </div>
           {/if}
           <!-- fixed composer in continuous chat mode -->
           {#if conversationMode}
             <div class="fixed inset-x-0.5 bottom-0.75 z-40 flex items-end justify-center">
-              <label class="input mx-4 mb-3 w-full rounded-box border bg-base-100/95 shadow-lg">
+              <label
+                class="input mx-4 mb-3 w-full rounded-box border bg-base-100/95 shadow-lg"
+                style="border-color: var(--color-border) !important"
+              >
                 <input
                   type="text"
                   class="grow"
@@ -704,6 +713,7 @@
                 />
                 <Button
                   size="sm"
+                  class="border-0"
                   icon={ArrowCircleRightIcon}
                   onclick={reply}
                   disabled={streaming || !userMessage.trim()}

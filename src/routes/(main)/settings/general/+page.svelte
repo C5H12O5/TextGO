@@ -3,6 +3,7 @@
   import Label from '$lib/components/Label.svelte';
   import Select from '$lib/components/Select.svelte';
   import Setting from '$lib/components/Setting.svelte';
+  import ThemeEditor from '$lib/components/ThemeEditor.svelte';
   import Toggle from '$lib/components/Toggle.svelte';
   import { setupTray } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
@@ -88,6 +89,8 @@
         class="w-36 select-sm"
       />
     </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <ThemeEditor />
   </Setting>
   <Setting icon={ClockCounterClockwiseIcon} title={m.history()}>
     <fieldset class="flex items-center justify-between gap-1">

@@ -105,7 +105,7 @@
             placeholder={m.bwlist_placeholder()}
           />
         </label>
-        <Button icon={MinusCircleIcon} size="sm" class="text-error" onclick={() => handleRemove(index)} />
+        <Button icon={MinusCircleIcon} size="md" class="text-error" onclick={() => handleRemove(index)} />
       </div>
     {/each}
     {#if list.length === 0}
