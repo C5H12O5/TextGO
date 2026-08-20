@@ -139,6 +139,35 @@ export class Manager {
   }
 
   /**
+   * Enable or disable a shortcut group.
+   *
+   * @param shortcut - shortcut string
+   * @param enabled - whether the shortcut should be enabled
+   */
+  async setEnabled(shortcut: string, enabled: boolean): Promise<void> {
+    try {
+      const s = shortcuts.current[shortcut];
+      if (!s) {
+        return;
+      }
+
+      if (!isMouseShortcut(shortcut) && s.rules.length > 0) {
+        const isRegistered = await invoke('is_shortcut_registered', { shortcut });
+        if (enabled && !isRegistered) {
+          await invoke('register_shortcut', { shortcut });
+        } else if (!enabled && isRegistered) {
+          await invoke('unregister_shortcut', { shortcut });
+        }
+      }
+
+      s.disabled = !enabled;
+    } catch (error) {
+      console.error(`Failed to update shortcut state: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
    * Register rule.
    *
    * @param rule - rule object
@@ -146,7 +175,8 @@ export class Manager {
   async register(rule: Rule): Promise<void> {
     try {
       const shortcut = rule.shortcut;
-      if (!isMouseShortcut(shortcut)) {
+      const s = shortcuts.current[shortcut];
+      if (!isMouseShortcut(shortcut) && !s?.disabled) {
         // check if backend shortcut is registered
         const isRegistered = await invoke('is_shortcut_registered', { shortcut });
         if (!isRegistered) {
@@ -155,7 +185,6 @@ export class Manager {
         }
       }
       // save rule to frontend registry
-      const s = shortcuts.current[shortcut];
       if (s && s.rules && !s.rules.find((r) => r.id === rule.id)) {
         s.rules.push(rule);
       }

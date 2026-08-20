@@ -13,6 +13,7 @@
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
+  import { manager } from '$lib/shortcut';
   import { blacklist, longPress, shortcuts } from '$lib/stores.svelte';
   import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
   import ArrowCircleRightIcon from 'phosphor-svelte/lib/ArrowCircleRightIcon';
@@ -270,8 +271,12 @@
           class="ml-auto {disabled ? 'text-emphasis' : 'text-inactive'}"
           iconClass={disabled ? '' : 'rotate-90'}
           text={disabled ? m.enable_shortcut() : m.disable_shortcut()}
-          onclick={() => {
-            shortcuts.current[shortcut].disabled = !shortcuts.current[shortcut].disabled;
+          onclick={async () => {
+            try {
+              await manager.setEnabled(shortcut, !!disabled);
+            } catch (error) {
+              console.error(`Failed to update shortcut state: ${error}`);
+            }
           }}
         />
         <Button
