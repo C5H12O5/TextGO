@@ -26,11 +26,11 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 
 ## ✨ Core Features
 
-- **Multiple Triggers**: Configure independent rules for hotkeys, double-click, shift-click, and drag-select.
+- **Multiple Triggers**: Hotkeys, double-click, shift-click, or drag-select, each with independent rule configurations.
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
-- **Customizable Icons**: Upload custom SVG icons to personalize the toolbar.
-- **Ready to Use**: Start quickly with built-in text types and processing actions.
-- **Highly Extensible**: Extend with regex, ML models, scripts, and local or cloud AI for recognition and processing.
+- **Customizable Appearance**: Use custom SVG toolbar icons and customize light and dark themes separately.
+- **Ready to Use**: A rich set of built-in text types and processing actions, ready to use with minimal configuration.
+- **Highly Extensible**: Extend with regex, ML models, scripts, or local/cloud AI for custom recognition and processing.
 
 | <img align="center" src="screenshots/new_rule.png" /> | <img align="center" src="screenshots/model_providers.png" /> | <img align="center" src="screenshots/update_script.png" /> |
 | ----------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -43,7 +43,7 @@ Download the installer for your platform from [**GitHub Releases**](https://gith
 
 ### Permissions
 
-TextGO requires the `Accessibility` permission on macOS to function properly.
+On macOS, TextGO needs the `Accessibility` permission to read selected text and simulate keyboard input.
 
 **Setup steps:**
 
@@ -52,7 +52,7 @@ TextGO requires the `Accessibility` permission on macOS to function properly.
 3. If TextGO is not listed, click the "+" button to add it manually
 
 > [!TIP]
-> The system prompts for authorization when the app is first used.
+> The system will automatically prompt for authorization when the app is used for the first time.
 
 ### Extensions
 
