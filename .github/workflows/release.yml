@@ -67,7 +67,7 @@ jobs:
                   "target": "$1"
                 }
               ],
-              "commit_template": "- #{{TITLE}} (by [@#{{AUTHOR}}](https://github.com/#{{AUTHOR}}))"
+              "commit_template": "- #{{TITLE}} (by @#{{AUTHOR}})"
             }
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
