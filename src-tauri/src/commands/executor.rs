@@ -21,10 +21,13 @@ pub async fn execute_javascript(
     // create JavaScript code wrapper
     let wrapped_code = format!(
         r#"
+const __emit = console.log.bind(console);
+console.log = console.error.bind(console);
 const data = {};
 {}
 const result = process(data);
-console.log(typeof result === 'string' ? result : JSON.stringify(result));
+const __text = typeof result === 'string' ? result : JSON.stringify(result);
+__emit(JSON.stringify(__text === undefined ? 'undefined' : __text));
         "#,
         data, code
     );
@@ -94,8 +97,7 @@ async fn execute_javascript_custom(
 
             let output = child.wait_with_output().await?;
             if output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                Ok(stdout.trim().to_string())
+                Ok(serde_json::from_slice(&output.stdout)?)
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 Err(format!("JavaScript execution failed:\n\n{}", stderr).into())
@@ -171,8 +173,7 @@ async fn execute_javascript_system(code: &str) -> Result<String, AppError> {
             Ok(child) => {
                 let output = child.wait_with_output().await?;
                 if output.status.success() {
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    return Ok(stdout.trim().to_string());
+                    return Ok(serde_json::from_slice(&output.stdout)?);
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     // if it's a command not found error, try the next command
@@ -202,10 +203,16 @@ pub async fn execute_python(
     let wrapped_code = format!(
         r#"
 import json
+import sys
+__write = sys.stdout.write
+__flush = sys.stdout.flush
+sys.stdout = sys.stderr
 data = {}
 {}
 result = process(data)
-print(result if isinstance(result, str) else json.dumps(result, ensure_ascii=False))
+__text = result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
+__write(json.dumps(__text, ensure_ascii=False))
+__flush()
         "#,
         data, code
     );
@@ -262,8 +269,7 @@ async fn execute_python_custom(program: &str, code: &str) -> Result<String, AppE
 
             let output = child.wait_with_output().await?;
             if output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                Ok(stdout.trim().to_string())
+                Ok(serde_json::from_slice(&output.stdout)?)
             } else {
                 let stderr = String::from_utf8_lossy(&output.stderr);
                 Err(format!("Python execution failed:\n\n{}", stderr).into())
@@ -357,8 +363,7 @@ async fn execute_python_system(code: &str) -> Result<String, AppError> {
             Ok(child) => {
                 let output = child.wait_with_output().await?;
                 if output.status.success() {
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    return Ok(stdout.trim().to_string());
+                    return Ok(serde_json::from_slice(&output.stdout)?);
                 } else {
                     let stderr = String::from_utf8_lossy(&output.stderr);
                     // if it's a command not found error, try the next command
@@ -491,5 +496,30 @@ if ($__jsonData) {{
             }
         }
         Err(e) => Err(format!("Failed to execute PowerShell script: {}", e).into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn external_script_runtimes_preserve_result_boundaries() {
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+        let expected = "  first\nlast\n";
+        let javascript = runtime.block_on(execute_javascript(
+            "function process(data) { console.log('debug'); return '  first\\nlast\\n'; }".into(),
+            "{}".into(),
+            Some("node".into()),
+            None,
+        ));
+        assert_eq!(javascript.unwrap(), expected);
+
+        let python = runtime.block_on(execute_python(
+            "def process(data):\n    print('debug')\n    return '  first\\nlast\\n'".into(),
+            "{}".into(),
+            Some("python3".into()),
+        ));
+        assert_eq!(python.unwrap(), expected);
     }
 }
