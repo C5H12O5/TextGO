@@ -141,7 +141,11 @@ def process(data):
 
   // install from external source
   export const install = (script: Script) => {
-    if (modal.isOpen()) {
+    if (
+      modal.isOpen() ||
+      (osType === 'windows' && script.lang === 'shell') ||
+      (osType !== 'windows' && script.lang === 'powershell')
+    ) {
       return;
     }
     fillForm(script);
