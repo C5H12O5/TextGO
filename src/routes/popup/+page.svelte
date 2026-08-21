@@ -669,6 +669,8 @@
           {#if !conversationMode && replyBox}
             <div
               class="fixed inset-x-0.5 top-8.5 bottom-0.75 z-50 flex items-end justify-center bg-black/20"
+              style:border-bottom-left-radius={cornerRadiusStyle}
+              style:border-bottom-right-radius={cornerRadiusStyle}
               transition:fade={{ duration: 150 }}
             >
               <label
