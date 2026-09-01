@@ -238,9 +238,9 @@
   import ArrowCircleRightIcon from 'phosphor-svelte/lib/ArrowCircleRightIcon';
   import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
   import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
+  import ArrowLineDownLeftIcon from 'phosphor-svelte/lib/ArrowLineDownLeftIcon';
   import ChatTeardropDotsIcon from 'phosphor-svelte/lib/ChatTeardropDotsIcon';
-  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
-  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
+  import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
   import PushPinIcon from 'phosphor-svelte/lib/PushPinIcon';
   import StopCircleIcon from 'phosphor-svelte/lib/StopCircleIcon';
   import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
@@ -655,13 +655,8 @@
   <div
     class="mt-1 -ml-1 flex h-6 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
   >
-    <Button icon={CopySimpleIcon} iconClass="opacity-60" text={m.copy()} onclick={() => copyResponse(content)} />
-    <Button
-      icon={PencilSimpleLineIcon}
-      iconClass="opacity-60"
-      text={m.replace_selection()}
-      onclick={() => replaceSelection(content)}
-    />
+    <Button icon={CopyIcon} iconClass="opacity-60" onclick={() => copyResponse(content)} />
+    <Button icon={ArrowLineDownLeftIcon} iconClass="opacity-60" onclick={() => replaceSelection(content)} />
     <time class="ml-1 text-xs text-base-content/40" datetime={new Date(completedAt).toISOString()}>
       {formatResponseTime(completedAt)}
     </time>
@@ -711,8 +706,8 @@
           {:else}
             <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
             <Button icon={TextIndentIcon} onclick={() => codeMirror?.format()} />
-            <Button icon={CopySimpleIcon} onclick={() => codeMirror?.copy()} />
-            <Button icon={PencilSimpleLineIcon} onclick={() => replaceSelection()} />
+            <Button icon={CopyIcon} onclick={() => codeMirror?.copy()} />
+            <Button icon={ArrowLineDownLeftIcon} onclick={() => replaceSelection()} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
           <Button icon={XIcon} onclick={() => currentWindow.hide()} />

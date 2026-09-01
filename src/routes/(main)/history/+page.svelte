@@ -14,7 +14,7 @@
   import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeftIcon';
   import BroomIcon from 'phosphor-svelte/lib/BroomIcon';
   import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
-  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
   import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
   import FileJsIcon from 'phosphor-svelte/lib/FileJsIcon';
   import FilePyIcon from 'phosphor-svelte/lib/FilePyIcon';
@@ -136,7 +136,7 @@
                   </span>
                 {/if}
               </div>
-              <Button icon={CopySimpleIcon} onclick={() => copy(entry.result)} />
+              <Button icon={CopyIcon} onclick={() => copy(entry.result)} />
             </div>
             <div class="h-14 overflow-auto overscroll-none rounded-box border bg-base-200 px-2 py-1 text-xs opacity-70">
               {entry.result}

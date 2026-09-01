@@ -233,7 +233,7 @@
   } from '@codemirror/view';
   import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
   import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
-  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
   import FrameCornersIcon from 'phosphor-svelte/lib/FrameCornersIcon';
   import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
   import { onMount } from 'svelte';
@@ -484,7 +484,7 @@
         <Button icon={TextIndentIcon} class="border-0 bg-transparent shadow-none" onclick={format} />
       {/if}
       {#if copier}
-        <Button icon={CopySimpleIcon} class="border-0 bg-transparent shadow-none" onclick={copy} />
+        <Button icon={CopyIcon} class="border-0 bg-transparent shadow-none" onclick={copy} />
       {/if}
     </span>
   </div>

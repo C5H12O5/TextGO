@@ -27,7 +27,7 @@ import {
 } from 'es-toolkit/string';
 import ArrowsClockwiseIcon from 'phosphor-svelte/lib/ArrowsClockwiseIcon';
 import BrowsersIcon from 'phosphor-svelte/lib/BrowsersIcon';
-import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
 import FolderOpenIcon from 'phosphor-svelte/lib/FolderOpenIcon';
 import FunctionIcon from 'phosphor-svelte/lib/FunctionIcon';
 import ScissorsIcon from 'phosphor-svelte/lib/ScissorsIcon';
@@ -78,7 +78,7 @@ export const DEFAULT_ACTIONS: Processor[] = [
   {
     value: 'copy',
     label: m.copy(),
-    icon: CopySimpleIcon,
+    icon: CopyIcon,
     process: (text: string) => {
       if (text) {
         invoke('set_clipboard_text', { text });
