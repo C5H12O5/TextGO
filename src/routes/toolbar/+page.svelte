@@ -49,6 +49,7 @@
 
   // current window
   const currentWindow = getCurrentWindow();
+  let toolbarZoomFactor = 1;
 
   // toolbar initialized state
   let initialized = $state(false);
@@ -325,10 +326,8 @@
 
     try {
       // measure natural content size instead of the viewport-constrained layout size
-      const dpr = window.devicePixelRatio;
-      const scale = await currentWindow.scaleFactor();
-      const width = ((container.scrollWidth + 10) * dpr) / scale;
-      const height = ((container.scrollHeight + 10) * dpr) / scale;
+      const width = (container.scrollWidth + 10) * toolbarZoomFactor;
+      const height = (container.scrollHeight + 10) * toolbarZoomFactor;
       // set window size with some padding
       await currentWindow.setSize(new LogicalSize(width, height));
       if (reposition) {
@@ -605,6 +604,9 @@
   }
 
   onMount(async () => {
+    const scale = await currentWindow.scaleFactor();
+    toolbarZoomFactor = window.devicePixelRatio / scale;
+
     // mark toolbar as initialized
     await invoke('mark_toolbar_initialized');
   });
