@@ -100,6 +100,8 @@
     content: string;
     /** Whether the content is a provider error excluded from future context. */
     error?: boolean;
+    /** Local timestamp recorded when an assistant response finishes. */
+    completedAt?: number;
   };
 
   /**
@@ -161,6 +163,30 @@
       return [...messages];
     }
     return messages.map((message, messageIndex) => (messageIndex === index ? update(message) : message));
+  }
+
+  /**
+   * Record when the latest successful assistant response finishes.
+   *
+   * @param messages - visible conversation messages
+   * @param completedAt - local completion timestamp
+   * @returns updated conversation messages
+   */
+  function completeLatestAssistant(messages: ConversationMessage[], completedAt = Date.now()): ConversationMessage[] {
+    return updateLatestAssistant(messages, (message) =>
+      message.content && !message.error && !message.completedAt ? { ...message, completedAt } : message
+    );
+  }
+
+  /**
+   * Format a response timestamp as local 24-hour time.
+   *
+   * @param timestamp - local response completion timestamp
+   * @returns time formatted as HH:mm
+   */
+  function formatResponseTime(timestamp: number): string {
+    const date = new Date(timestamp);
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
   }
 
   /**
@@ -423,6 +449,7 @@
       syncInitialResponse(latestAssistant?.content ?? '');
     } finally {
       if (requestId === chatRequestId) {
+        chatMessages = completeLatestAssistant(chatMessages);
         streaming = false;
         llmClient = null;
         await tick();
@@ -457,6 +484,7 @@
     chatRequestId += 1;
     llmClient?.abort();
     llmClient = null;
+    chatMessages = completeLatestAssistant(chatMessages);
     chatMessages = abortAssistantMessage(chatMessages);
     syncInitialResponse(latestAssistant?.content ?? '');
     streaming = false;
@@ -492,11 +520,25 @@
   }
 
   /**
-   * Replace the source application's selection with the current popup result.
+   * Copy an AI response to the system clipboard.
+   *
+   * @param text - raw Markdown response content
    */
-  async function replaceSelection() {
+  async function copyResponse(text: string) {
     try {
-      const text = result;
+      await navigator.clipboard.writeText(text);
+    } catch (error) {
+      console.error(`Failed to copy AI response: ${error}`);
+    }
+  }
+
+  /**
+   * Replace the source application's selection with the provided text or current popup result.
+   *
+   * @param text - replacement text
+   */
+  async function replaceSelection(text: string = result) {
+    try {
       const clipboard = entry?.copyOnPopup;
 
       await currentWindow.hide();
@@ -609,6 +651,23 @@
   });
 </script>
 
+{#snippet responseActions(content: string, completedAt: number)}
+  <div
+    class="mt-1 -ml-1 flex h-6 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
+  >
+    <Button icon={CopySimpleIcon} iconClass="opacity-60" text={m.copy()} onclick={() => copyResponse(content)} />
+    <Button
+      icon={PencilSimpleLineIcon}
+      iconClass="opacity-60"
+      text={m.replace_selection()}
+      onclick={() => replaceSelection(content)}
+    />
+    <time class="ml-1 text-xs text-base-content/40" datetime={new Date(completedAt).toISOString()}>
+      {formatResponseTime(completedAt)}
+    </time>
+  </div>
+{/snippet}
+
 {#key entry?.id}
   <main class="h-screen bg-transparent p-0.5 pb-0.75">
     <div class="flex h-full flex-col overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle}>
@@ -653,7 +712,7 @@
             <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
             <Button icon={TextIndentIcon} onclick={() => codeMirror?.format()} />
             <Button icon={CopySimpleIcon} onclick={() => codeMirror?.copy()} />
-            <Button icon={PencilSimpleLineIcon} onclick={replaceSelection} />
+            <Button icon={PencilSimpleLineIcon} onclick={() => replaceSelection()} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
           <Button icon={XIcon} onclick={() => currentWindow.hide()} />
@@ -686,15 +745,20 @@
                 {:else if streaming && index === chatMessages.length - 1 && !message.content}
                   <div class="loading loading-sm loading-dots opacity-70"></div>
                 {:else if message.content}
-                  <!-- svelte-ignore a11y_click_events_have_key_events -->
-                  <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div
-                    class="prose prose-sm max-w-none text-base-content/90"
-                    style:font-size={fontSizeStyle}
-                    onclick={handleLinkClick}
-                  >
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                    {@html marked(message.content + (streaming && index === chatMessages.length - 1 ? ' |' : ''))}
+                  <div class="group">
+                    <!-- svelte-ignore a11y_click_events_have_key_events -->
+                    <!-- svelte-ignore a11y_no_static_element_interactions -->
+                    <div
+                      class="prose prose-sm max-w-none text-base-content/90"
+                      style:font-size={fontSizeStyle}
+                      onclick={handleLinkClick}
+                    >
+                      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                      {@html marked(message.content + (streaming && index === chatMessages.length - 1 ? ' |' : ''))}
+                    </div>
+                    {#if message.completedAt}
+                      {@render responseActions(message.content, message.completedAt)}
+                    {/if}
                   </div>
                 {/if}
               {/each}
@@ -708,15 +772,20 @@
                   {latestAssistant.content}
                 </div>
               {:else if latestAssistant?.content}
-                <!-- svelte-ignore a11y_click_events_have_key_events -->
-                <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div
-                  class="prose prose-sm max-w-none text-base-content/90"
-                  style:font-size={fontSizeStyle}
-                  onclick={handleLinkClick}
-                >
-                  <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                  {@html marked(latestAssistant.content + (streaming ? ' |' : ''))}
+                <div class="group">
+                  <!-- svelte-ignore a11y_click_events_have_key_events -->
+                  <!-- svelte-ignore a11y_no_static_element_interactions -->
+                  <div
+                    class="prose prose-sm max-w-none text-base-content/90"
+                    style:font-size={fontSizeStyle}
+                    onclick={handleLinkClick}
+                  >
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+                    {@html marked(latestAssistant.content + (streaming ? ' |' : ''))}
+                  </div>
+                  {#if latestAssistant.completedAt}
+                    {@render responseActions(latestAssistant.content, latestAssistant.completedAt)}
+                  {/if}
                 </div>
               {/if}
             </div>
