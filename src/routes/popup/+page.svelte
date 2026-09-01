@@ -10,6 +10,88 @@
   import type { ChatMessage, LLMClient } from '$lib/llm';
   import type { Entry, WindowSize } from '$lib/types';
 
+  type ScrollContainer = Pick<HTMLElement, 'clientHeight' | 'scrollHeight' | 'scrollTop'>;
+  type FrameScheduler = (callback: FrameRequestCallback) => number;
+  type FrameCanceller = (frameId: number) => void;
+
+  /**
+   * Create a controller that keeps streamed content pinned to the bottom while respecting manual scrolling.
+   *
+   * Scroll requests are coalesced into one animation frame. The frame reads the latest container height so rapid
+   * content updates cannot leave the viewport targeting an outdated bottom position.
+   *
+   * @param scheduleFrame - schedule work for the next browser animation frame
+   * @param cancelFrame - cancel previously scheduled animation-frame work
+   * @returns controls for follow mode, scroll-position updates, and bottom-alignment requests
+   */
+  function createAutoScrollController(scheduleFrame: FrameScheduler, cancelFrame: FrameCanceller) {
+    let following = false;
+    let pendingFrame: number | null = null;
+    let latestContainer: ScrollContainer | null = null;
+    let lastScrollTop: number | null = null;
+
+    return {
+      /** Enable bottom-following for a new assistant response. */
+      start() {
+        following = true;
+        lastScrollTop = null;
+      },
+      /** Disable bottom-following and cancel any queued scroll. */
+      stop() {
+        following = false;
+        latestContainer = null;
+        lastScrollTop = null;
+        if (pendingFrame !== null) {
+          cancelFrame(pendingFrame);
+          pendingFrame = null;
+        }
+      },
+      /**
+       * Update follow mode from the current scroll position.
+       *
+       * Only an upward movement pauses following. Content growth can temporarily move the bottom away without a
+       * user scroll, so treating every bottom gap as manual input would incorrectly stop fast streamed responses.
+       * Returning within 10 pixels of the bottom restores following.
+       */
+      updateFromScroll(container: ScrollContainer) {
+        const currentScrollTop = container.scrollTop;
+        const isAtBottom = currentScrollTop + container.clientHeight >= container.scrollHeight - 10;
+        const isScrollingUp = lastScrollTop !== null && currentScrollTop < lastScrollTop;
+
+        if (isScrollingUp) {
+          following = false;
+        } else if (isAtBottom) {
+          following = true;
+        }
+        lastScrollTop = currentScrollTop;
+      },
+      /**
+       * Queue a scroll to the latest bottom position while follow mode is active.
+       *
+       * Repeated requests before the next frame reuse the pending frame and update its target container.
+       */
+      request(container: ScrollContainer) {
+        if (!following) {
+          return;
+        }
+        lastScrollTop ??= container.scrollTop;
+        latestContainer = container;
+        if (pendingFrame !== null) {
+          return;
+        }
+        pendingFrame = scheduleFrame(() => {
+          pendingFrame = null;
+          const target = latestContainer;
+          latestContainer = null;
+          if (following && target) {
+            target.scrollTop = target.scrollHeight;
+            lastScrollTop = target.scrollTop;
+          }
+        });
+      }
+    };
+  }
+
   /** Message displayed in the popup conversation. */
   type ConversationMessage = {
     /** Message author supported by the conversation UI. */
@@ -141,6 +223,7 @@
 
   // current window
   const currentWindow = getCurrentWindow();
+  const autoScrollController = createAutoScrollController(requestAnimationFrame, cancelAnimationFrame);
   let canPersistWindowSize = false;
 
   // popup corner radius style
@@ -200,9 +283,7 @@
   let streaming: boolean = $state(false);
 
   // auto scroll control
-  let autoScroll = $state(false);
   let scrollElement: HTMLElement | null = $state(null);
-  let scrollTimer: ReturnType<typeof setInterval> | null = $state(null);
 
   // chat messages history
   let chatMessages: ConversationMessage[] = $state([]);
@@ -273,7 +354,11 @@
     const requestId = ++chatRequestId;
     syncInitialResponse('');
     streaming = true;
-    startAutoScroll();
+    autoScrollController.start();
+    await tick();
+    if (scrollElement) {
+      autoScrollController.request(scrollElement);
+    }
 
     try {
       const { createLLMClient } = await import('$lib/llm');
@@ -314,6 +399,10 @@
           content: message.content + chunk
         }));
         syncInitialResponse(latestAssistant?.content ?? '');
+        await tick();
+        if (scrollElement) {
+          autoScrollController.request(scrollElement);
+        }
       }
     } catch (error) {
       if (requestId !== chatRequestId) {
@@ -332,9 +421,12 @@
       syncInitialResponse(latestAssistant?.content ?? '');
     } finally {
       if (requestId === chatRequestId) {
-        stopAutoScroll();
         streaming = false;
         llmClient = null;
+        await tick();
+        if (scrollElement) {
+          autoScrollController.request(scrollElement);
+        }
       }
     }
   }
@@ -356,45 +448,16 @@
    * Abort AI conversation.
    */
   function abort() {
+    autoScrollController.stop();
     if (!streaming) {
       return;
     }
     chatRequestId += 1;
-    stopAutoScroll();
     llmClient?.abort();
     llmClient = null;
     chatMessages = abortAssistantMessage(chatMessages);
     syncInitialResponse(latestAssistant?.content ?? '');
     streaming = false;
-  }
-
-  /**
-   * Start auto scroll.
-   */
-  function startAutoScroll() {
-    if (scrollTimer) {
-      clearInterval(scrollTimer);
-    }
-    autoScroll = true;
-    scrollTimer = setInterval(() => {
-      if (autoScroll && scrollElement) {
-        scrollElement.scrollTo({
-          top: scrollElement.scrollHeight,
-          behavior: 'smooth'
-        });
-      }
-    }, 100);
-  }
-
-  /**
-   * Stop auto scroll.
-   */
-  function stopAutoScroll() {
-    if (scrollTimer) {
-      clearInterval(scrollTimer);
-    }
-    autoScroll = false;
-    scrollTimer = null;
   }
 
   /**
@@ -405,19 +468,7 @@
   function handleScroll(event: Event) {
     if (streaming) {
       const target = event.target as HTMLElement;
-      if (autoScroll) {
-        // if user scrolls up, stop auto scroll
-        const isScrollingUp = target.scrollTop + target.clientHeight < target.scrollHeight - 10;
-        if (isScrollingUp) {
-          stopAutoScroll();
-        }
-      } else {
-        // if user scrolls to bottom, restore auto scroll
-        const isAtBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 10;
-        if (isAtBottom) {
-          startAutoScroll();
-        }
-      }
+      autoScrollController.updateFromScroll(target);
     }
   }
 
@@ -629,7 +680,7 @@
               {/each}
             </div>
           {:else}
-            <div class="px-4 pt-2 pb-10">
+            <div class="px-4 pt-2" class:pb-10={!streaming}>
               {#if streaming && !latestAssistant?.content}
                 <div class="loading loading-sm loading-dots opacity-70"></div>
               {:else if latestAssistant?.error}
