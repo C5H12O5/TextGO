@@ -807,6 +807,7 @@
               minHeight="100%"
               maxHeight="100%"
               panelClass="hidden"
+              editorClass="h-full"
               class="popup-result h-full rounded-none border-none"
               fontSize={fontSizeStyle}
             />
@@ -829,6 +830,7 @@
     }
 
     .popup-result .cm-editor {
+      height: 100%;
       background-color: transparent !important;
     }
 
