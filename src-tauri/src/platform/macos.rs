@@ -27,6 +27,9 @@ const AX_VALUE_TYPE_CF_RANGE: i32 = 4;
 const PID_CACHE_EXPIRE_SECS: u64 = 5;
 static PROCESSED_PIDS: Mutex<Option<HashMap<i32, Instant>>> = Mutex::new(None);
 
+/// Native identifier for the application that owned focus before the popup opened.
+pub type FocusTarget = i32;
+
 // NSPoint structure for macOS AppKit
 #[repr(C)]
 #[derive(Clone, Copy)]
@@ -119,6 +122,20 @@ unsafe fn objc_call_point(obj: *const c_void, sel: *const c_void) -> NSPoint {
 /// Invokes an Objective-C method that returns an i32.
 unsafe fn objc_call_i32(obj: *const c_void, sel: *const c_void) -> i32 {
     objc_call!(obj, sel, i32)
+}
+
+/// Invokes an Objective-C method with an i32 argument that returns a pointer.
+unsafe fn objc_call_ptr_i32(obj: *const c_void, sel: *const c_void, arg: i32) -> *const c_void {
+    type ObjCFn = unsafe extern "C" fn(*const c_void, *const c_void, i32) -> *const c_void;
+    let func: ObjCFn = std::mem::transmute(objc_msgSend as *const c_void);
+    func(obj, sel, arg)
+}
+
+/// Invokes an Objective-C method with a usize argument that returns an Objective-C BOOL.
+unsafe fn objc_call_bool_usize(obj: *const c_void, sel: *const c_void, arg: usize) -> bool {
+    type ObjCFn = unsafe extern "C" fn(*const c_void, *const c_void, usize) -> i8;
+    let func: ObjCFn = std::mem::transmute(objc_msgSend as *const c_void);
+    func(obj, sel, arg) != 0
 }
 
 /// Check if two NSPoint values are equal with floating point tolerance.
@@ -257,6 +274,50 @@ fn get_frontmost_app_pid() -> Option<i32> {
 
         Some(pid)
     }
+}
+
+/// Capture the application that currently owns focus.
+pub fn get_focus_target() -> Option<FocusTarget> {
+    get_frontmost_app_pid()
+}
+
+/// Activate the application that owned focus before the popup opened.
+pub fn activate_focus_target(target: FocusTarget) -> Result<(), AppError> {
+    unsafe {
+        let running_app_class = objc_getClass(c"NSRunningApplication".as_ptr());
+        if running_app_class.is_null() {
+            return Err("NSRunningApplication class not found".into());
+        }
+
+        let running_app_sel =
+            sel_registerName(c"runningApplicationWithProcessIdentifier:".as_ptr());
+        if running_app_sel.is_null() {
+            return Err("NSRunningApplication PID selector not found".into());
+        }
+
+        let running_app = objc_call_ptr_i32(running_app_class, running_app_sel, target);
+        if running_app.is_null() {
+            return Err("Popup source application is no longer running".into());
+        }
+
+        let activate_sel = sel_registerName(c"activateWithOptions:".as_ptr());
+        if activate_sel.is_null() {
+            return Err("NSRunningApplication activation selector not found".into());
+        }
+
+        // NSApplicationActivateIgnoringOtherApps
+        const ACTIVATE_IGNORING_OTHER_APPS: usize = 1 << 1;
+        if !objc_call_bool_usize(running_app, activate_sel, ACTIVATE_IGNORING_OTHER_APPS) {
+            return Err("Failed to activate popup source application".into());
+        }
+
+        Ok(())
+    }
+}
+
+/// Check whether the popup source application currently owns focus.
+pub fn is_focus_target_active(target: FocusTarget) -> bool {
+    get_frontmost_app_pid() == Some(target)
 }
 
 /// Enable AXAPI for special applications (Chrome/Chromium and Electron apps).

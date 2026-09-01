@@ -3,7 +3,9 @@ use crate::platform;
 use crate::{ENIGO, TOOLBAR_MENU_OPEN};
 use enigo::Mouse;
 use serde::{Deserialize, Serialize};
+use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{LazyLock, Mutex};
 use std::time::Duration;
 use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, Manager, Position, WebviewWindow};
 
@@ -25,9 +27,47 @@ const SAFE_AREA_BOTTOM: i32 = 80;
 // maximum wait time for window initialization
 const INITIALIZATION_TIMEOUT_MS: u64 = 5000;
 
+// maximum time to wait for the popup source application to regain focus
+const FOCUS_RESTORE_TIMEOUT_MS: u64 = 500;
+
+// interval between source focus checks
+const FOCUS_RESTORE_INTERVAL_MS: u64 = 10;
+
 // initialization flags for popup and toolbar windows
 static POPUP_INITIALIZED: AtomicBool = AtomicBool::new(false);
 static TOOLBAR_INITIALIZED: AtomicBool = AtomicBool::new(false);
+static POPUP_SOURCE_FOCUS: LazyLock<Mutex<Option<platform::FocusTarget>>> =
+    LazyLock::new(|| Mutex::new(None));
+
+/// Activate a focus target and wait until the operating system reports it as active.
+async fn restore_focus_with<T, Activate, IsActive, Sleep, SleepFuture>(
+    target: T,
+    activate: Activate,
+    is_active: IsActive,
+    sleep: Sleep,
+) -> Result<(), AppError>
+where
+    T: Copy,
+    Activate: FnOnce(T) -> Result<(), AppError>,
+    IsActive: Fn(T) -> bool,
+    Sleep: Fn(Duration) -> SleepFuture,
+    SleepFuture: Future<Output = ()>,
+{
+    activate(target)?;
+
+    let interval = Duration::from_millis(FOCUS_RESTORE_INTERVAL_MS);
+    let max_checks = FOCUS_RESTORE_TIMEOUT_MS / FOCUS_RESTORE_INTERVAL_MS;
+    for check in 0..=max_checks {
+        if is_active(target) {
+            return Ok(());
+        }
+        if check < max_checks {
+            sleep(interval).await;
+        }
+    }
+
+    Err("Failed to restore focus to popup source application".into())
+}
 
 /// Show main window.
 #[tauri::command]
@@ -77,6 +117,8 @@ pub fn set_toolbar_menu_open(open: bool) {
 /// Show popup window and position it near the cursor.
 #[tauri::command]
 pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
+    *POPUP_SOURCE_FOCUS.lock()? = platform::get_focus_target();
+
     if let Some(window) = app.get_webview_window("popup") {
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
@@ -102,6 +144,12 @@ pub fn show_popup_sameplace(
     payload: String,
     placement: WindowPlacement,
 ) -> Result<(), AppError> {
+    let mut source_focus = POPUP_SOURCE_FOCUS.lock()?;
+    if source_focus.is_none() {
+        *source_focus = platform::get_focus_target();
+    }
+    drop(source_focus);
+
     if let Some(window) = app.get_webview_window("popup") {
         // set window position with safe area constraints if screen info is provided
         let position = if let (Some(screen_size), Some(screen_position)) =
@@ -167,6 +215,8 @@ pub fn position_toolbar(app: AppHandle, mouse: Option<bool>) -> Result<(), AppEr
 /// Show toolbar window and position it near the cursor.
 #[tauri::command]
 pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Result<(), AppError> {
+    *POPUP_SOURCE_FOCUS.lock()? = platform::get_focus_target();
+
     if let Some(window) = app.get_webview_window("toolbar") {
         // position window near cursor
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
@@ -208,6 +258,23 @@ pub fn show_toolbar_regardless(app: AppHandle) -> Result<(), AppError> {
     }
 
     Ok(())
+}
+
+/// Restore focus to the application that opened the popup.
+#[tauri::command]
+pub async fn focus_popup_source() -> Result<(), AppError> {
+    let target = POPUP_SOURCE_FOCUS
+        .lock()?
+        .take()
+        .ok_or("Popup source focus target not found")?;
+
+    restore_focus_with(
+        target,
+        platform::activate_focus_target,
+        platform::is_focus_target_active,
+        tokio::time::sleep,
+    )
+    .await
 }
 
 /// Wait for window initialization and emit event.

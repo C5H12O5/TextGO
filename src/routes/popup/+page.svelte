@@ -214,6 +214,7 @@
   import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
   import ChatTeardropDotsIcon from 'phosphor-svelte/lib/ChatTeardropDotsIcon';
   import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
+  import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
   import PushPinIcon from 'phosphor-svelte/lib/PushPinIcon';
   import StopCircleIcon from 'phosphor-svelte/lib/StopCircleIcon';
   import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
@@ -259,6 +260,7 @@
 
   // shortcut trigger record
   let entry: Entry | null = $state(null);
+  let result = $state('');
 
   // determine if in prompt mode
   let promptMode: boolean = $derived.by(() => entry?.actionType === 'prompt');
@@ -489,6 +491,22 @@
     }
   }
 
+  /**
+   * Replace the source application's selection with the current popup result.
+   */
+  async function replaceSelection() {
+    try {
+      const text = result;
+      const clipboard = entry?.copyOnPopup;
+
+      await currentWindow.hide();
+      await invoke<void>('focus_popup_source');
+      await invoke<void>('enter_text', { text, clipboard });
+    } catch (error) {
+      console.error(`Failed to replace selected text: ${error}`);
+    }
+  }
+
   onMount(() => {
     let unlistenResize: (() => void) | undefined;
     let mounted = true;
@@ -546,6 +564,7 @@
     const setup = (data: Entry | null) => {
       abort();
       entry = data;
+      result = data?.result ?? '';
       codeMirror = null;
       // reset chat history
       chatMessages = [];
@@ -634,6 +653,7 @@
             <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
             <Button icon={TextIndentIcon} onclick={() => codeMirror?.format()} />
             <Button icon={CopySimpleIcon} onclick={() => codeMirror?.copy()} />
+            <Button icon={PencilSimpleLineIcon} onclick={replaceSelection} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
           <Button icon={XIcon} onclick={() => currentWindow.hide()} />
@@ -783,7 +803,7 @@
           {:then { default: Editor }}
             <Editor
               bind:this={codeMirror}
-              document={entry?.result}
+              bind:document={result}
               minHeight="100%"
               maxHeight="100%"
               panelClass="hidden"

@@ -2,7 +2,7 @@ use crate::error::AppError;
 use std::fs;
 use std::path::Path;
 use windows::core::{Interface, PWSTR};
-use windows::Win32::Foundation::MAX_PATH;
+use windows::Win32::Foundation::{HWND, MAX_PATH};
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
 };
@@ -17,9 +17,12 @@ use windows::Win32::UI::Accessibility::{
     UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetCursorInfo, GetForegroundWindow, GetWindowThreadProcessId, LoadCursorW, CURSORINFO,
-    CURSOR_SHOWING, IDC_IBEAM,
+    GetCursorInfo, GetForegroundWindow, GetWindowThreadProcessId, LoadCursorW, SetForegroundWindow,
+    CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
 };
+
+/// Native identifier for the window that owned focus before the popup opened.
+pub type FocusTarget = isize;
 
 // bounds validation constants
 const MIN_VALID_WIDTH: f64 = 1.0;
@@ -56,6 +59,30 @@ unsafe extern "system" {
 /// COM resource guard.
 struct ComGuard {
     initialized: bool,
+}
+
+/// Capture the window that currently owns focus.
+pub fn get_focus_target() -> Option<FocusTarget> {
+    unsafe {
+        let window = GetForegroundWindow();
+        (!window.is_invalid()).then_some(window.0 as isize)
+    }
+}
+
+/// Activate the window that owned focus before the popup opened.
+pub fn activate_focus_target(target: FocusTarget) -> Result<(), AppError> {
+    unsafe {
+        let window = HWND(target as *mut _);
+        if window.is_invalid() || !SetForegroundWindow(window).as_bool() {
+            return Err("Failed to activate popup source window".into());
+        }
+        Ok(())
+    }
+}
+
+/// Check whether the popup source window currently owns focus.
+pub fn is_focus_target_active(target: FocusTarget) -> bool {
+    unsafe { GetForegroundWindow().0 as isize == target }
 }
 
 impl ComGuard {

@@ -5,11 +5,13 @@ mod windows;
 
 #[cfg(target_os = "macos")]
 pub use macos::{
-    get_app_id, get_cursor_location, get_frontmost_app_id, get_frontmost_url, get_selection,
-    is_cursor_editable, is_ibeam_cursor, select_backward_chars,
+    activate_focus_target, get_app_id, get_cursor_location, get_focus_target, get_frontmost_app_id,
+    get_frontmost_url, get_selection, is_cursor_editable, is_focus_target_active, is_ibeam_cursor,
+    select_backward_chars, FocusTarget,
 };
 #[cfg(target_os = "windows")]
 pub use windows::{
-    get_app_id, get_cursor_location, get_frontmost_app_id, get_frontmost_url, get_selection,
-    is_cursor_editable, is_ibeam_cursor, select_backward_chars,
+    activate_focus_target, get_app_id, get_cursor_location, get_focus_target, get_frontmost_app_id,
+    get_frontmost_url, get_selection, is_cursor_editable, is_focus_target_active, is_ibeam_cursor,
+    select_backward_chars, FocusTarget,
 };

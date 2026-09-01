@@ -172,6 +172,7 @@ pub fn run() {
             set_toolbar_menu_open,
             show_popup,
             show_popup_sameplace,
+            focus_popup_source,
             position_toolbar,
             show_toolbar,
             show_toolbar_regardless,
