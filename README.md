@@ -30,7 +30,7 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
 - **Customizable Appearance**: Use custom SVG toolbar icons and customize light and dark themes separately.
 - **Ready to Use**: A rich set of built-in text types and processing actions, ready to use with minimal configuration.
-- **Highly Extensible**: Extend with regex, ML models, scripts, or local/cloud AI for custom recognition and processing.
+- **Highly Extensible**: Extend with regex, ML models, scripts, or local/cloud AI for recognition and processing.
 
 | <img align="center" src="screenshots/new_rule.png" /> | <img align="center" src="screenshots/model_providers.png" /> | <img align="center" src="screenshots/update_script.png" /> |
 | ----------------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------------- |
@@ -95,7 +95,7 @@ _Follow these steps:_
 
 <br>
 
-_TextGO is unsigned, so macOS binds Accessibility permission to its current binary. An update changes the binary identity and invalidates the permission, even if System Settings still shows it as enabled._
+TextGO is unsigned, so macOS binds Accessibility permission to its current binary. An update changes the binary identity and invalidates the permission, even if System Settings still shows it as enabled.
 
 _To restore permission:_
 
