@@ -1,6 +1,6 @@
 import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
-import { getLocale, locales } from '$lib/paraglide/runtime';
+import { getLocale, locales, type Locale } from '$lib/paraglide/runtime';
 import { invoke } from '@tauri-apps/api/core';
 import { type } from '@tauri-apps/plugin-os';
 import type { ActionReturn } from 'svelte/action';
@@ -164,15 +164,9 @@ export function tooltip(target: HTMLElement, props: Partial<Props>): ActionRetur
 /**
  * Setup tray menu language.
  */
-export async function setupTray() {
+export async function setupTray(locale: Locale = getLocale()) {
   try {
-    await invoke('setup_tray', {
-      mainWindowText: m.tray_main_window(),
-      shortcutsText: m.tray_shortcuts(),
-      historyText: m.tray_history(),
-      settingsText: m.tray_settings(),
-      quitText: m.tray_quit()
-    });
+    await invoke('set_tray_locale', { locale });
   } catch (error) {
     console.error(`Failed to setup tray menu language: ${error}`);
   }

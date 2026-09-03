@@ -70,8 +70,8 @@
         onchange={async (event) => {
           const target = event.currentTarget;
           locale = target.value as Locale;
+          await setupTray(locale);
           setLocale(locale);
-          await setupTray();
         }}
       />
     </fieldset>

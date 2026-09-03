@@ -202,7 +202,7 @@ pub fn run() {
             send_cut_keys,
             send_copy_keys,
             send_paste_keys,
-            setup_tray,
+            set_tray_locale,
             show_about,
             check_accessibility,
             open_accessibility,
@@ -237,14 +237,7 @@ fn setup_app(app: &mut App) -> Result<(), Box<dyn std::error::Error>> {
     });
 
     // setup system tray
-    setup_tray(
-        app_handle.clone(),
-        "Open TextGO".to_string(),
-        "Manage Shortcuts".to_string(),
-        "View History".to_string(),
-        "Settings...".to_string(),
-        "Quit".to_string(),
-    )?;
+    initialize_tray(&app_handle)?;
 
     // setup main window
     setup_window(
