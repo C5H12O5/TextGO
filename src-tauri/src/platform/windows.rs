@@ -20,9 +20,19 @@ use windows::Win32::UI::WindowsAndMessaging::{
     GetCursorInfo, GetForegroundWindow, GetWindowThreadProcessId, LoadCursorW, SetForegroundWindow,
     CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
 };
+use windows::UI::ViewManagement::UISettings;
 
 /// Native identifier for the window that owned focus before the popup opened.
 pub type FocusTarget = isize;
+
+/// Get the Windows accessibility text scale applied by WebView2.
+pub fn get_text_scale_factor() -> f64 {
+    UISettings::new()
+        .and_then(|settings| settings.TextScaleFactor())
+        .ok()
+        .filter(|scale| scale.is_finite() && *scale > 0.0)
+        .unwrap_or(1.0)
+}
 
 // bounds validation constants
 const MIN_VALID_WIDTH: f64 = 1.0;

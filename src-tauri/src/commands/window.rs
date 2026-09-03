@@ -108,6 +108,19 @@ pub fn mark_toolbar_initialized() {
     TOOLBAR_INITIALIZED.store(true, Ordering::Relaxed);
 }
 
+/// Get the stable content scale used to size the toolbar window.
+#[tauri::command]
+pub fn get_toolbar_zoom_factor() -> f64 {
+    #[cfg(target_os = "windows")]
+    {
+        platform::get_text_scale_factor()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        1.0
+    }
+}
+
 /// Set toolbar native menu open state.
 #[tauri::command]
 pub fn set_toolbar_menu_open(open: bool) {

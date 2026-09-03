@@ -169,6 +169,7 @@ pub fn run() {
             toggle_main_window,
             mark_popup_initialized,
             mark_toolbar_initialized,
+            get_toolbar_zoom_factor,
             set_toolbar_menu_open,
             show_popup,
             show_popup_sameplace,
