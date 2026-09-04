@@ -219,6 +219,9 @@
 <script lang="ts">
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
+  import Select from '$lib/components/Select.svelte';
+  import { renderPrompt } from '$lib/executor';
+  import { guessNaturalLanguage, NATURAL_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import {
     popupCornerRadius,
@@ -239,6 +242,7 @@
   import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
   import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
   import ArrowLineDownLeftIcon from 'phosphor-svelte/lib/ArrowLineDownLeftIcon';
+  import ArrowsLeftRightIcon from 'phosphor-svelte/lib/ArrowsLeftRightIcon';
   import ChatTeardropDotsIcon from 'phosphor-svelte/lib/ChatTeardropDotsIcon';
   import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
   import PushPinIcon from 'phosphor-svelte/lib/PushPinIcon';
@@ -319,6 +323,12 @@
   let conversationMode = $derived(chatMessages.filter((message) => message.role === 'user').length > 1);
   let canRegenerate = $derived(!!latestAssistant || chatMessages.at(-1)?.role === 'user');
 
+  // translation mode state
+  let translationText = $state('');
+  let sourceLanguage = $state('');
+  let targetLanguage = $state('');
+  let renderedTranslation = '';
+
   // reply box state
   let replyBox = $state(false);
   let userMessage = $state('');
@@ -355,6 +365,63 @@
   }
 
   /**
+   * Regenerate the initial translation after its text or language changes.
+   */
+  function regenerateTranslation() {
+    if (streaming || !entry?.translation) {
+      return;
+    }
+
+    const translationKey = JSON.stringify([translationText, sourceLanguage, targetLanguage]);
+    if (translationKey === renderedTranslation) {
+      return;
+    }
+
+    entry.selection = translationText;
+    renderedTranslation = translationKey;
+    if (!translationText.trim()) {
+      entry.result = '';
+      entry.systemPrompt = '';
+      chatMessages = [];
+      syncInitialResponse('');
+      return;
+    }
+
+    const sourceCode = sourceLanguage || guessNaturalLanguage(translationText);
+    const sourceValue =
+      NATURAL_CASES.find(({ value }) => value === sourceCode)?.promptValue || 'Unknown (infer from source text)';
+    const targetValue = NATURAL_CASES.find(({ value }) => value === targetLanguage)?.promptValue || '';
+
+    entry.result = renderPrompt(entry.translation.prompt, entry, sourceValue, targetValue);
+    entry.systemPrompt = renderPrompt(entry.translation.systemPrompt || '', entry, sourceValue, targetValue);
+    void chat(undefined, true);
+  }
+
+  /**
+   * Regenerate edited source text when focus leaves the translation controls.
+   *
+   * @param event - focus event raised when moving away from a translation control
+   */
+  function handleTranslationFocusOut(event: FocusEvent) {
+    const controls = event.currentTarget as HTMLElement;
+    if (event.relatedTarget instanceof Node && controls.contains(event.relatedTarget)) {
+      return;
+    }
+    regenerateTranslation();
+  }
+
+  /**
+   * Swap explicitly selected source and target languages.
+   */
+  function swapTranslationLanguages() {
+    if (!sourceLanguage) {
+      return;
+    }
+    [sourceLanguage, targetLanguage] = [targetLanguage, sourceLanguage];
+    regenerateTranslation();
+  }
+
+  /**
    * Start AI conversation.
    *
    * @param message - optional user message
@@ -362,7 +429,7 @@
    * @returns promise that resolves after the assistant request finishes
    */
   async function chat(message?: string, regenerate = false) {
-    if (streaming || !entry?.model || !entry?.provider) {
+    if (streaming || !entry?.model || !entry?.provider || (entry.translation && !entry.selection.trim())) {
       return;
     }
 
@@ -612,6 +679,10 @@
       chatMessages = [];
       replyBox = false;
       userMessage = '';
+      translationText = data?.selection ?? '';
+      sourceLanguage = '';
+      targetLanguage = data?.translation?.targetLanguage ?? '';
+      renderedTranslation = data?.translation ? JSON.stringify([translationText, sourceLanguage, targetLanguage]) : '';
     };
 
     // listen to window show/hide events
@@ -759,6 +830,37 @@
               {/each}
             </div>
           {:else}
+            {#if entry?.translation}
+              <fieldset class="space-y-2 px-3 py-3" disabled={streaming} onfocusout={handleTranslationFocusOut}>
+                <div class="flex items-center gap-1.5">
+                  <Select
+                    bind:value={sourceLanguage}
+                    options={[{ value: '', label: m.auto_detect() }, ...NATURAL_CASES]}
+                    onchange={regenerateTranslation}
+                    class="min-w-0 flex-1 shadow-sm select-sm"
+                  />
+                  <Button
+                    icon={ArrowsLeftRightIcon}
+                    text={m.swap_languages()}
+                    size="sm"
+                    disabled={!sourceLanguage}
+                    onclick={swapTranslationLanguages}
+                  />
+                  <Select
+                    bind:value={targetLanguage}
+                    options={NATURAL_CASES}
+                    onchange={regenerateTranslation}
+                    class="min-w-0 flex-1 shadow-sm select-sm"
+                  />
+                </div>
+                <textarea
+                  class="textarea w-full resize-none text-sm shadow-sm textarea-sm"
+                  rows="3"
+                  aria-label={m.selected_text()}
+                  spellcheck="false"
+                  bind:value={translationText}></textarea>
+              </fieldset>
+            {/if}
             <div class="px-4 pt-2" class:pb-10={!streaming}>
               {#if streaming && !latestAssistant?.content}
                 <div class="loading loading-sm loading-dots opacity-70"></div>

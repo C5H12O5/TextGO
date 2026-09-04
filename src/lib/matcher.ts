@@ -178,17 +178,17 @@ export const TEXT_CASES: Option[] = [
 /**
  * Natural language recognition options.
  */
-export const NATURAL_CASES: Option[] = [
-  { value: 'eng', label: m.lang_eng() },
-  { value: 'cmn', label: m.lang_cmn() },
-  { value: 'jpn', label: m.lang_jpn() },
-  { value: 'kor', label: m.lang_kor() },
-  { value: 'rus', label: m.lang_rus() },
-  { value: 'fra', label: m.lang_fra() },
-  { value: 'deu', label: m.lang_deu() },
-  { value: 'spa', label: m.lang_spa() },
-  { value: 'por', label: m.lang_por() },
-  { value: 'arb', label: m.lang_arb() }
+export const NATURAL_CASES = [
+  { value: 'eng', label: m.lang_eng(), promptValue: 'English (en)' },
+  { value: 'cmn', label: m.lang_cmn(), promptValue: 'Chinese (zh)' },
+  { value: 'jpn', label: m.lang_jpn(), promptValue: 'Japanese (ja)' },
+  { value: 'kor', label: m.lang_kor(), promptValue: 'Korean (ko)' },
+  { value: 'rus', label: m.lang_rus(), promptValue: 'Russian (ru)' },
+  { value: 'fra', label: m.lang_fra(), promptValue: 'French (fr)' },
+  { value: 'deu', label: m.lang_deu(), promptValue: 'German (de)' },
+  { value: 'spa', label: m.lang_spa(), promptValue: 'Spanish (es)' },
+  { value: 'por', label: m.lang_por(), promptValue: 'Portuguese (pt)' },
+  { value: 'arb', label: m.lang_arb(), promptValue: 'Arabic (ar)' }
 ].map((c) => ({ ...c, icon: TranslateIcon }));
 
 /**
@@ -611,4 +611,16 @@ export async function guessProgrammingLanguage(text: string, langs: string[]): P
     console.error(`Programming language detection failed: ${error}`);
     return null;
   }
+}
+
+/**
+ * Guess the natural language of the given text.
+ *
+ * @param text - text to analyze
+ * @returns the detected natural language code, or null if not confident
+ */
+export function guessNaturalLanguage(text: string): string | null {
+  const results = francAll(text, FRANC_OPTIONS);
+  const code = results[0]?.[0];
+  return code && findNaturalCase(code) && matchNaturalCase(code, results) ? code : null;
 }

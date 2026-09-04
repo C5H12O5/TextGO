@@ -1,9 +1,10 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
 import { evalAsync } from '$lib/evaluator';
 import { isMouseShortcut } from '$lib/helpers';
+import { guessNaturalLanguage, NATURAL_CASES } from '$lib/matcher';
 import { m } from '$lib/paraglide/messages';
 import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
-import type { Entry, Processor, Prompt, Rule, Script, WindowPlacement } from '$lib/types';
+import type { Entry, Processor, Rule, Script, WindowPlacement } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
 import { memoize } from 'es-toolkit/function';
@@ -329,12 +330,25 @@ const promptExecutor: Executor = async (rule, entry, placement) => {
   }
 
   console.debug(`Generating prompt: ${promptId}`);
-  const result = renderPrompt(prompt, entry);
+  let sourceLanguage = '';
+  let targetLanguage = '';
+  if (prompt.targetLanguage) {
+    const sourceCode = guessNaturalLanguage(entry.selection);
+    sourceLanguage =
+      NATURAL_CASES.find(({ value }) => value === sourceCode)?.promptValue || 'Unknown (infer from source text)';
+    targetLanguage = NATURAL_CASES.find(({ value }) => value === prompt.targetLanguage)?.promptValue || '';
+    entry.translation = {
+      prompt: prompt.prompt,
+      systemPrompt: prompt.systemPrompt,
+      targetLanguage: prompt.targetLanguage
+    };
+  }
+  const result = renderPrompt(prompt.prompt, entry, sourceLanguage, targetLanguage);
   // save history record
   entry.actionType = 'prompt';
   entry.actionLabel = promptId;
   entry.result = result;
-  entry.systemPrompt = prompt.systemPrompt;
+  entry.systemPrompt = renderPrompt(prompt.systemPrompt || '', entry, sourceLanguage, targetLanguage);
   entry.provider = prompt.provider;
   entry.model = prompt.model;
   entry.maxTokens = prompt.maxTokens;
@@ -521,17 +535,21 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
 /**
  * Render the input prompt and return the result.
  *
- * @param prompt - prompt object
+ * @param template - prompt template
  * @param entry - record object
+ * @param sourceLanguage - detected source language
+ * @param targetLanguage - selected target language
  * @returns rendering result
  */
-function renderPrompt(prompt: Prompt, entry: Entry): string {
-  let result = prompt.prompt || '';
+export function renderPrompt(template: string, entry: Entry, sourceLanguage = '', targetLanguage = ''): string {
+  let result = template;
 
   // use regular expression to replace template parameters
   result = result.replace(/\{\{clipboard\}\}/g, entry.clipboard);
   result = result.replace(/\{\{selection\}\}/g, entry.selection);
   result = result.replace(/\{\{datetime\}\}/g, entry.datetime);
+  result = result.replace(/\{\{sourceLanguage\}\}/g, sourceLanguage);
+  result = result.replace(/\{\{targetLanguage\}\}/g, targetLanguage);
 
   return result;
 }

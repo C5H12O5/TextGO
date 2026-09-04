@@ -410,7 +410,17 @@
   /**
    * Extension for enabling placeholder text.
    */
-  const placeholderHandler: Extension = $derived(_placeholder ? placeholder(_placeholder) : []);
+  const editorPlaceholder = new Compartment();
+  const getEditorPlaceholder = () => (_placeholder ? placeholder(_placeholder) : []);
+  const placeholderHandler: Extension = editorPlaceholder.of(getEditorPlaceholder());
+
+  // update the editor when placeholder text changes
+  $effect(() => {
+    const currentEditorPlaceholder = getEditorPlaceholder();
+    if (editorView) {
+      editorView.dispatch({ effects: editorPlaceholder.reconfigure(currentEditorPlaceholder) });
+    }
+  });
 
   /**
    * Extension for editor theme.

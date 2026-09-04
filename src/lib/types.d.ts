@@ -130,6 +130,18 @@ export type ChatOptions = {
 };
 
 /**
+ * Translation prompt data used to regenerate a popup response.
+ */
+export type TranslationPrompt = {
+  /** Original prompt template. */
+  prompt: string;
+  /** Original system prompt template. */
+  systemPrompt?: string;
+  /** Initial target language code used by franc. */
+  targetLanguage: string;
+};
+
+/**
  * Type of shortcut-triggered record.
  */
 export type Entry = {
@@ -161,6 +173,8 @@ export type Entry = {
   model?: string;
   /** Response content. */
   response?: string;
+  /** Translation prompt data. */
+  translation?: TranslationPrompt;
 } & ChatOptions;
 
 /**
@@ -263,6 +277,8 @@ export type Prompt = {
   model: string;
   /** Prompt content. */
   prompt: string;
+  /** Target language code used by franc. */
+  targetLanguage?: string;
 } & ChatOptions;
 
 /**

@@ -12,6 +12,10 @@ ${m.prompt_variables_tip()}
 {{selection}} - ${m.selected_text()}
 `.trimStart();
 
+  const TRANSLATION_PLACEHOLDER = `{{sourceLanguage}} - ${m.source_language()}
+{{targetLanguage}} - ${m.target_language()}
+`;
+
   // form schema
   const schema = buildFormSchema(({ text, number, range }) => ({
     name: text().maxlength(64),
@@ -38,6 +42,7 @@ ${m.prompt_variables_tip()}
   import Modal from '$lib/components/Modal.svelte';
   import Select from '$lib/components/Select.svelte';
   import { PROMPT_MARK } from '$lib/constants';
+  import { NATURAL_CASES } from '$lib/matcher';
   import { updateActionId } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
   import {
@@ -62,9 +67,12 @@ ${m.prompt_variables_tip()}
   let systemPrompt: string = $state('');
   let modelProvider: string = $state(DEFAULT_PROVIDER);
   let modelName: string = $state(DEFAULT_MODEL);
+  let translationMode: boolean = $state(false);
+  let targetLanguage: string | null = $state(null);
   let maxTokens: number | undefined = $state(undefined);
   let temperature: number | undefined = $state(DEFAULT_TEMPERATURE);
   let topP: number | undefined = $state(DEFAULT_TOP_P);
+  let promptPlaceholder = $derived(`${PROMPT_PLACEHOLDER}${translationMode ? TRANSLATION_PLACEHOLDER : ''}`);
 
   // fill form fields
   const fillForm = (prompt: Prompt) => {
@@ -74,6 +82,8 @@ ${m.prompt_variables_tip()}
     systemPrompt = prompt.systemPrompt || '';
     modelProvider = prompt.provider;
     modelName = prompt.model;
+    translationMode = Boolean(prompt.targetLanguage);
+    targetLanguage = prompt.targetLanguage || null;
     maxTokens = prompt.maxTokens;
     temperature = prompt.temperature;
     topP = prompt.topP;
@@ -121,6 +131,12 @@ ${m.prompt_variables_tip()}
       alert({ level: 'error', message: m.prompt_content_empty() });
       return;
     }
+    if (translationMode && !targetLanguage) {
+      alert({ level: 'error', message: m.target_language_required() });
+      const targetLanguageSelect = form.querySelector('.target-language');
+      (targetLanguageSelect as HTMLSelectElement | null)?.focus();
+      return;
+    }
 
     // start saving
     loading.start();
@@ -136,6 +152,7 @@ ${m.prompt_variables_tip()}
       prompt.systemPrompt = systemPrompt;
       prompt.provider = modelProvider;
       prompt.model = modelName;
+      prompt.targetLanguage = translationMode ? targetLanguage || undefined : undefined;
       prompt.maxTokens = maxTokens;
       prompt.temperature = temperature;
       prompt.topP = topP;
@@ -149,6 +166,7 @@ ${m.prompt_variables_tip()}
         systemPrompt: systemPrompt,
         provider: modelProvider,
         model: modelName,
+        targetLanguage: translationMode ? targetLanguage || undefined : undefined,
         maxTokens: maxTokens,
         temperature: temperature,
         topP: topP
@@ -160,6 +178,8 @@ ${m.prompt_variables_tip()}
       systemPrompt = '';
       modelProvider = DEFAULT_PROVIDER;
       modelName = DEFAULT_MODEL;
+      translationMode = false;
+      targetLanguage = null;
       maxTokens = undefined;
       temperature = DEFAULT_TEMPERATURE;
       topP = DEFAULT_TOP_P;
@@ -218,12 +238,20 @@ ${m.prompt_variables_tip()}
         </span>
       </div>
       <Label required tip={m.prompt_tip()}>{m.prompt()}</Label>
-      <CodeMirror
-        title={m.prompt()}
-        language={markdown()}
-        placeholder={PROMPT_PLACEHOLDER}
-        bind:document={promptText}
-      />
+      <div class="flex items-center gap-2">
+        <label class="label mr-2 min-h-8 shrink-0 cursor-pointer justify-start gap-2">
+          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={translationMode} />
+          <span>{m.translation_mode()}</span>
+        </label>
+        <Select
+          bind:value={targetLanguage}
+          options={NATURAL_CASES}
+          placeholder={m.target_language()}
+          disabled={!translationMode}
+          class="target-language min-w-0 grow select-sm"
+        />
+      </div>
+      <CodeMirror title={m.prompt()} language={markdown()} placeholder={promptPlaceholder} bind:document={promptText} />
       <div class="collapse-arrow collapse mt-2 overflow-hidden border">
         <input type="checkbox" class="peer" />
         <div class="collapse-title border-b-transparent transition-all duration-200 peer-checked:border-b">
