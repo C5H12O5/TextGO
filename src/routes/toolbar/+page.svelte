@@ -718,7 +718,9 @@
             title={action.label}
           >
             {#if showIcon && action.icon}
-              <Icon icon={action.icon} class="size-4.5 shrink-0" />
+              <span class="flex size-4.5 shrink-0 items-center justify-center">
+                <Icon icon={action.icon} class="size-4.5" />
+              </span>
             {/if}
             {#if showLabel}
               <span class="max-w-30 truncate text-xs font-[450]">{action.label}</span>
