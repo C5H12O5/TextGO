@@ -231,12 +231,12 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
     *POPUP_SOURCE_FOCUS.lock()? = platform::get_focus_target();
 
     if let Some(window) = app.get_webview_window("toolbar") {
-        // position window near cursor
+        // position before setup so native-menu actions also inherit the current placement
         position_window_near_cursor(&window, mouse.unwrap_or(false))?;
 
         // show window without focusing
         if !TOOLBAR_INITIALIZED.load(Ordering::Relaxed) {
-            show_toolbar_regardless(app.clone())?;
+            show_toolbar_regardless(app.clone(), None)?;
         }
 
         // wait for initialization and emit event
@@ -249,25 +249,37 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
 }
 
 /// Show toolbar window without focusing it.
+///
+/// When `only_if_hidden` is true, leave an already visible toolbar unchanged.
+/// Return an error if the window/panel is missing or a visibility operation fails.
 #[tauri::command]
-pub fn show_toolbar_regardless(app: AppHandle) -> Result<(), AppError> {
+pub fn show_toolbar_regardless(
+    app: AppHandle,
+    only_if_hidden: Option<bool>,
+) -> Result<(), AppError> {
+    let window = app
+        .get_webview_window("toolbar")
+        .ok_or("Toolbar window not found")?;
+    if only_if_hidden.unwrap_or(false) && window.is_visible()? {
+        return Ok(());
+    }
+
     #[cfg(target_os = "macos")]
     {
         use tauri_nspanel::ManagerExt;
 
-        if let Ok(panel) = app.get_webview_panel("toolbar") {
-            // bring to front without making key
-            panel.order_front_regardless();
-        }
+        let panel = app
+            .get_webview_panel("toolbar")
+            .map_err(|_| "Toolbar panel not found")?;
+        // bring to front without making key
+        panel.order_front_regardless();
     }
     #[cfg(not(target_os = "macos"))]
     {
-        if let Some(window) = app.get_webview_window("toolbar") {
-            window.show()?;
-            // refresh z-order to ensure toolbar stays on top
-            window.set_always_on_top(false)?;
-            window.set_always_on_top(true)?;
-        }
+        window.show()?;
+        // refresh z-order to ensure toolbar stays on top
+        window.set_always_on_top(false)?;
+        window.set_always_on_top(true)?;
     }
 
     Ok(())

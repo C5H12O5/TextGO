@@ -323,6 +323,7 @@
    *
    * @param mouse - whether to position near mouse cursor
    * @param reposition - whether to reposition the toolbar after resizing
+   * @returns a promise resolved after window updates; failures are logged
    */
   async function resizeToolbar(mouse: boolean, reposition: boolean) {
     await tick();
@@ -340,7 +341,7 @@
       }
       const width = Math.ceil((container.scrollWidth + 10) * toolbarZoomFactor);
       const height = Math.ceil((container.scrollHeight + 10) * toolbarZoomFactor);
-      // set window size with some padding
+      // keep separate IPC calls so native geometry updates can run between stages
       await currentWindow.setSize(new LogicalSize(width, height));
       if (reposition) {
         await invoke('position_toolbar', { mouse });
@@ -636,18 +637,19 @@
       pointerInside = false;
       clearAutoHideTimer();
       initialized = false;
-      setup(JSON.parse(event.payload)).then(async (showToolbar) => {
-        if (!showToolbar) {
-          await currentWindow.hide();
-          return;
-        }
-        // show window without focusing
-        const visible = await currentWindow.isVisible();
-        if (!visible) {
-          await invoke('show_toolbar_regardless');
-        }
-        autoHideReady = true;
-      });
+      setup(JSON.parse(event.payload))
+        .then(async (showToolbar) => {
+          if (!showToolbar) {
+            await currentWindow.hide();
+            return;
+          }
+          // still try showing after a resize/position failure, using the existing placement
+          await invoke('show_toolbar_regardless', { onlyIfHidden: true });
+          autoHideReady = true;
+        })
+        .catch((error) => {
+          console.error(`Failed to show toolbar: ${error}`);
+        });
     });
     const unlistenWindowHide = listen('hide-toolbar', () => {
       autoHideReady = false;
