@@ -62,8 +62,39 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   // get current window label
   const currentWindow = getCurrentWindow().label;
 
+  /**
+   * Read settings, normalizing legacy shortcut language cases only in memory.
+   *
+   * @returns loaded settings; rejects if the store cannot be read
+   */
+  const loadValue = async (): Promise<T | undefined> => {
+    const item = await settings.get<T>(key);
+    if (key === 'shortcuts' && item) {
+      const languageCodes: Record<string, string> = {
+        eng: 'en',
+        cmn: 'zh',
+        jpn: 'ja',
+        kor: 'ko',
+        rus: 'ru',
+        fra: 'fr',
+        deu: 'de',
+        spa: 'es',
+        por: 'pt',
+        arb: 'ar'
+      };
+      for (const shortcut of Object.values(item as Record<string, Shortcut>)) {
+        for (const rule of shortcut?.rules ?? []) {
+          if (rule && Object.hasOwn(languageCodes, rule.case)) {
+            rule.case = languageCodes[rule.case];
+          }
+        }
+      }
+    }
+    return item;
+  };
+
   // load data from store
-  const ready = settings.get<T>(key).then(async (item) => {
+  const ready = loadValue().then(async (item) => {
     if (item !== undefined) {
       state = options?.decrypt?.(item) ?? item;
       options?.onload?.(state);
@@ -102,7 +133,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   const reloadFromStore = debounce(() => {
     console.info(`[${currentWindow}] Detected external change for key "${key}", reloading from store.`);
     syncing = true;
-    settings.get<T>(key).then((item) => {
+    loadValue().then((item) => {
       if (item !== undefined) {
         state = options?.decrypt?.(item) ?? item;
         options?.onchange?.(state);

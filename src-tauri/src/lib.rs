@@ -197,6 +197,7 @@ pub fn run() {
             execute_javascript,
             execute_shell,
             execute_powershell,
+            detect_natural_language,
             enter_text,
             send_key,
             send_cut_keys,

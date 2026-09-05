@@ -1,4 +1,4 @@
-import { execute } from '$lib/executor';
+import { createExecutionGuard, execute } from '$lib/executor';
 import { shortcuts } from '$lib/stores.svelte';
 import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
@@ -77,10 +77,13 @@ export class Manager {
    *
    * @param shortcut - triggered shortcut string
    * @param selection - selected text
+   * @returns promise resolving after matching/execution; superseded selections are discarded
    */
   private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
     try {
+      const isCurrent = createExecutionGuard();
       await shortcuts.ready;
+      if (!isCurrent()) return;
 
       // handle long press shortcut
       if (LONG_PRESS_SHORTCUT === shortcut) {
@@ -99,15 +102,18 @@ export class Manager {
       const mouse = isMouseShortcut(shortcut);
       if (mouse && !selection.trim()) {
         selection = await invoke<string>('get_selection', { mouse: true });
+        if (!isCurrent()) return;
         if (!selection.trim()) {
           return;
         }
       }
 
       const { matchAll, matchOne } = await import('$lib/matcher');
+      if (!isCurrent()) return;
       if (s.mode === 'toolbar') {
         // find all matching rules
         const rules = await matchAll(selection, s.rules);
+        if (!isCurrent()) return;
         if (rules.length === 0) {
           console.warn('No matching rules found');
           return;
@@ -119,19 +125,25 @@ export class Manager {
         } else {
           // slight delay to ensure keyboard event has fully processed
           setTimeout(async () => {
-            await invoke('show_toolbar', { payload, mouse });
+            if (!isCurrent()) return;
+            try {
+              await invoke('show_toolbar', { payload, mouse });
+            } catch (error) {
+              console.error(`Failed to show toolbar: ${error}`);
+            }
           }, 100);
         }
       } else {
         // find first matching rule
         const rule = await matchOne(selection, s.rules);
+        if (!isCurrent()) return;
         if (rule === null) {
           console.warn('No matching rule found');
           return;
         }
         // execute action immediately
         rule.preview = false;
-        await execute(rule, selection);
+        await execute(rule, selection, undefined, isCurrent);
       }
     } catch (error) {
       console.error(`Failed to handle shortcut event: ${error}`);

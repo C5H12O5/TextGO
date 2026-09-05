@@ -4,7 +4,7 @@ import { isMouseShortcut } from '$lib/helpers';
 import { guessNaturalLanguage, NATURAL_CASES } from '$lib/matcher';
 import { m } from '$lib/paraglide/messages';
 import { denoPath, entries, historySize, nodePath, prompts, pythonPath, scripts, searchers } from '$lib/stores.svelte';
-import type { Entry, Processor, Rule, Script, WindowPlacement } from '$lib/types';
+import type { Entry, Processor, Rule, Script, TranslationPrompt, WindowPlacement } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { openPath, openUrl } from '@tauri-apps/plugin-opener';
 import { memoize } from 'es-toolkit/function';
@@ -38,7 +38,24 @@ import SelectionBackgroundIcon from 'phosphor-svelte/lib/SelectionBackgroundIcon
  * Executor function type.
  * Returns true if the action was handled, false otherwise.
  */
-type Executor = (rule: Rule, entry: Entry, placement?: WindowPlacement) => Promise<boolean | string>;
+type Executor = (
+  rule: Rule,
+  entry: Entry,
+  placement?: WindowPlacement,
+  isCurrent?: () => boolean
+) => Promise<boolean | string>;
+
+/**
+ * Start a request shared across windows, invalidating earlier shortcut matching and prompt detection.
+ *
+ * @returns synchronous check that becomes false when a newer request starts in any window
+ * @throws if shared browser storage is unavailable
+ */
+export function createExecutionGuard(): () => boolean {
+  const requestId = crypto.randomUUID();
+  localStorage.setItem('executionRequestId', requestId);
+  return () => localStorage.getItem('executionRequestId') === requestId;
+}
 
 /**
  * Script execution result type.
@@ -316,13 +333,21 @@ const scriptExecutor: Executor = async (rule, entry, placement) => {
 };
 
 /**
- * Prompt executor - generates AI prompts and shows popup window.
+ * Prompt executor - awaits language detection, then shows the popup if the request is still current.
+ *
+ * @param rule - action and history settings
+ * @param entry - record to populate with rendered prompts
+ * @param placement - optional popup window placement
+ * @param isCurrent - checks whether the triggering selection has been superseded
+ * @returns promise resolving to whether the prompt action was handled, including cancelled requests
  */
-const promptExecutor: Executor = async (rule, entry, placement) => {
+const promptExecutor: Executor = async (rule, entry, placement, isCurrent = () => true) => {
   if (!rule.action.startsWith(PROMPT_MARK)) {
     return false;
   }
 
+  await prompts.ready;
+  if (!isCurrent()) return true;
   const promptId = rule.action.substring(PROMPT_MARK.length);
   const prompt = prompts.current.find((p) => p.id === promptId);
   if (!prompt) {
@@ -330,25 +355,21 @@ const promptExecutor: Executor = async (rule, entry, placement) => {
   }
 
   console.debug(`Generating prompt: ${promptId}`);
-  let sourceLanguage = '';
-  let targetLanguage = '';
   if (prompt.targetLanguage) {
-    const sourceCode = guessNaturalLanguage(entry.selection);
-    sourceLanguage =
-      NATURAL_CASES.find(({ value }) => value === sourceCode)?.promptValue || 'Unknown (infer from source text)';
-    targetLanguage = NATURAL_CASES.find(({ value }) => value === prompt.targetLanguage)?.promptValue || '';
     entry.translation = {
       prompt: prompt.prompt,
       systemPrompt: prompt.systemPrompt,
       targetLanguage: prompt.targetLanguage
     };
+    Object.assign(entry, await renderTranslationPrompt(entry, entry.translation));
+  } else {
+    entry.result = renderPrompt(prompt.prompt, entry);
+    entry.systemPrompt = renderPrompt(prompt.systemPrompt || '', entry);
   }
-  const result = renderPrompt(prompt.prompt, entry, sourceLanguage, targetLanguage);
+  if (!isCurrent()) return true;
   // save history record
   entry.actionType = 'prompt';
   entry.actionLabel = promptId;
-  entry.result = result;
-  entry.systemPrompt = renderPrompt(prompt.systemPrompt || '', entry, sourceLanguage, targetLanguage);
   entry.provider = prompt.provider;
   entry.model = prompt.model;
   entry.maxTokens = prompt.maxTokens;
@@ -441,8 +462,15 @@ const EXECUTORS: Executor[] = [defaultExecutor, scriptExecutor, promptExecutor, 
  * @param rule - rule object
  * @param selection - selected text
  * @param placement - optional placement for popup window
+ * @param isCurrent - validity check from the triggering action; defaults to a new request except for background previews
+ * @returns promise resolving to preview text, or an empty string when handled or superseded
  */
-export async function execute(rule: Rule, selection: string, placement?: WindowPlacement): Promise<string> {
+export async function execute(
+  rule: Rule,
+  selection: string,
+  placement?: WindowPlacement,
+  isCurrent: () => boolean = rule.preview ? () => true : createExecutionGuard()
+): Promise<string> {
   const datetime = new Date().toISOString();
   const clipboard = await invoke<string>('get_clipboard_text');
 
@@ -458,12 +486,36 @@ export async function execute(rule: Rule, selection: string, placement?: WindowP
 
   // execute executors in chain until one succeeds
   for (const executor of EXECUTORS) {
-    const result = await executor(rule, entry, placement);
+    const result = await executor(rule, entry, placement, isCurrent);
     if (result) {
       return typeof result === 'string' ? result : '';
     }
   }
   return '';
+}
+
+/**
+ * Render translation templates asynchronously without mutating the entry.
+ *
+ * @param entry - snapshot of the source text and prompt variables
+ * @param translation - original templates and selected target language
+ * @param sourceLanguage - explicit source language; empty means detect with Lingua
+ * @returns rendered prompts, or empty prompts for blank source text; native errors use the unknown fallback
+ */
+export async function renderTranslationPrompt(
+  entry: Entry,
+  translation: TranslationPrompt,
+  sourceLanguage = ''
+): Promise<{ result: string; systemPrompt: string }> {
+  if (!entry.selection.trim()) return { result: '', systemPrompt: '' };
+  const sourceCode = sourceLanguage || (await guessNaturalLanguage(entry.selection));
+  const sourceValue =
+    NATURAL_CASES.find(({ value }) => value === sourceCode)?.promptValue || 'Unknown (infer from source text)';
+  const targetValue = NATURAL_CASES.find(({ value }) => value === translation.targetLanguage)?.promptValue || '';
+  return {
+    result: renderPrompt(translation.prompt, entry, sourceValue, targetValue),
+    systemPrompt: renderPrompt(translation.systemPrompt || '', entry, sourceValue, targetValue)
+  };
 }
 
 /**

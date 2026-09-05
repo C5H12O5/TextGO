@@ -220,8 +220,8 @@
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import Select from '$lib/components/Select.svelte';
-  import { renderPrompt } from '$lib/executor';
-  import { guessNaturalLanguage, NATURAL_CASES } from '$lib/matcher';
+  import { renderTranslationPrompt } from '$lib/executor';
+  import { NATURAL_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
   import {
     popupCornerRadius,
@@ -327,7 +327,15 @@
   let translationText = $state('');
   let sourceLanguage = $state('');
   let targetLanguage = $state('');
-  let renderedTranslation = '';
+  let renderedTranslation = $state('');
+  let translationRequestId = 0;
+  // Keep follow-ups on hold until the edited text and languages have been rendered.
+  let translationPending = $derived.by(
+    () =>
+      !!entry?.translation &&
+      !conversationMode &&
+      JSON.stringify([translationText, sourceLanguage, targetLanguage]) !== renderedTranslation
+  );
 
   // reply box state
   let replyBox = $state(false);
@@ -366,9 +374,12 @@
 
   /**
    * Regenerate the initial translation after its text or language changes.
+   *
+   * @returns promise resolving after detection and translation; stale snapshots are discarded
    */
-  function regenerateTranslation() {
-    if (streaming || !entry?.translation) {
+  async function regenerateTranslation(): Promise<void> {
+    const requestId = ++translationRequestId;
+    if (streaming || conversationMode || !entry?.translation || !targetLanguage) {
       return;
     }
 
@@ -377,9 +388,10 @@
       return;
     }
 
-    entry.selection = translationText;
-    renderedTranslation = translationKey;
+    const selection = translationText;
     if (!translationText.trim()) {
+      entry.selection = selection;
+      renderedTranslation = translationKey;
       entry.result = '';
       entry.systemPrompt = '';
       chatMessages = [];
@@ -387,18 +399,22 @@
       return;
     }
 
-    const sourceCode = sourceLanguage || guessNaturalLanguage(translationText);
-    const sourceValue =
-      NATURAL_CASES.find(({ value }) => value === sourceCode)?.promptValue || 'Unknown (infer from source text)';
-    const targetValue = NATURAL_CASES.find(({ value }) => value === targetLanguage)?.promptValue || '';
+    const rendered = await renderTranslationPrompt(
+      { ...entry, selection },
+      { ...entry.translation, targetLanguage },
+      sourceLanguage
+    );
+    // Native focus loss can hide the window without emitting hide-popup.
+    const visible = await currentWindow.isVisible().catch(() => false);
+    if (!visible || requestId !== translationRequestId) return;
 
-    entry.result = renderPrompt(entry.translation.prompt, entry, sourceValue, targetValue);
-    entry.systemPrompt = renderPrompt(entry.translation.systemPrompt || '', entry, sourceValue, targetValue);
-    void chat(undefined, true);
+    Object.assign(entry, rendered, { selection });
+    renderedTranslation = translationKey;
+    await chat(undefined, true);
   }
 
   /**
-   * Regenerate edited source text when focus leaves the translation controls.
+   * Start asynchronous regeneration when focus leaves the translation controls.
    *
    * @param event - focus event raised when moving away from a translation control
    */
@@ -407,28 +423,32 @@
     if (event.relatedTarget instanceof Node && controls.contains(event.relatedTarget)) {
       return;
     }
-    regenerateTranslation();
+    void regenerateTranslation();
   }
 
   /**
-   * Swap explicitly selected source and target languages.
+   * Swap explicitly selected source and target languages, then regenerate asynchronously.
    */
   function swapTranslationLanguages() {
     if (!sourceLanguage) {
       return;
     }
     [sourceLanguage, targetLanguage] = [targetLanguage, sourceLanguage];
-    regenerateTranslation();
+    void regenerateTranslation();
   }
 
   /**
    * Start AI conversation.
    *
-   * @param message - optional user message
+   * @param message - optional user message; follow-ups require a current initial translation
    * @param regenerate - whether to regenerate an existing assistant turn
    * @returns promise that resolves after the assistant request finishes
    */
-  async function chat(message?: string, regenerate = false) {
+  async function chat(message?: string, regenerate = false): Promise<void> {
+    if (translationPending) {
+      if (message === undefined) await regenerateTranslation();
+      return;
+    }
     if (streaming || !entry?.model || !entry?.provider || (entry.translation && !entry.selection.trim())) {
       return;
     }
@@ -447,6 +467,7 @@
     }
 
     const requestId = ++chatRequestId;
+    translationRequestId += 1;
     syncInitialResponse('');
     streaming = true;
     autoScrollController.start();
@@ -528,11 +549,12 @@
   }
 
   /**
-   * Continue AI conversation.
+   * Continue AI conversation asynchronously when translation and streaming are complete.
+   * Keep the reply draft intact while either is pending.
    */
   function reply() {
     const message = userMessage.trim();
-    if (!message) {
+    if (!message || streaming || translationPending) {
       return;
     }
     replyBox = false;
@@ -541,9 +563,10 @@
   }
 
   /**
-   * Abort AI conversation.
+   * Abort AI conversation and invalidate any pending language detection.
    */
   function abort() {
+    translationRequestId += 1;
     autoScrollController.stop();
     if (!streaming) {
       return;
@@ -781,7 +804,13 @@
             <Button icon={ArrowLineDownLeftIcon} onclick={() => replaceSelection()} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
-          <Button icon={XIcon} onclick={() => currentWindow.hide()} />
+          <Button
+            icon={XIcon}
+            onclick={() => {
+              translationRequestId += 1;
+              currentWindow.hide();
+            }}
+          />
         </div>
       </div>
       <!-- popup window body -->
@@ -858,6 +887,7 @@
                   rows="3"
                   aria-label={m.selected_text()}
                   spellcheck="false"
+                  oninput={() => (translationRequestId += 1)}
                   bind:value={translationText}></textarea>
               </fieldset>
             {/if}
@@ -929,7 +959,7 @@
                   class="border-0"
                   icon={ArrowCircleRightIcon}
                   onclick={reply}
-                  disabled={!userMessage.trim()}
+                  disabled={streaming || translationPending || !userMessage.trim()}
                 />
               </label>
             </div>

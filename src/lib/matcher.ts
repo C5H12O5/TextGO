@@ -4,7 +4,7 @@ import { m } from '$lib/paraglide/messages';
 import { models, regexps } from '$lib/stores.svelte';
 import type { Model, Option, Rule } from '$lib/types';
 import { memoize } from 'es-toolkit/function';
-import { francAll, type TrigramTuple } from 'franc-min';
+import { invoke } from '@tauri-apps/api/core';
 import CalendarDotsIcon from 'phosphor-svelte/lib/CalendarDotsIcon';
 import ClockIcon from 'phosphor-svelte/lib/ClockIcon';
 import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
@@ -28,8 +28,8 @@ interface MatcherContext {
   text: string;
   /** Rule to match against */
   rule: Rule;
-  /** Natural language detection results */
-  naturalLangs: TrigramTuple[] | null;
+  /** ISO 639-1 result; undefined until detected, null when unknown. */
+  naturalLanguage: string | null | undefined;
   /** Programming language detection results */
   programmingLangs: ProgrammingLanguageResult[] | null;
 }
@@ -179,16 +179,16 @@ export const TEXT_CASES: Option[] = [
  * Natural language recognition options.
  */
 export const NATURAL_CASES = [
-  { value: 'eng', label: m.lang_eng(), promptValue: 'English (en)' },
-  { value: 'cmn', label: m.lang_cmn(), promptValue: 'Chinese (zh)' },
-  { value: 'jpn', label: m.lang_jpn(), promptValue: 'Japanese (ja)' },
-  { value: 'kor', label: m.lang_kor(), promptValue: 'Korean (ko)' },
-  { value: 'rus', label: m.lang_rus(), promptValue: 'Russian (ru)' },
-  { value: 'fra', label: m.lang_fra(), promptValue: 'French (fr)' },
-  { value: 'deu', label: m.lang_deu(), promptValue: 'German (de)' },
-  { value: 'spa', label: m.lang_spa(), promptValue: 'Spanish (es)' },
-  { value: 'por', label: m.lang_por(), promptValue: 'Portuguese (pt)' },
-  { value: 'arb', label: m.lang_arb(), promptValue: 'Arabic (ar)' }
+  { value: 'en', label: m.lang_en(), promptValue: 'English (en)' },
+  { value: 'zh', label: m.lang_zh(), promptValue: 'Chinese (zh)' },
+  { value: 'ja', label: m.lang_ja(), promptValue: 'Japanese (ja)' },
+  { value: 'ko', label: m.lang_ko(), promptValue: 'Korean (ko)' },
+  { value: 'ru', label: m.lang_ru(), promptValue: 'Russian (ru)' },
+  { value: 'fr', label: m.lang_fr(), promptValue: 'French (fr)' },
+  { value: 'de', label: m.lang_de(), promptValue: 'German (de)' },
+  { value: 'es', label: m.lang_es(), promptValue: 'Spanish (es)' },
+  { value: 'pt', label: m.lang_pt(), promptValue: 'Portuguese (pt)' },
+  { value: 'ar', label: m.lang_ar(), promptValue: 'Arabic (ar)' }
 ].map((c) => ({ ...c, icon: TranslateIcon }));
 
 /**
@@ -251,9 +251,6 @@ export const PROGRAMMING_CASES: Option[] = [
   { value: 'yaml', label: 'YAML' }
 ].map((c) => ({ ...c, icon: CodeIcon }));
 
-// natural language detection options for franc
-const FRANC_OPTIONS = { minLength: 2, only: NATURAL_CASES.map((c) => c.value as string) };
-
 // minimum expected confidence
 const MIN_CONFIDENCE = 0.2;
 
@@ -268,11 +265,24 @@ const findBuiltinCase = memoize((_case: string) => [...GENERAL_CASES, ...TEXT_CA
 const findNaturalCase = memoize((_case: string) => NATURAL_CASES.find((c) => c.value === _case));
 const findProgrammingCase = memoize((_case: string) => PROGRAMMING_CASES.find((c) => c.value === _case));
 
+/**
+ * Lazy-load the programming language detector and analyze text asynchronously.
+ *
+ * @param text - source text to analyze
+ * @returns promise resolving to language candidates and confidence scores; rejects if loading or detection fails
+ */
 async function detectProgrammingLanguages(text: string): Promise<ProgrammingLanguageResult[]> {
   const detector = await import('$lib/detector');
   return await detector.detectProgrammingLanguages(text);
 }
 
+/**
+ * Lazy-load the custom classifier and predict asynchronously. Module loading errors reject the promise.
+ *
+ * @param modelId - ID of the custom model to load or reuse
+ * @param text - text to classify
+ * @returns promise resolving to the positive-class probability, or null if the model is unavailable or prediction fails
+ */
 async function predictModel(modelId: string, text: string): Promise<number | null> {
   const classifier = await import('$lib/classifier');
   return await classifier.predict(modelId, text);
@@ -306,27 +316,19 @@ const builtinMatcher: Matcher = async (context) => {
 };
 
 /**
- * Natural language matcher - detects natural languages using franc (https://github.com/wooorm/franc).
+ * Natural language matcher - awaits Lingua once per text, including unknown results.
+ *
+ * @param context - current rule and shared detection result
+ * @returns promise resolving to the matching rule, or null for a different/unknown language
  */
 const naturalMatcher: Matcher = async (context) => {
-  if (!context.text) {
-    return null;
-  }
-
   const natural = findNaturalCase(context.rule.case);
-  if (natural) {
-    try {
-      // lazy load natural language detection results
-      if (context.naturalLangs === null) {
-        context.naturalLangs = francAll(context.text, FRANC_OPTIONS);
-        console.debug(`Natural language detection result: ${JSON.stringify(context.naturalLangs)}`);
-      }
-      if (matchNaturalCase(context.rule.case, context.naturalLangs)) {
-        console.debug(`Natural language detected: ${natural.label}`);
-        return { ...context.rule, caseLabel: natural.label };
-      }
-    } catch (error) {
-      console.error(`Natural language detection failed: ${error}`);
+  if (natural && context.text.trim()) {
+    if (context.naturalLanguage === undefined) {
+      context.naturalLanguage = await guessNaturalLanguage(context.text);
+    }
+    if (context.rule.case === context.naturalLanguage) {
+      return { ...context.rule, caseLabel: natural.label };
     }
   }
   return null;
@@ -436,7 +438,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
   const matchedActions: Set<string> = new Set();
 
   // shared context for lazy-loaded results
-  let naturalLangs: TrigramTuple[] | null = null;
+  let naturalLanguage: string | null | undefined;
   let programmingLangs: ProgrammingLanguageResult[] | null = null;
 
   // iterate through all rules
@@ -447,7 +449,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
     }
 
     // create context for this rule
-    const context: MatcherContext = { text, rule, naturalLangs, programmingLangs };
+    const context: MatcherContext = { text, rule, naturalLanguage, programmingLangs };
 
     // execute matchers in chain until one succeeds
     let matched: Rule | null = null;
@@ -457,7 +459,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
     }
 
     // update shared context with lazy-loaded results
-    naturalLangs = context.naturalLangs;
+    naturalLanguage = context.naturalLanguage;
     programmingLangs = context.programmingLangs;
 
     // collect matched rule or return immediately
@@ -534,41 +536,6 @@ function matchProgrammingCase(targetId: string, results: ProgrammingLanguageResu
 }
 
 /**
- * Determine if the natural language detection result matches the target language.
- * Uses similar strategy as programming language detection.
- *
- * @param targetCode - target language code (e.g., 'cmn', 'eng')
- * @param results - franc detection results (array of [code, confidence] tuples)
- * @returns whether it matches the target language
- */
-function matchNaturalCase(targetCode: string, results: TrigramTuple[]): boolean {
-  if (!results || results.length === 0) {
-    return false;
-  }
-  // get the position and confidence of target language in detection results
-  const targetIndex = results.findIndex(([code]) => code === targetCode);
-  if (targetIndex === -1) {
-    // target language is not in the results
-    return false;
-  }
-  const targetConfidence = results[targetIndex][1];
-
-  // strategy 1: judge if the confidence of target language meets the threshold
-  const threshold = INITIAL_THRESHOLD + 0.1 * targetIndex;
-  if (targetConfidence > threshold) {
-    return true;
-  }
-
-  // strategy 2: judge if the confidence difference from adjacent positions meets the threshold
-  if (targetConfidence <= MIN_CONFIDENCE || targetIndex >= 3) {
-    // confidence is too low or ranking is too low
-    return false;
-  }
-  const nextConfidence = results[targetIndex + 1]?.[1] ?? 0;
-  return targetConfidence - nextConfidence > RELATIVE_THRESHOLD;
-}
-
-/**
  * Determine if the selected text matches the custom model.
  *
  * @param model - custom model
@@ -614,13 +581,19 @@ export async function guessProgrammingLanguage(text: string, langs: string[]): P
 }
 
 /**
- * Guess the natural language of the given text.
+ * Detect natural language asynchronously with the shared Rust Lingua detector.
+ * Lingua applies its relative-distance threshold; no frontend confidence filter is added.
  *
- * @param text - text to analyze
- * @returns the detected natural language code, or null if not confident
+ * @param text - text to analyze; blank input skips the native call
+ * @returns ISO 639-1 code, or null for unknown, unsupported results or native errors
  */
-export function guessNaturalLanguage(text: string): string | null {
-  const results = francAll(text, FRANC_OPTIONS);
-  const code = results[0]?.[0];
-  return code && findNaturalCase(code) && matchNaturalCase(code, results) ? code : null;
+export async function guessNaturalLanguage(text: string): Promise<string | null> {
+  if (!text.trim()) return null;
+  try {
+    const code = await invoke<string | null>('detect_natural_language', { text });
+    return code ? (findNaturalCase(code)?.value ?? null) : null;
+  } catch (error) {
+    console.error(`Natural language detection failed: ${error}`);
+    return null;
+  }
 }

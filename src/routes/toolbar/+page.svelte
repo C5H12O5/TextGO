@@ -9,7 +9,14 @@
     TOOLBAR_CORNER_RADIUS,
     TOOLBAR_OPACITY
   } from '$lib/constants';
-  import { CONVERT_ACTIONS, DEFAULT_ACTIONS, execute, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
+  import {
+    CONVERT_ACTIONS,
+    createExecutionGuard,
+    DEFAULT_ACTIONS,
+    execute,
+    GENERAL_ACTIONS,
+    PROCESS_ACTIONS
+  } from '$lib/executor';
   import { resolvePhosphorIcon } from '$lib/phosphor';
   import {
     prompts,
@@ -567,14 +574,19 @@
    * Handle action click event.
    *
    * @param action - toolbar action
+   * @returns promise resolving after execution; pending translation is discarded if the selection changes
    */
   async function executeAction(action: Action) {
+    const requestId = selectionRequestId;
+    const selectedText = selection;
     try {
+      const isCurrent = createExecutionGuard();
       autoHideReady = false;
       clearAutoHideTimer();
 
       // get current window placement
       const placement = await windowPlacement();
+      if (!isCurrent() || requestId !== selectionRequestId) return;
       // hide the toolbar window
       await currentWindow.hide();
 
@@ -601,7 +613,7 @@
         }
       } else {
         // execute the action normally
-        await execute(action.rule, selection, placement);
+        await execute(action.rule, selectedText, placement, () => isCurrent() && requestId === selectionRequestId);
       }
     } catch (error) {
       console.error(`Failed to execute action: ${error}`);
@@ -613,9 +625,13 @@
     await invoke('mark_toolbar_initialized');
   });
 
+  // Invalidate pending prompt detection when a new toolbar selection arrives.
+  let selectionRequestId = 0;
+
   onMount(() => {
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-toolbar', (event) => {
+      selectionRequestId += 1;
       autoHideReady = false;
       pointerInside = false;
       clearAutoHideTimer();

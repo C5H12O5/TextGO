@@ -137,7 +137,7 @@ export type TranslationPrompt = {
   prompt: string;
   /** Original system prompt template. */
   systemPrompt?: string;
-  /** Initial target language code used by franc. */
+  /** Initial target language ISO 639-1 code. */
   targetLanguage: string;
 };
 
@@ -277,7 +277,7 @@ export type Prompt = {
   model: string;
   /** Prompt content. */
   prompt: string;
-  /** Target language code used by franc. */
+  /** Target language ISO 639-1 code. */
   targetLanguage?: string;
 } & ChatOptions;
 
