@@ -58,6 +58,10 @@ interface ModelCache {
  * key: model ID, value: model cache object
  */
 const MODEL_CACHE = new Map<string, ModelCache>();
+// share active reads only; saving or deleting an ID invalidates its older load
+const MODEL_LOADS = new Map<string, Promise<void>>();
+const MODEL_CACHE_MAX_AGE = 60 * 60 * 1000;
+let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
  * Text classifier based on synthetic negative samples.
@@ -91,8 +95,14 @@ export class Classifier {
     return classifier;
   }
 
-  // train single-class text classification model
-  async trainModel(positiveTrainingData: string[] | string) {
+  /**
+   * Train and save a single-class model, releasing temporary tensors and the training optimizer on every exit.
+   * A failed replacement leaves the previous cached model available.
+   *
+   * @param positiveTrainingData - positive samples as an array or newline-separated text
+   * @returns training history after saving succeeds; rejects on validation, training or storage failure
+   */
+  async trainModel(positiveTrainingData: string[] | string): Promise<tf.History> {
     console.debug('Preparing training data for single-class model...');
 
     // 0. validate and preprocess training data
@@ -101,18 +111,24 @@ export class Classifier {
       throw new Error('Training data format invalid or insufficient samples');
     }
 
+    let inputs: tf.Tensor2D | undefined;
+    let labels: tf.Tensor1D | undefined;
+    let trainedModel: tf.LayersModel | undefined;
+    let optimizer: tf.Optimizer | undefined;
     try {
       // 1. build vocabulary
       this.buildVocabulary(processedData);
 
       // 2. generate negative samples and prepare training data
-      const { inputs, labels } = this.prepareTrainingData(processedData);
+      ({ inputs, labels } = tf.tidy(() => this.prepareTrainingData(processedData)));
 
       console.debug(`Input shape: ${inputs.shape}, dtype: ${inputs.dtype}`);
       console.debug(`Labels shape: ${labels.shape}, dtype: ${labels.dtype}`);
 
       // 3. create model
-      this.model = this.createModel();
+      trainedModel = this.createModel();
+      optimizer = trainedModel.optimizer;
+      this.model = trainedModel;
 
       // 4. train
       const { epochs, batchSize, validationSplit } = this.trainingConfig;
@@ -133,9 +149,11 @@ export class Classifier {
         }
       });
 
-      // 5. clean up tensor memory
+      // 5. release training data before serialization; finally also handles failed fits
       inputs.dispose();
       labels.dispose();
+      inputs = undefined;
+      labels = undefined;
 
       // 6. save model and tokenizer
       this.modelTrained = true;
@@ -144,13 +162,27 @@ export class Classifier {
       console.debug('Single-class model trained successfully!');
       return history;
     } catch (error) {
+      if (trainedModel && MODEL_CACHE.get(this.id)?.model !== trainedModel) {
+        trainedModel.dispose();
+        this.model = null;
+        this.modelTrained = false;
+      }
       console.error(`Training failed: ${error}`);
       this.debugInfo();
       throw error;
+    } finally {
+      inputs?.dispose();
+      labels?.dispose();
+      // explicit optimizers are caller-owned in TensorFlow.js; model.dispose() does not release them
+      optimizer?.dispose();
     }
   }
 
-  // create single-class classification model
+  /**
+   * Create and compile a model with a caller-owned Adam optimizer.
+   *
+   * @returns compiled model; the training caller releases its optimizer, and compilation failures release both
+   */
   private createModel(): tf.LayersModel {
     console.debug(`Creating single-class model, vocabulary size: ${this.tokenizer.size}`);
 
@@ -179,13 +211,15 @@ export class Classifier {
     });
 
     // use binary classification loss function
-    model.compile({
-      optimizer: tf.train.adam(this.trainingConfig.learningRate),
-      loss: 'binaryCrossentropy',
-      metrics: ['accuracy']
-    });
-
-    return model;
+    const optimizer = tf.train.adam(this.trainingConfig.learningRate);
+    try {
+      model.compile({ optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
+      return model;
+    } catch (error) {
+      model.dispose();
+      optimizer.dispose();
+      throw error;
+    }
   }
 
   // build vocabulary (only process positive samples)
@@ -584,7 +618,12 @@ export class Classifier {
     return sequence;
   }
 
-  // predict whether text belongs to target category
+  /**
+   * Predict whether text belongs to the target category and refresh the cached model's idle time.
+   *
+   * @param text - text to classify
+   * @returns synchronous positive-class probability, or zero for an unavailable model or empty/unknown input
+   */
   predict(text: string): number {
     if (!this.model || !this.modelTrained) {
       console.warn('Model not loaded or not trained');
@@ -595,6 +634,11 @@ export class Classifier {
     if (!text || text.trim().length === 0) {
       console.warn('Empty input text');
       return 0;
+    }
+
+    const cached = MODEL_CACHE.get(this.id);
+    if (cached?.model === this.model) {
+      cached.lastUsed = Date.now();
     }
 
     const tokens = this.tokenizeText(text);
@@ -644,8 +688,12 @@ export class Classifier {
     });
   }
 
-  // save model
-  async saveModel() {
+  /**
+   * Save the current model and replace its cached predecessor only after persistence succeeds.
+   *
+   * @returns promise resolving after storage and cache updates; rejects on storage failure
+   */
+  async saveModel(): Promise<void> {
     if (!this.model) {
       console.warn('No model to save');
       return;
@@ -669,13 +717,19 @@ export class Classifier {
 
       localStorage.setItem(`${STORAGE.CONFIG}_${this.id}`, JSON.stringify(config));
 
-      // add to cache
+      // invalidate older reads before replacing the cache with the newly saved model
+      MODEL_LOADS.delete(this.id);
+      const previous = MODEL_CACHE.get(this.id);
       MODEL_CACHE.set(this.id, {
         model: this.model,
         tokenizer: new Map(this.tokenizer),
         config: { ...config },
         lastUsed: Date.now()
       });
+      if (previous && previous.model !== this.model) {
+        previous.model.dispose();
+      }
+      scheduleCleanup();
 
       console.debug(`Model saved and cached successfully, tokenizer size: ${this.tokenizer.size}`);
     } catch (error) {
@@ -684,90 +738,79 @@ export class Classifier {
     }
   }
 
-  // load model
+  /**
+   * Load a cached or persisted model, sharing concurrent reads for the same ID.
+   * Superseded/deleted loads release their weights instead of restoring stale cache entries.
+   *
+   * @returns true after restoring a current model; false when missing, deleted or loading fails
+   */
   async loadModel(): Promise<boolean> {
     try {
-      console.debug('Attempting to load model...');
+      let cached = MODEL_CACHE.get(this.id);
+      if (!cached) {
+        let pending = MODEL_LOADS.get(this.id);
+        if (!pending) {
+          pending = (async () => {
+            const tokenizerData = localStorage.getItem(`${STORAGE.TOKENIZER}_${this.id}`);
+            const configData = localStorage.getItem(`${STORAGE.CONFIG}_${this.id}`);
+            if (!tokenizerData || !configData) {
+              return;
+            }
 
-      // first check cache
-      const cached = MODEL_CACHE.get(this.id);
-      if (cached) {
-        console.debug(`Loading model from cache: ${this.id}`);
-        this.model = cached.model;
-        this.tokenizer = new Map(cached.tokenizer);
-        this.maxSequenceLength = cached.config.maxSequenceLength;
-        this.embeddingDim = cached.config.embeddingDim;
-        this.modelTrained = cached.config.modelTrained;
+            let loadedModel: tf.LayersModel | undefined;
+            try {
+              loadedModel = await tf.loadLayersModel(`localstorage://${STORAGE.CLASSIFIER}_${this.id}`);
+              // deletion or a successful save may have invalidated this read while weights were loading
+              if (MODEL_LOADS.get(this.id) !== pending) {
+                return;
+              }
 
-        // update last used time
-        cached.lastUsed = Date.now();
-        return true;
+              const tokenizer = new Map<string, number>(JSON.parse(tokenizerData));
+              const config: ModelCache['config'] = JSON.parse(configData);
+              if (config.tokenizerSize && config.tokenizerSize !== tokenizer.size) {
+                console.warn(`Tokenizer size mismatch: expected=${config.tokenizerSize}, actual=${tokenizer.size}`);
+              }
+
+              MODEL_CACHE.set(this.id, {
+                model: loadedModel,
+                tokenizer,
+                config,
+                lastUsed: Date.now()
+              });
+              loadedModel = undefined; // ownership has transferred to the cache
+              scheduleCleanup();
+            } finally {
+              loadedModel?.dispose();
+            }
+          })();
+          MODEL_LOADS.set(this.id, pending);
+        }
+
+        try {
+          await pending;
+        } finally {
+          if (MODEL_LOADS.get(this.id) === pending) {
+            MODEL_LOADS.delete(this.id);
+          }
+        }
+        cached = MODEL_CACHE.get(this.id);
       }
 
-      // not in cache, load from localStorage
-      // check if model data exists in localStorage
-      const tokenizerData = localStorage.getItem(`${STORAGE.TOKENIZER}_${this.id}`);
-      const configData = localStorage.getItem(`${STORAGE.CONFIG}_${this.id}`);
-
-      if (!tokenizerData || !configData) {
-        console.debug('No saved model data found in localStorage');
+      if (!cached) {
         return false;
       }
-
-      // load TensorFlow model
-      const storageKey = `${STORAGE.CLASSIFIER}_${this.id}`;
-      this.model = await tf.loadLayersModel(`localstorage://${storageKey}`);
-      console.debug('TensorFlow model loaded successfully');
-
-      // restore tokenizer
-      const tokenizerEntries = JSON.parse(tokenizerData);
-      this.tokenizer = new Map(tokenizerEntries);
-      console.debug(`Tokenizer restored, size: ${this.tokenizer.size}`);
-
-      // restore config
-      const config = JSON.parse(configData);
-      this.maxSequenceLength = config.maxSequenceLength;
-      this.embeddingDim = config.embeddingDim;
-      this.modelTrained = config.modelTrained;
-
-      console.debug(`Config restored - Max sequence length: ${this.maxSequenceLength}`);
-      console.debug(`Config restored - Embedding dim: ${this.embeddingDim}`);
-      console.debug(`Config restored - Model trained: ${this.modelTrained}`);
-
-      // verify data integrity
-      if (config.tokenizerSize && config.tokenizerSize !== this.tokenizer.size) {
-        console.warn(`Tokenizer size mismatch: expected=${config.tokenizerSize}, actual=${this.tokenizer.size}`);
-      }
-
-      // add to cache
-      MODEL_CACHE.set(this.id, {
-        model: this.model,
-        tokenizer: new Map(this.tokenizer),
-        config: {
-          maxSequenceLength: this.maxSequenceLength,
-          embeddingDim: this.embeddingDim,
-          modelTrained: this.modelTrained,
-          tokenizerSize: this.tokenizer.size
-        },
-        lastUsed: Date.now()
-      });
-
-      // test if model works correctly
-      const testTokens = Array.from(this.tokenizer.keys()).slice(0, 3);
-      if (testTokens.length > 0) {
-        console.debug(`Loaded tokenizer sample tokens: ${testTokens.join(', ')}`);
-      }
-
-      console.debug(`Model loaded and cached successfully: ${this.id}`);
+      this.model = cached.model;
+      this.tokenizer = new Map(cached.tokenizer);
+      this.maxSequenceLength = cached.config.maxSequenceLength;
+      this.embeddingDim = cached.config.embeddingDim;
+      this.modelTrained = cached.config.modelTrained;
+      cached.lastUsed = Date.now();
       return true;
     } catch (error) {
       console.error(`Failed to load model: ${error}`);
-
-      // clean up partially loaded data
       this.model = null;
       this.tokenizer.clear();
       this.modelTrained = false;
-
       return false;
     }
   }
@@ -874,9 +917,15 @@ export class Classifier {
     return { sizeKB, vocabulary };
   }
 
-  // clear saved model data
-  static clearSavedModel(id: string) {
+  /**
+   * Delete a model's storage and cache, invalidating any unfinished load for the same ID.
+   *
+   * @param id - model ID to remove
+   * @returns immediately after synchronous removal; storage failures are logged
+   */
+  static clearSavedModel(id: string): void {
     try {
+      MODEL_LOADS.delete(id);
       // remove from cache and clean up resources
       const cached = MODEL_CACHE.get(id);
       if (cached) {
@@ -886,6 +935,7 @@ export class Classifier {
         MODEL_CACHE.delete(id);
         console.debug(`Cleared model from cache: ${id}`);
       }
+      scheduleCleanup();
 
       localStorage.removeItem(`${STORAGE.CONFIG}_${id}`);
       localStorage.removeItem(`${STORAGE.TOKENIZER}_${id}`);
@@ -969,8 +1019,9 @@ export async function predict(modelId: string, text: string): Promise<number | n
  * Clean up expired models in cache (unused longer than specified time).
  *
  * @param maxAge - maximum lifetime (milliseconds), default 1 hour
+ * @returns immediately after disposing expired models and scheduling the next idle check
  */
-export function cleanup(maxAge: number = 60 * 60 * 1000) {
+export function cleanup(maxAge: number = MODEL_CACHE_MAX_AGE): void {
   const now = Date.now();
   const toDelete: string[] = [];
 
@@ -992,4 +1043,28 @@ export function cleanup(maxAge: number = 60 * 60 * 1000) {
   if (toDelete.length > 0) {
     console.debug(`Cleaned up ${toDelete.length} expired models`);
   }
+  scheduleCleanup();
+}
+
+/**
+ * Schedule one check at the earliest cache expiry, cancelling it when the cache becomes empty.
+ * Predictions are synchronous, and training models enter the cache only after fitting/saving finishes.
+ *
+ * @returns immediately; the timer rechecks lastUsed before disposing idle models
+ */
+function scheduleCleanup(): void {
+  if (cleanupTimer !== undefined) {
+    clearTimeout(cleanupTimer);
+    cleanupTimer = undefined;
+  }
+  if (MODEL_CACHE.size === 0) return;
+
+  const oldest = Math.min(...Array.from(MODEL_CACHE.values(), (entry) => entry.lastUsed));
+  cleanupTimer = setTimeout(
+    () => {
+      cleanupTimer = undefined;
+      cleanup();
+    },
+    Math.max(0, oldest + MODEL_CACHE_MAX_AGE + 1 - Date.now())
+  );
 }
