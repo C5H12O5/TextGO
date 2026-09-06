@@ -6,6 +6,9 @@ authors = ["Xylitol <jam.xylitol@gmail.com>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
 
+[profile.release]
+strip = "symbols"
+
 [lib]
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
