@@ -31,6 +31,18 @@ import { tick, untrack } from 'svelte';
 // create a global LazyStore instance
 export const settings = new LazyStore('.settings.dat');
 
+// share the initial read within this window without retaining its snapshot after startup
+let initialSettings: Promise<Map<string, unknown> | undefined> | undefined = settings
+  .entries<unknown>()
+  .then((entries) => new Map(entries))
+  .catch((error) => {
+    console.error(`Failed to load initial settings: ${error}`);
+    return undefined;
+  })
+  .finally(() => {
+    initialSettings = undefined;
+  });
+
 // the type of snapshot of a state
 type Snapshot<T> = ReturnType<typeof $state.snapshot<T>>;
 
@@ -52,7 +64,7 @@ type Options<T> = {
  * @param key - key for local storage
  * @param initial - initial value
  * @param options - persistence options
- * @returns persisted state object
+ * @returns persisted state with a ready promise that resolves after initial loading or rejects on read failure
  */
 function persisted<T>(key: string, initial: T, options?: Options<T>) {
   let initialized = false;
@@ -65,10 +77,12 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   /**
    * Read settings, normalizing legacy shortcut language cases only in memory.
    *
+   * @param initialLoad - whether to use the shared startup snapshot when available
    * @returns loaded settings; rejects if the store cannot be read
    */
-  const loadValue = async (): Promise<T | undefined> => {
-    const item = await settings.get<T>(key);
+  const loadValue = async (initialLoad = false): Promise<T | undefined> => {
+    const snapshot = initialLoad ? await initialSettings : undefined;
+    const item = snapshot ? (snapshot.get(key) as T | undefined) : await settings.get<T>(key);
     if (key === 'shortcuts' && item) {
       const languageCodes: Record<string, string> = {
         eng: 'en',
@@ -94,7 +108,7 @@ function persisted<T>(key: string, initial: T, options?: Options<T>) {
   };
 
   // load data from store
-  const ready = loadValue().then(async (item) => {
+  const ready = loadValue(true).then(async (item) => {
     if (item !== undefined) {
       state = options?.decrypt?.(item) ?? item;
       options?.onload?.(state);
@@ -191,8 +205,10 @@ export const shortcuts = persisted<Record<string, Shortcut>>(
       // register all shortcut groups when main window initializes
       if (getCurrentWindow().label === 'main') {
         const { manager } = await import('$lib/shortcut');
+        // rules are already loaded; one rule is enough to register its shortcut group
         for (const shortcut of Object.values(shortcuts)) {
-          for (const rule of shortcut.rules) {
+          const rule = shortcut.rules[0];
+          if (rule) {
             await manager.register(rule);
           }
         }
