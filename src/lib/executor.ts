@@ -1,5 +1,4 @@
 import { PROMPT_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
-import { evalAsync } from '$lib/evaluator';
 import { isMouseShortcut } from '$lib/helpers';
 import { guessNaturalLanguage, NATURAL_CASES } from '$lib/matcher';
 import { m } from '$lib/paraglide/messages';
@@ -519,11 +518,11 @@ export async function renderTranslationPrompt(
 }
 
 /**
- * Execute input script and return result.
+ * Execute input script asynchronously, loading the WebView evaluator only when needed.
  *
  * @param script - script object
  * @param entry - record object
- * @returns script execution result
+ * @returns promise resolving to the result or an error result if loading or execution fails
  */
 async function executeScript(script: Script, entry: Entry): Promise<Result> {
   try {
@@ -543,6 +542,8 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
 
       if (useWebView) {
         try {
+          // load the script environment only when executing JavaScript in the WebView
+          const { evalAsync } = await import('$lib/evaluator');
           console.debug('Executing JavaScript in WebView');
           return { text: await evalAsync(data, code) };
         } catch (error) {
