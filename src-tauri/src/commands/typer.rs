@@ -31,11 +31,13 @@ pub async fn enter_text(
         set_clipboard_text(text)?;
 
         // send paste shortcut
-        let _ = app.run_on_main_thread(|| {
-            let _ = send_paste_keys(Some(false), Some(true));
-        });
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        app.run_on_main_thread(move || {
+            let _ = sender.send(send_paste_keys(Some(false), Some(true)));
+        })?;
+        receiver.await.map_err(|error| error.to_string())??;
 
-        // delay 100 ms to ensure paste operation completes
+        // allow 100 ms for the target to process paste after the keys have been sent
         tokio::time::sleep(Duration::from_millis(100)).await;
 
         // if cursor position is editable, try to select entered text
