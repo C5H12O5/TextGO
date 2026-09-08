@@ -624,16 +624,15 @@
 
   /**
    * Replace the source application's selection with the provided text or current popup result.
+   * Keep the inserted text on the clipboard so a delayed paste cannot read restored contents.
    *
    * @param text - replacement text
    */
   async function replaceSelection(text: string = result) {
     try {
-      const clipboard = entry?.copyOnPopup;
-
       await currentWindow.hide();
       await invoke<void>('focus_popup_source');
-      await invoke<void>('enter_text', { text, clipboard });
+      await invoke<void>('enter_text', { text, clipboard: true });
     } catch (error) {
       console.error(`Failed to replace selected text: ${error}`);
     }
