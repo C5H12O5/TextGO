@@ -748,8 +748,13 @@
   <div
     class="mt-1 -ml-1 flex h-6 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
   >
-    <Button icon={CopyIcon} iconClass="opacity-60" onclick={() => copyResponse(content)} />
-    <Button icon={ArrowLineDownLeftIcon} iconClass="opacity-60" onclick={() => replaceSelection(content)} />
+    <Button icon={CopyIcon} text={m.copy()} iconClass="opacity-60" onclick={() => copyResponse(content)} />
+    <Button
+      icon={ArrowLineDownLeftIcon}
+      text={m.insert()}
+      iconClass="opacity-60"
+      onclick={() => replaceSelection(content)}
+    />
     <time class="ml-1 text-xs text-base-content/40" datetime={new Date(completedAt).toISOString()}>
       {formatResponseTime(completedAt)}
     </time>
@@ -780,6 +785,7 @@
           {#if promptMode}
             <Button
               icon={StopCircleIcon}
+              text={m.stop_generation()}
               iconWeight="bold"
               iconClass="opacity-80"
               disabled={!streaming}
@@ -787,6 +793,7 @@
             />
             <Button
               icon={ArrowClockwiseIcon}
+              text={m.regenerate()}
               iconWeight="bold"
               iconClass="opacity-80"
               disabled={streaming || !canRegenerate}
@@ -797,10 +804,10 @@
               }}
             />
           {:else}
-            <Button icon={ArrowCounterClockwiseIcon} onclick={() => codeMirror?.reset()} />
-            <Button icon={TextIndentIcon} onclick={() => codeMirror?.format()} />
-            <Button icon={CopyIcon} onclick={() => codeMirror?.copy()} />
-            <Button icon={ArrowLineDownLeftIcon} onclick={() => replaceSelection()} />
+            <Button icon={ArrowCounterClockwiseIcon} text={m.reset_content()} onclick={() => codeMirror?.reset()} />
+            <Button icon={TextIndentIcon} text={m.format()} onclick={() => codeMirror?.format()} />
+            <Button icon={CopyIcon} text={m.copy()} onclick={() => codeMirror?.copy()} />
+            <Button icon={ArrowLineDownLeftIcon} text={m.insert()} onclick={() => replaceSelection()} />
           {/if}
           <div class="divider mx-0 my-auto divider-horizontal h-4 w-1 opacity-50"></div>
           <Button

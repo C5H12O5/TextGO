@@ -488,13 +488,18 @@
     </span>
     <span class="flex items-center gap-2">
       {#if !readOnly && resetter}
-        <Button icon={ArrowCounterClockwiseIcon} class="border-0 bg-transparent shadow-none" onclick={reset} />
+        <Button
+          icon={ArrowCounterClockwiseIcon}
+          text={m.reset_content()}
+          class="border-0 bg-transparent shadow-none"
+          onclick={reset}
+        />
       {/if}
       {#if !readOnly && formatter && languageName.toLowerCase() in formatOptionLoaders}
-        <Button icon={TextIndentIcon} class="border-0 bg-transparent shadow-none" onclick={format} />
+        <Button icon={TextIndentIcon} text={m.format()} class="border-0 bg-transparent shadow-none" onclick={format} />
       {/if}
       {#if copier}
-        <Button icon={CopyIcon} class="border-0 bg-transparent shadow-none" onclick={copy} />
+        <Button icon={CopyIcon} text={m.copy()} class="border-0 bg-transparent shadow-none" onclick={copy} />
       {/if}
     </span>
   </div>

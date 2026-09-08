@@ -98,6 +98,7 @@
           <time class="ml-3 text-sm text-emphasis/50">{formatISO8601(entry.datetime)}</time>
           <Button
             icon={TrashIcon}
+            text={m.delete()}
             size="sm"
             class="ml-auto text-emphasis"
             onclick={() => entries.current.splice(index, 1)}
@@ -136,7 +137,7 @@
                   </span>
                 {/if}
               </div>
-              <Button icon={CopyIcon} onclick={() => copy(entry.result)} />
+              <Button icon={CopyIcon} text={m.copy()} onclick={() => copy(entry.result)} />
             </div>
             <div class="h-14 overflow-auto overscroll-none rounded-box border bg-base-200 px-2 py-1 text-xs opacity-70">
               {entry.result}
