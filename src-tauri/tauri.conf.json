@@ -16,8 +16,8 @@
       {
         "label": "main",
         "title": "TextGO",
-        "width": 800,
-        "height": 648,
+        "width": 864,
+        "height": 700,
         "minWidth": 600,
         "minHeight": 300,
         "center": true,
