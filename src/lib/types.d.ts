@@ -127,6 +127,8 @@ export type ChatOptions = {
   temperature?: number;
   /** Top-p (nucleus sampling) for response generation. */
   topP?: number;
+  /** Custom JSON parameters merged last into the chat request body. */
+  customParams?: Record<string, unknown>;
 };
 
 /**

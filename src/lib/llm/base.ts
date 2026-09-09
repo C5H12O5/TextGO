@@ -1,5 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import type {
+  ChatCompletion,
   ChatCompletionChunk,
   ChatCompletionCreateParamsBase as ChatCompletionParams
 } from 'openai/resources/chat/completions';
@@ -13,9 +14,10 @@ export interface LLMClient {
    * Send a chat history and get the assistant's response.
    *
    * @param request - chat completion request parameters
+   * @param customParams - request body fields that override generated parameters
    * @returns an async iterable that yields response chunks
    */
-  chat(request: ChatCompletionParams): AsyncIterable<string>;
+  chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<string>;
 
   /**
    * Abort the ongoing request.
@@ -36,10 +38,20 @@ export abstract class OpenAICompatibleClient implements LLMClient {
     this.apiKey = apiKey;
   }
 
-  async *chat(request: ChatCompletionParams): AsyncIterable<string> {
+  async *chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<string> {
     this.abortController = new AbortController();
 
     try {
+      const body = {
+        stream: true,
+        model: request.model,
+        messages: request.messages,
+        max_tokens: request.max_tokens,
+        max_completion_tokens: request.max_tokens,
+        temperature: request.temperature === 1 ? undefined : request.temperature,
+        top_p: request.top_p === 1 ? undefined : request.top_p,
+        ...customParams
+      };
       // send request to OpenAI-compatible endpoint using Tauri's fetch
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -48,15 +60,7 @@ export abstract class OpenAICompatibleClient implements LLMClient {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${this.apiKey}`
         },
-        body: JSON.stringify({
-          stream: true,
-          model: request.model,
-          messages: request.messages,
-          max_tokens: request.max_tokens,
-          max_completion_tokens: request.max_tokens,
-          temperature: request.temperature === 1 ? undefined : request.temperature,
-          top_p: request.top_p === 1 ? undefined : request.top_p
-        }),
+        body: JSON.stringify(body),
         signal: this.abortController.signal
       });
 
@@ -66,6 +70,12 @@ export abstract class OpenAICompatibleClient implements LLMClient {
       }
       if (!response.body) {
         throw new Error('response body is empty');
+      }
+
+      if (body.stream !== true) {
+        const completion = (await response.json()) as ChatCompletion;
+        yield completion.choices[0]?.message.content || '';
+        return;
       }
 
       // use OpenAI SDK's Stream to handle SSE parsing

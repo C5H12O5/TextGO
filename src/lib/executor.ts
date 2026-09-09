@@ -374,6 +374,7 @@ const promptExecutor: Executor = async (rule, entry, placement, isCurrent = () =
   entry.maxTokens = prompt.maxTokens;
   entry.temperature = prompt.temperature;
   entry.topP = prompt.topP;
+  entry.customParams = prompt.customParams;
   if (rule.history) {
     saveHistory(entry);
   }

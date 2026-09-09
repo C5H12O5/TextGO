@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.5",
+    "@codemirror/lang-json": "^6.0.2",
     "@codemirror/lang-markdown": "^6.5.2",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/legacy-modes": "^6.5.4",

@@ -498,13 +498,16 @@
           .map(({ role, content }) => ({ role, content }) as ChatMessage)
       );
 
-      const response = llmClient.chat({
-        model: entry.model,
-        messages: messages,
-        max_tokens: entry.maxTokens,
-        temperature: entry.temperature,
-        top_p: entry.topP
-      });
+      const response = llmClient.chat(
+        {
+          model: entry.model,
+          messages: messages,
+          max_tokens: entry.maxTokens,
+          temperature: entry.temperature,
+          top_p: entry.topP
+        },
+        entry.customParams
+      );
 
       for await (const chunk of response) {
         if (requestId !== chatRequestId || !streaming) {

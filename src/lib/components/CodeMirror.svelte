@@ -274,6 +274,13 @@
   const languageName = $derived(getLanguageName(language));
 
   /**
+   * Focus the editor.
+   */
+  export function focus() {
+    editorView.focus();
+  }
+
+  /**
    * Reset document content.
    */
   export function reset() {

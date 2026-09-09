@@ -53,6 +53,7 @@ ${m.prompt_variables_tip()}
     providers,
     xaiApiKey
   } from '$lib/stores.svelte';
+  import { json } from '@codemirror/lang-json';
   import { markdown } from '@codemirror/lang-markdown';
   import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
   import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
@@ -72,6 +73,8 @@ ${m.prompt_variables_tip()}
   let maxTokens: number | undefined = $state(undefined);
   let temperature: number | undefined = $state(DEFAULT_TEMPERATURE);
   let topP: number | undefined = $state(DEFAULT_TOP_P);
+  let customParamsJson = $state('{}');
+  let customParamsEditor: CodeMirror;
   let promptPlaceholder = $derived(`${PROMPT_PLACEHOLDER}${translationMode ? TRANSLATION_PLACEHOLDER : ''}`);
 
   // fill form fields
@@ -85,8 +88,9 @@ ${m.prompt_variables_tip()}
     translationMode = Boolean(prompt.targetLanguage);
     targetLanguage = prompt.targetLanguage || null;
     maxTokens = prompt.maxTokens;
-    temperature = prompt.temperature;
-    topP = prompt.topP;
+    temperature = prompt.temperature ?? DEFAULT_TEMPERATURE;
+    topP = prompt.topP ?? DEFAULT_TOP_P;
+    customParamsJson = prompt.customParams === undefined ? '{}' : JSON.stringify(prompt.customParams, null, 2);
   };
 
   // show modal dialog
@@ -138,6 +142,23 @@ ${m.prompt_variables_tip()}
       return;
     }
 
+    let customParams: Record<string, unknown> | undefined;
+    try {
+      if (customParamsJson.trim()) {
+        const parsed: unknown = JSON.parse(customParamsJson);
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+          throw new Error('Expected a JSON object');
+        }
+        if (Object.keys(parsed).length > 0) {
+          customParams = parsed as Record<string, unknown>;
+        }
+      }
+    } catch {
+      alert({ level: 'error', message: m.custom_params_invalid() });
+      customParamsEditor.focus();
+      return;
+    }
+
     // start saving
     loading.start();
     prompt = prompts.find((p) => p.id === promptId);
@@ -156,6 +177,7 @@ ${m.prompt_variables_tip()}
       prompt.maxTokens = maxTokens;
       prompt.temperature = temperature;
       prompt.topP = topP;
+      prompt.customParams = customParams;
       alert(m.prompt_updated_success());
     } else {
       // add new prompt
@@ -169,7 +191,8 @@ ${m.prompt_variables_tip()}
         targetLanguage: translationMode ? targetLanguage || undefined : undefined,
         maxTokens: maxTokens,
         temperature: temperature,
-        topP: topP
+        topP: topP,
+        customParams: customParams
       });
       // reset form
       promptName = '';
@@ -183,6 +206,7 @@ ${m.prompt_variables_tip()}
       maxTokens = undefined;
       temperature = DEFAULT_TEMPERATURE;
       topP = DEFAULT_TOP_P;
+      customParamsJson = '{}';
       alert(m.prompt_added_success());
     }
     modal.close();
@@ -258,7 +282,7 @@ ${m.prompt_variables_tip()}
           <SlidersHorizontalIcon class="size-5" />
           {m.more_options()}
         </div>
-        <div class="collapse-content space-y-1.5">
+        <div class="collapse-content flex flex-col gap-1.5">
           <!-- system prompt -->
           <Label>{m.system_prompt()}</Label>
           <CodeMirror title={m.system_prompt()} language={markdown()} bind:document={systemPrompt} />
@@ -293,6 +317,16 @@ ${m.prompt_variables_tip()}
             </div>
             <span class="w-7 text-base font-light tracking-widest">{topP?.toFixed(1)}</span>
           </label>
+          <!-- custom request parameters -->
+          <Label tip={m.custom_params_tip()}>{m.custom_params()}</Label>
+          <CodeMirror
+            title={m.custom_params()}
+            language={json()}
+            tabSize={2}
+            darkMode={true}
+            bind:document={customParamsJson}
+            bind:this={customParamsEditor}
+          />
         </div>
       </div>
     </fieldset>

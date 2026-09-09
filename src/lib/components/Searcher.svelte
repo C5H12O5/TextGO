@@ -213,10 +213,10 @@
       <Label required tip={m.search_url_tip({ selection: '{{selection}}' })}>{m.search_url()}</Label>
       <textarea
         class="textarea w-full font-mono text-sm textarea-sm"
-        {...schema.url}
-        bind:value={url}
+        rows="2"
         placeholder={URL_PLACEHOLDER}
-        rows="2"></textarea>
+        {...schema.url}
+        bind:value={url}></textarea>
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
