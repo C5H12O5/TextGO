@@ -182,7 +182,7 @@
   "search_action": "搜索动作",
   "search_action_count": "{count}个搜索动作",
   "search_url": "搜索网址",
-  "search_url_tip": "使用 {selection} 插入选中的文本",
+  "search_url_tip": "每行输入一个网址，使用 {selection} 插入选中的文本",
   "browser": "浏览器",
   "browser_placeholder": "留空则使用默认浏览器",
   "searcher_added_success": "搜索动作添加成功！",

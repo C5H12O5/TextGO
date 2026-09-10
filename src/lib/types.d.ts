@@ -293,6 +293,6 @@ export type Searcher = {
   icon?: string;
   /** Browser to use. */
   browser?: string;
-  /** Search URL. */
+  /** Search URLs. */
   url: string;
 };

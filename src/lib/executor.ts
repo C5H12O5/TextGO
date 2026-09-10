@@ -397,18 +397,22 @@ const searcherExecutor: Executor = async (rule, entry) => {
     return false;
   }
 
-  console.debug(`Opening URL for searcher: ${searcherId}`);
-  // replace {{selection}} in URL template with trimmed selection
-  const result = searcher.url.replace(/\{\{selection\}\}/g, encodeURIComponent(entry.selection.trim()));
+  console.debug(`Opening URLs for searcher: ${searcherId}`);
+  // replace {{selection}} and split newline-separated URL templates
+  const urls = searcher.url
+    .replace(/\{\{selection\}\}/g, encodeURIComponent(entry.selection.trim()))
+    .split(/\r\n?|\n/)
+    .map((url) => url.trim())
+    .filter(Boolean);
   // save history record
   entry.actionType = 'searcher';
   entry.actionLabel = searcherId;
-  entry.result = result;
+  entry.result = urls.join('\n');
   if (rule.history) {
     saveHistory(entry);
   }
-  // open URL
-  await openUrl(result, searcher.browser);
+  // start every URL request so one failure does not prevent the others from opening
+  await Promise.all(urls.map((url) => openUrl(url, searcher.browser)));
   return true;
 };
 

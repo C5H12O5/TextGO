@@ -31,7 +31,7 @@
   const schema = buildFormSchema(({ text }) => ({
     name: text().maxlength(64),
     browser: text().maxlength(128).required(false),
-    url: text().maxlength(512)
+    url: text().maxlength(4096)
   }));
 
   // default values
@@ -213,7 +213,7 @@
       <Label required tip={m.search_url_tip({ selection: '{{selection}}' })}>{m.search_url()}</Label>
       <textarea
         class="textarea w-full font-mono text-sm textarea-sm"
-        rows="2"
+        rows="4"
         placeholder={URL_PLACEHOLDER}
         {...schema.url}
         bind:value={url}></textarea>
