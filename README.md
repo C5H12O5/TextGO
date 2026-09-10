@@ -102,6 +102,7 @@ _To restore permission:_
 1. Open "System Settings" > "Privacy & Security" > "Accessibility"
 2. Select TextGO from the list and remove it with the "−" button
 3. Click the "+" button to add TextGO back
+4. Restart the app
 
 </details>
 
