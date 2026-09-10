@@ -50,7 +50,6 @@
     "tippy.js": "^6.3.7"
   },
   "devDependencies": {
-    "@eslint/compat": "^2.1.1",
     "@eslint/js": "^10.0.1",
     "@inlang/paraglide-js": "^2.25.0",
     "@sveltejs/adapter-static": "^3.0.10",
