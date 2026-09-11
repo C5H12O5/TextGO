@@ -6,6 +6,49 @@ import type {
 } from 'openai/resources/chat/completions';
 import { Stream } from 'openai/streaming';
 
+/** Text returned by a provider, with thinking kept separate from the answer. */
+export type LLMResponseChunk = {
+  content: string;
+  thinking: string;
+};
+
+/** OpenAI-compatible providers expose thinking using different optional fields. */
+type ResponseMessage = {
+  content?: string | null;
+  reasoning_content?: unknown;
+  reasoning?: unknown;
+  thinking?: unknown;
+  reasoning_details?: unknown;
+};
+
+/**
+ * Normalize streamed deltas and complete messages without duplicating reasoning aliases.
+ *
+ * @param message - assistant text and optional provider-specific thinking fields
+ * @returns separate answer and readable thinking text; encrypted details are ignored
+ */
+function parseResponseChunk(message?: ResponseMessage): LLMResponseChunk {
+  const content = typeof message?.content === 'string' ? message.content : '';
+  const thinking = [message?.reasoning_content, message?.reasoning, message?.thinking].find(
+    (value): value is string => typeof value === 'string' && value.length > 0
+  );
+  if (thinking !== undefined) {
+    return { content, thinking };
+  }
+
+  const details = Array.isArray(message?.reasoning_details) ? message.reasoning_details : [];
+  return {
+    content,
+    thinking: details
+      .map((detail) => {
+        if (detail?.type === 'reasoning.text' && typeof detail.text === 'string') return detail.text;
+        if (detail?.type === 'reasoning.summary' && typeof detail.summary === 'string') return detail.summary;
+        return '';
+      })
+      .join('')
+  };
+}
+
 /**
  * LLM Client interface.
  */
@@ -17,7 +60,7 @@ export interface LLMClient {
    * @param customParams - request body fields that override generated parameters
    * @returns an async iterable that yields response chunks
    */
-  chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<string>;
+  chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<LLMResponseChunk>;
 
   /**
    * Abort the ongoing request.
@@ -38,7 +81,7 @@ export abstract class OpenAICompatibleClient implements LLMClient {
     this.apiKey = apiKey;
   }
 
-  async *chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<string> {
+  async *chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<LLMResponseChunk> {
     this.abortController = new AbortController();
 
     try {
@@ -74,14 +117,16 @@ export abstract class OpenAICompatibleClient implements LLMClient {
 
       if (body.stream !== true) {
         const completion = (await response.json()) as ChatCompletion;
-        yield completion.choices[0]?.message.content || '';
+        const chunk = parseResponseChunk(completion.choices[0]?.message);
+        if (chunk.content || chunk.thinking) yield chunk;
         return;
       }
 
       // use OpenAI SDK's Stream to handle SSE parsing
       const stream = Stream.fromSSEResponse<ChatCompletionChunk>(response, this.abortController);
       for await (const chunk of stream) {
-        yield chunk.choices[0]?.delta.content || '';
+        const responseChunk = parseResponseChunk(chunk.choices[0]?.delta);
+        if (responseChunk.content || responseChunk.thinking) yield responseChunk;
       }
     } catch (error) {
       if (error instanceof Error) {

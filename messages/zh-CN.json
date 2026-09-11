@@ -161,6 +161,7 @@
   "custom_params_tip": "自定义 JSON 参数会合并到请求体中，并覆盖表单设置的同名参数。",
   "custom_params_invalid": "自定义请求参数必须是有效的 JSON 对象。",
   "continue_chat": "继续对话...",
+  "thinking_process": "思考过程",
   "api_key": "{provider} API 密钥",
   "api_keys": "API 密钥",
   "ai": "AI",

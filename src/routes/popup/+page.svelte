@@ -98,6 +98,8 @@
     role: Extract<ChatMessage['role'], 'user' | 'assistant'>;
     /** Plain-text message content. */
     content: string;
+    /** Provider thinking text displayed separately from the answer. */
+    thinking?: string;
     /** Whether the content is a provider error excluded from future context. */
     error?: boolean;
     /** Local timestamp recorded when an assistant response finishes. */
@@ -131,7 +133,7 @@
    */
   function abortAssistantMessage(messages: ConversationMessage[]): ConversationMessage[] {
     const index = findLatestAssistantIndex(messages);
-    if (index >= 0 && !messages[index]?.content) {
+    if (index >= 0 && !messages[index]?.content && !messages[index]?.thinking?.trim()) {
       return messages.filter((_, messageIndex) => messageIndex !== index);
     }
     return [...messages];
@@ -515,7 +517,8 @@
         }
         chatMessages = updateLatestAssistant(chatMessages, (message) => ({
           ...message,
-          content: message.content + chunk
+          content: message.content + chunk.content,
+          thinking: (message.thinking ?? '') + chunk.thinking
         }));
         syncInitialResponse(latestAssistant?.content ?? '');
         await tick();
@@ -747,6 +750,42 @@
   });
 </script>
 
+{#snippet assistantResponse(message: ConversationMessage, isStreaming: boolean)}
+  <div>
+    {#if message.thinking?.trim()}
+      <details class="mb-2 text-sm text-base-content/50" style:font-size={fontSizeStyle}>
+        <summary class="cursor-pointer select-none hover:text-base-content/70">{m.thinking_process()}</summary>
+        <div class="mt-2 border-l-2 border-base-content/10 pl-3 wrap-anywhere whitespace-pre-wrap">
+          {message.thinking}
+        </div>
+      </details>
+    {/if}
+    {#if message.error}
+      <div class="text-sm whitespace-pre-wrap text-error" style:font-size={fontSizeStyle}>
+        {message.content}
+      </div>
+    {:else if isStreaming && !message.content}
+      <div class="loading loading-sm loading-dots opacity-70"></div>
+    {:else if message.content}
+      <div class="group">
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+          class="prose prose-sm max-w-none text-base-content/90"
+          style:font-size={fontSizeStyle}
+          onclick={handleLinkClick}
+        >
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+          {@html marked(message.content + (isStreaming ? ' |' : ''))}
+        </div>
+        {#if message.completedAt}
+          {@render responseActions(message.content, message.completedAt)}
+        {/if}
+      </div>
+    {/if}
+  </div>
+{/snippet}
+
 {#snippet responseActions(content: string, completedAt: number)}
   <div
     class="mt-1 -ml-1 flex h-6 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
@@ -842,28 +881,8 @@
                       {message.content}
                     </div>
                   </div>
-                {:else if message.error}
-                  <div class="text-sm whitespace-pre-wrap text-error" style:font-size={fontSizeStyle}>
-                    {message.content}
-                  </div>
-                {:else if streaming && index === chatMessages.length - 1 && !message.content}
-                  <div class="loading loading-sm loading-dots opacity-70"></div>
-                {:else if message.content}
-                  <div class="group">
-                    <!-- svelte-ignore a11y_click_events_have_key_events -->
-                    <!-- svelte-ignore a11y_no_static_element_interactions -->
-                    <div
-                      class="prose prose-sm max-w-none text-base-content/90"
-                      style:font-size={fontSizeStyle}
-                      onclick={handleLinkClick}
-                    >
-                      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                      {@html marked(message.content + (streaming && index === chatMessages.length - 1 ? ' |' : ''))}
-                    </div>
-                    {#if message.completedAt}
-                      {@render responseActions(message.content, message.completedAt)}
-                    {/if}
-                  </div>
+                {:else}
+                  {@render assistantResponse(message, streaming && index === chatMessages.length - 1)}
                 {/if}
               {/each}
             </div>
@@ -901,28 +920,8 @@
               </fieldset>
             {/if}
             <div class="px-4 pt-2" class:pb-10={!streaming}>
-              {#if streaming && !latestAssistant?.content}
-                <div class="loading loading-sm loading-dots opacity-70"></div>
-              {:else if latestAssistant?.error}
-                <div class="text-sm whitespace-pre-wrap text-error" style:font-size={fontSizeStyle}>
-                  {latestAssistant.content}
-                </div>
-              {:else if latestAssistant?.content}
-                <div class="group">
-                  <!-- svelte-ignore a11y_click_events_have_key_events -->
-                  <!-- svelte-ignore a11y_no_static_element_interactions -->
-                  <div
-                    class="prose prose-sm max-w-none text-base-content/90"
-                    style:font-size={fontSizeStyle}
-                    onclick={handleLinkClick}
-                  >
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-                    {@html marked(latestAssistant.content + (streaming ? ' |' : ''))}
-                  </div>
-                  {#if latestAssistant.completedAt}
-                    {@render responseActions(latestAssistant.content, latestAssistant.completedAt)}
-                  {/if}
-                </div>
+              {#if latestAssistant}
+                {@render assistantResponse(latestAssistant, streaming)}
               {/if}
             </div>
           {/if}

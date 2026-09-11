@@ -55,4 +55,5 @@ export function createLLMClient(provider: LLMProvider | string): LLMClient {
 
 // export types for external usage
 export type { ChatCompletionMessageParam as ChatMessage } from 'openai/resources/chat/completions';
+export type { LLMResponseChunk } from './base';
 export type { LLMClient, LLMProvider };
