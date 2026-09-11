@@ -24,10 +24,20 @@
   import { MODEL_MARK } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
   import { updateCaseId } from '$lib/shortcut';
-  import { Loading } from '$lib/states.svelte';
+  import { onMount, tick } from 'svelte';
 
   const { models }: { models: Model[] } = $props();
-  const loading = new Loading();
+  let training = $state(false);
+  let disposed = false;
+  let finishPendingPaint: (() => void) | undefined;
+
+  onMount(() => {
+    return () => {
+      disposed = true;
+      // release the rendering wait
+      finishPendingPaint?.();
+    };
+  });
 
   let modelId: string = $state('');
   let modelName: string = $state('');
@@ -46,7 +56,7 @@
   // show modal dialog
   let modal: Modal;
   export const showModal = (id?: string) => {
-    if (loading.started) {
+    if (training) {
       alert({ level: 'error', message: m.model_training_waiting() });
       return;
     }
@@ -66,7 +76,7 @@
     if (modal.isOpen()) {
       return;
     }
-    if (loading.started) {
+    if (training) {
       alert({ level: 'error', message: m.model_training_waiting() });
       return;
     }
@@ -80,6 +90,9 @@
    * @param form - form element
    */
   function save(form: HTMLFormElement) {
+    if (training) {
+      return;
+    }
     // validate inputs
     modelName = modelName.trim();
     let model = models.find((p) => p.id === modelName);
@@ -94,8 +107,9 @@
       return;
     }
 
-    // start saving
-    loading.start();
+    // hide the dialog immediately, without leaving its outro over the training status
+    form.closest('dialog')?.close();
+    modal.close();
     model = models.find((c) => c.id === modelId);
     if (model) {
       let retrain = false;
@@ -118,7 +132,6 @@
       } else {
         // only update other info
         alert(m.model_info_updated());
-        loading.end();
       }
     } else {
       // train classification model
@@ -131,7 +144,6 @@
       // train model
       train(modelName, true);
     }
-    modal.close();
   }
 
   /**
@@ -141,17 +153,42 @@
    * @param reset - whether to reset the form
    */
   export async function train(id: string, reset: boolean = false) {
+    if (training) {
+      return;
+    }
     const model = models.find((c) => c.id === id);
     if (!model) {
       return;
     }
     // mark model as training
+    training = true;
     model.modelTrained = undefined;
     try {
+      // tick() updates the DOM; two frames allow it to paint before synchronous TensorFlow setup.
+      await tick();
+      if (!disposed && document.visibilityState === 'visible') {
+        await new Promise<void>((resolve) => {
+          let frame: number;
+          const finish = () => {
+            cancelAnimationFrame(frame);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+            finishPendingPaint = undefined;
+            resolve();
+          };
+          const onVisibilityChange = () => {
+            // Hidden windows can suspend animation frames indefinitely.
+            if (document.visibilityState !== 'visible') finish();
+          };
+          finishPendingPaint = finish;
+          document.addEventListener('visibilitychange', onVisibilityChange);
+          frame = requestAnimationFrame(() => {
+            frame = requestAnimationFrame(finish);
+          });
+        });
+      }
       await new Classifier(id).trainModel(model.sample);
       model.modelTrained = true;
       alert(m.model_training_success());
-      loading.end();
       // reset form after training
       if (reset) {
         modelName = '';
@@ -163,7 +200,8 @@
       console.error(`Failed to train model: ${error}`);
       model.modelTrained = false;
       alert({ level: 'error', message: m.model_training_failed() });
-      loading.end();
+    } finally {
+      training = false;
     }
   }
 </script>
@@ -196,12 +234,7 @@
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal.close()}>{m.cancel()}</button>
-      <button type="submit" class="btn btn-submit" disabled={loading.started}>
-        {m.confirm()}
-        {#if loading.delayed}
-          <span class="loading loading-xs loading-dots"></span>
-        {/if}
-      </button>
+      <button type="submit" class="btn btn-submit" disabled={training}>{m.confirm()}</button>
     </div>
   </form>
 </Modal>
