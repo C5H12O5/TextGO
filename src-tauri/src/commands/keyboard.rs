@@ -55,7 +55,7 @@ pub async fn send_key(
     })?;
     let result = receiver.recv()?;
 
-    // Keep shortcut handling suspended until the synthetic release event is delivered.
+    // keep shortcut handling suspended until the synthetic release event is delivered
     tokio::time::sleep(SHORTCUT_RESUME_DELAY).await;
     result
 }
@@ -156,7 +156,10 @@ pub fn send_paste_keys(
     let modifier = Key::Control;
 
     enigo.key(modifier, Direction::Press)?;
-    enigo.key(Key::Unicode('v'), Direction::Click)?;
+    enigo.key(Key::Unicode('v'), Direction::Press)?;
+    // allow paste to arrive before keyup removes a rich-text editor's paste bin
+    std::thread::sleep(Duration::from_millis(100));
+    enigo.key(Key::Unicode('v'), Direction::Release)?;
     enigo.key(modifier, Direction::Release)?;
 
     Ok(())
