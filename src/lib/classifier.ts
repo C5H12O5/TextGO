@@ -897,15 +897,11 @@ export class Classifier {
 
         // storage size
         let totalSize = 0;
-        const modelPrefix = `tensorflowjs_models/${STORAGE.CLASSIFIER}_${id}`;
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith(modelPrefix)) {
-            const value = localStorage.getItem(key);
-            if (value) {
-              // estimate UTF-16 encoded byte size (JavaScript strings are UTF-16)
-              totalSize += key.length * 2 + value.length * 2;
-            }
+        for (const key of Classifier.getModelStorageKeys(id)) {
+          const value = localStorage.getItem(key);
+          if (value) {
+            // estimate UTF-16 encoded byte size (JavaScript strings are UTF-16)
+            totalSize += key.length * 2 + value.length * 2;
           }
         }
         sizeKB = parseFloat((totalSize / 1024).toFixed(2));
@@ -915,6 +911,67 @@ export class Classifier {
     }
 
     return { sizeKB, vocabulary };
+  }
+
+  // Match the complete model path, including IDs that contain slashes.
+  private static getModelStorageKeys(id: string): string[] {
+    const path = `tensorflowjs_models/${STORAGE.CLASSIFIER}_${id}`;
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.slice(0, key.lastIndexOf('/')) === path) {
+        keys.push(key);
+      }
+    }
+    return keys;
+  }
+
+  /**
+   * Rename persisted artifacts and the cached model without retraining or disposing its weights.
+   * Copy failures leave the old model intact; existing destination data is never overwritten.
+   *
+   * @param id - current model ID
+   * @param newId - new model ID
+   * @throws if the destination exists or storage writes fail
+   */
+  static renameSavedModel(id: string, newId: string): void {
+    if (id === newId) return;
+    const metadata = [STORAGE.CONFIG, STORAGE.TOKENIZER];
+    if (
+      MODEL_CACHE.has(newId) ||
+      Classifier.getModelStorageKeys(newId).length > 0 ||
+      metadata.some((prefix) => localStorage.getItem(`${prefix}_${newId}`) !== null)
+    ) {
+      throw new Error(`Saved model already exists: ${newId}`);
+    }
+
+    const keys = [
+      ...metadata.map((prefix) => [`${prefix}_${id}`, `${prefix}_${newId}`]),
+      ...Classifier.getModelStorageKeys(id).map((key) => [
+        key,
+        `tensorflowjs_models/${STORAGE.CLASSIFIER}_${newId}/${key.slice(key.lastIndexOf('/') + 1)}`
+      ])
+    ];
+    try {
+      for (const [from, to] of keys) {
+        const value = localStorage.getItem(from);
+        if (value !== null) localStorage.setItem(to, value);
+      }
+    } catch (error) {
+      for (const [, to] of keys) localStorage.removeItem(to);
+      throw error;
+    }
+    for (const [from] of keys) localStorage.removeItem(from);
+
+    MODEL_LOADS.delete(id);
+    MODEL_LOADS.delete(newId);
+    const cached = MODEL_CACHE.get(id);
+    if (cached) {
+      MODEL_CACHE.delete(id);
+      cached.lastUsed = Date.now();
+      MODEL_CACHE.set(newId, cached);
+    }
+    scheduleCleanup();
   }
 
   /**
@@ -942,14 +999,7 @@ export class Classifier {
 
       // clear TensorFlow model
       if (typeof window !== 'undefined' && window.localStorage) {
-        const keys = [];
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith(`tensorflowjs_models/${STORAGE.CLASSIFIER}_${id}`)) {
-            keys.push(key);
-          }
-        }
-        keys.forEach((key) => localStorage.removeItem(key));
+        Classifier.getModelStorageKeys(id).forEach((key) => localStorage.removeItem(key));
       }
 
       console.debug('Cleared saved model data from localStorage');

@@ -107,23 +107,26 @@
       return;
     }
 
+    model = models.find((c) => c.id === modelId);
+    if (model && model.id !== modelName) {
+      try {
+        Classifier.renameSavedModel(modelId, modelName);
+      } catch (error) {
+        console.error(`Failed to rename model: ${error}`);
+        alert({ level: 'error', message: m.update_failed() });
+        return;
+      }
+      model.id = modelName;
+      updateCaseId(MODEL_MARK, modelId, modelName);
+      modelId = modelName;
+    }
+
     // hide the dialog immediately, without leaving its outro over the training status
     form.closest('dialog')?.close();
     modal.close();
-    model = models.find((c) => c.id === modelId);
     if (model) {
-      let retrain = false;
-      // update model information
-      if (model.id !== modelName) {
-        model.id = modelName;
-        updateCaseId(MODEL_MARK, modelId, modelName);
-        Classifier.clearSavedModel(modelId);
-        retrain = true;
-      }
-      if (model.sample !== modelSample) {
-        model.sample = modelSample;
-        retrain = true;
-      }
+      const retrain = model.sample !== modelSample;
+      model.sample = modelSample;
       model.icon = modelIcon;
       model.threshold = modelThreshold;
       if (retrain) {
