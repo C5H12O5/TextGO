@@ -97,6 +97,7 @@
   "upload_svg": "上传自定义 SVG",
   "upload_svg_btn": "选择 SVG 文件",
   "svg_convert_failed": "SVG 文件转换为 base64 失败！",
+  "svg_file_invalid": "SVG 文件格式不正确或大小超过 128 KiB！",
   "experimental": "实验性功能",
   "model": "分类模型",
   "model_hint": "训练分类模型识别自定义类型",

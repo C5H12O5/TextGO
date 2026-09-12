@@ -479,14 +479,17 @@
       props: { icon }
     });
 
-    // wait for rendering to complete
-    await tick();
+    const size = 32;
+    let objectURL: string | undefined;
 
     try {
-      // get the svg or img element
+      // wait for rendering to complete
+      await tick();
+
+      // get the svg or custom SVG element
       const svg = tempElement.querySelector('svg');
-      const img = tempElement.querySelector('img');
-      if (!svg && !img) {
+      const customSVG = tempElement.querySelector<HTMLElement>('[data-svg]');
+      if (!svg && !customSVG) {
         return undefined;
       }
 
@@ -501,26 +504,25 @@
       let url: string;
       if (svg) {
         // handle SVG element
+        svg.setAttribute('width', String(size));
+        svg.setAttribute('height', String(size));
         const svgData = new XMLSerializer().serializeToString(svg);
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-        url = URL.createObjectURL(svgBlob);
-      } else if (img) {
+        objectURL = URL.createObjectURL(svgBlob);
+        url = objectURL;
+      } else if (customSVG?.dataset.svg) {
         // handle base64 image
-        url = img.src;
+        url = customSVG.dataset.svg;
       } else {
         return undefined;
       }
 
       // create canvas to draw the icon
       const canvas = document.createElement('canvas');
-      const size = 32;
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
       if (!ctx) {
-        if (svg) {
-          URL.revokeObjectURL(url);
-        }
         return undefined;
       }
 
@@ -532,14 +534,19 @@
         imageEl.src = url;
       });
 
-      // cleanup URL object
-      if (svg) {
-        URL.revokeObjectURL(url);
-      }
-
       // draw image onto canvas
       ctx.clearRect(0, 0, size, size);
-      ctx.drawImage(imageEl, 0, 0, size, size);
+      const scale = Math.min(size / imageEl.naturalWidth, size / imageEl.naturalHeight);
+      const width = imageEl.naturalWidth * scale;
+      const height = imageEl.naturalHeight * scale;
+      ctx.drawImage(imageEl, (size - width) / 2, (size - height) / 2, width, height);
+
+      if (customSVG?.dataset.useTextColor === 'true') {
+        // match the CSS mask with the native menu's text color
+        ctx.globalCompositeOperation = 'source-in';
+        ctx.fillStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#ffffff' : '#000000';
+        ctx.fillRect(0, 0, size, size);
+      }
 
       // get RGBA pixel data
       const imageData = ctx.getImageData(0, 0, size, size);
@@ -551,6 +558,11 @@
       console.error(`Failed to convert icon to Image: ${error}`);
       return undefined;
     } finally {
+      // cleanup URL object
+      if (objectURL) {
+        URL.revokeObjectURL(objectURL);
+      }
+
       // cleanup component and temp container
       unmount(iconComponent);
       tempElement.remove();

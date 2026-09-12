@@ -97,6 +97,7 @@
   "upload_svg": "Upload Custom SVG",
   "upload_svg_btn": "Select SVG File",
   "svg_convert_failed": "Failed to convert SVG to base64!",
+  "svg_file_invalid": "This SVG file is invalid or larger than 128 KiB!",
   "experimental": "Experimental Feature",
   "model": "Classification Model",
   "model_hint": "Train a classification model to recognize custom types",

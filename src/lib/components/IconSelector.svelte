@@ -1,10 +1,9 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { alert } from '$lib/components/Alert.svelte';
-  import Icon from '$lib/components/Icon.svelte';
+  import Icon, { createSVGDataURL, phosphorIcons } from '$lib/components/Icon.svelte';
   import Label from '$lib/components/Label.svelte';
   import Modal from '$lib/components/Modal.svelte';
-  import { phosphorIcons } from '$lib/components/Icon.svelte';
   import { m } from '$lib/paraglide/messages';
   import { open } from '@tauri-apps/plugin-dialog';
   import { readTextFile } from '@tauri-apps/plugin-fs';
@@ -72,9 +71,11 @@
       // read SVG file contents
       const contents = await readTextFile(path);
 
-      // convert SVG to base64 data URL
-      const data = new TextEncoder().encode(contents);
-      const base64 = `data:image/svg+xml;base64,${btoa(String.fromCharCode(...data))}`;
+      const base64 = createSVGDataURL(contents);
+      if (!base64) {
+        alert({ level: 'error', message: m.svg_file_invalid() });
+        return;
+      }
 
       // set as selected icon
       icon = base64;
