@@ -210,7 +210,9 @@
           </ul>
         {/if}
       </div>
-      <Label required tip={m.search_url_tip({ selection: '{{selection}}' })}>{m.search_url()}</Label>
+      <Label required tip={m.search_url_tip({ selection: '{{selection}}', clipboard: '{{clipboard}}' })}>
+        {m.search_url()}
+      </Label>
       <textarea
         class="textarea w-full font-mono text-sm textarea-sm"
         rows="4"

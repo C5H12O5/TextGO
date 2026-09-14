@@ -184,7 +184,7 @@
   "search_action": "Search Action",
   "search_action_count": "Search Actions ({count})",
   "search_url": "Search URLs",
-  "search_url_tip": "Enter one URL per line. Use {selection} to insert selected text",
+  "search_url_tip": "Enter one URL per line. Use {selection} to insert selected text or {clipboard} to insert clipboard text",
   "browser": "Browser",
   "browser_placeholder": "Leave empty to use default browser",
   "searcher_added_success": "Search action added successfully!",

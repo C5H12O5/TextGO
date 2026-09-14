@@ -398,9 +398,10 @@ const searcherExecutor: Executor = async (rule, entry) => {
   }
 
   console.debug(`Opening URLs for searcher: ${searcherId}`);
-  // replace {{selection}} and split newline-separated URL templates
+  // replace template parameters and split newline-separated URLs
   const urls = searcher.url
     .replace(/\{\{selection\}\}/g, encodeURIComponent(entry.selection.trim()))
+    .replace(/\{\{clipboard\}\}/g, encodeURIComponent(entry.clipboard.trim()))
     .split(/\r\n?|\n/)
     .map((url) => url.trim())
     .filter(Boolean);
