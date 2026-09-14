@@ -935,7 +935,9 @@ export class Classifier {
    * @throws if the destination exists or storage writes fail
    */
   static renameSavedModel(id: string, newId: string): void {
-    if (id === newId) return;
+    if (id === newId) {
+      return;
+    }
     const metadata = [STORAGE.CONFIG, STORAGE.TOKENIZER];
     if (
       MODEL_CACHE.has(newId) ||
@@ -1107,7 +1109,9 @@ function scheduleCleanup(): void {
     clearTimeout(cleanupTimer);
     cleanupTimer = undefined;
   }
-  if (MODEL_CACHE.size === 0) return;
+  if (MODEL_CACHE.size === 0) {
+    return;
+  }
 
   const oldest = Math.min(...Array.from(MODEL_CACHE.values(), (entry) => entry.lastUsed));
   cleanupTimer = setTimeout(

@@ -599,7 +599,9 @@
 
       // get current window placement
       const placement = await windowPlacement();
-      if (!isCurrent() || requestId !== selectionRequestId) return;
+      if (!isCurrent() || requestId !== selectionRequestId) {
+        return;
+      }
       // hide the toolbar window
       await currentWindow.hide();
 

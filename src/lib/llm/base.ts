@@ -41,8 +41,12 @@ function parseResponseChunk(message?: ResponseMessage): LLMResponseChunk {
     content,
     thinking: details
       .map((detail) => {
-        if (detail?.type === 'reasoning.text' && typeof detail.text === 'string') return detail.text;
-        if (detail?.type === 'reasoning.summary' && typeof detail.summary === 'string') return detail.summary;
+        if (detail?.type === 'reasoning.text' && typeof detail.text === 'string') {
+          return detail.text;
+        }
+        if (detail?.type === 'reasoning.summary' && typeof detail.summary === 'string') {
+          return detail.summary;
+        }
         return '';
       })
       .join('')

@@ -588,7 +588,9 @@ export async function guessProgrammingLanguage(text: string, langs: string[]): P
  * @returns ISO 639-1 code, or null for unknown, unsupported results or native errors
  */
 export async function guessNaturalLanguage(text: string): Promise<string | null> {
-  if (!text.trim()) return null;
+  if (!text.trim()) {
+    return null;
+  }
   try {
     const code = await invoke<string | null>('detect_natural_language', { text });
     return code ? (findNaturalCase(code)?.value ?? null) : null;

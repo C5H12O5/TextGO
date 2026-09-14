@@ -18,10 +18,14 @@
    * @returns sanitized SVG data URL and text color flag, or undefined if invalid
    */
   function parseSVG(source: string): { src: string; useTextColor: boolean } | undefined {
-    if (!purifier || new TextEncoder().encode(source).length > MAX_SVG_BYTES) return;
+    if (!purifier || new TextEncoder().encode(source).length > MAX_SVG_BYTES) {
+      return;
+    }
     try {
       const document = new DOMParser().parseFromString(source, 'image/svg+xml');
-      if (document.querySelector('parsererror') || document.documentElement.localName !== 'svg') return;
+      if (document.querySelector('parsererror') || document.documentElement.localName !== 'svg') {
+        return;
+      }
 
       const svg = purifier.sanitize(document.documentElement.outerHTML, {
         USE_PROFILES: { svg: true, svgFilters: true },
@@ -32,11 +36,15 @@
         SANITIZE_DOM: false,
         RETURN_DOM_FRAGMENT: true
       }).firstElementChild;
-      if (svg?.localName !== 'svg') return;
+      if (svg?.localName !== 'svg') {
+        return;
+      }
 
       const content = new XMLSerializer().serializeToString(svg);
       const bytes = new TextEncoder().encode(content);
-      if (bytes.length > MAX_SVG_BYTES) return;
+      if (bytes.length > MAX_SVG_BYTES) {
+        return;
+      }
       // use a mask when the SVG contains currentColor, otherwise use a background image
       return {
         src: SVG_DATA_URL_PREFIX + btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join('')),
@@ -80,7 +88,9 @@
       return;
     }
     const encoded = icon.slice(SVG_DATA_URL_PREFIX.length);
-    if (encoded.length > MAX_BASE64_LENGTH) return;
+    if (encoded.length > MAX_BASE64_LENGTH) {
+      return;
+    }
     try {
       const bytes = Uint8Array.from(atob(encoded), (character) => character.charCodeAt(0));
       return parseSVG(new TextDecoder('utf-8', { fatal: true }).decode(bytes));

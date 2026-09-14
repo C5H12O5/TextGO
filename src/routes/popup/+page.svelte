@@ -408,7 +408,9 @@
     );
     // Native focus loss can hide the window without emitting hide-popup.
     const visible = await currentWindow.isVisible().catch(() => false);
-    if (!visible || requestId !== translationRequestId) return;
+    if (!visible || requestId !== translationRequestId) {
+      return;
+    }
 
     Object.assign(entry, rendered, { selection });
     renderedTranslation = translationKey;

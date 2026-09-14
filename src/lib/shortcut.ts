@@ -83,7 +83,9 @@ export class Manager {
     try {
       const isCurrent = createExecutionGuard();
       await shortcuts.ready;
-      if (!isCurrent()) return;
+      if (!isCurrent()) {
+        return;
+      }
 
       // handle long press shortcut
       if (LONG_PRESS_SHORTCUT === shortcut) {
@@ -102,18 +104,24 @@ export class Manager {
       const mouse = isMouseShortcut(shortcut);
       if (mouse && !selection.trim()) {
         selection = await invoke<string>('get_selection', { mouse: true });
-        if (!isCurrent()) return;
+        if (!isCurrent()) {
+          return;
+        }
         if (!selection.trim()) {
           return;
         }
       }
 
       const { matchAll, matchOne } = await import('$lib/matcher');
-      if (!isCurrent()) return;
+      if (!isCurrent()) {
+        return;
+      }
       if (s.mode === 'toolbar') {
         // find all matching rules
         const rules = await matchAll(selection, s.rules);
-        if (!isCurrent()) return;
+        if (!isCurrent()) {
+          return;
+        }
         if (rules.length === 0) {
           console.warn('No matching rules found');
           return;
@@ -125,7 +133,9 @@ export class Manager {
         } else {
           // slight delay to ensure keyboard event has fully processed
           setTimeout(async () => {
-            if (!isCurrent()) return;
+            if (!isCurrent()) {
+              return;
+            }
             try {
               await invoke('show_toolbar', { payload, mouse });
             } catch (error) {
@@ -136,7 +146,9 @@ export class Manager {
       } else {
         // find first matching rule
         const rule = await matchOne(selection, s.rules);
-        if (!isCurrent()) return;
+        if (!isCurrent()) {
+          return;
+        }
         if (rule === null) {
           console.warn('No matching rule found');
           return;
