@@ -50,9 +50,17 @@ pub static TOOLBAR_HIDE_ON_SCROLL: AtomicBool = AtomicBool::new(true);
 pub static REGISTERED_SHORTCUTS: LazyLock<Mutex<HashMap<u32, String>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
+// distinguish TextGO's simulated input from physical keys and other applications' input
+pub const SIMULATED_INPUT_MARKER: u32 = 0x0054_474f;
+
 // global Enigo instance for keyboard simulation
-pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> =
-    LazyLock::new(|| Mutex::new(Enigo::new(&Settings::default())));
+pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> = LazyLock::new(|| {
+    Mutex::new(Enigo::new(&Settings {
+        event_source_user_data: Some(SIMULATED_INPUT_MARKER.into()),
+        windows_dw_extra_info: Some(SIMULATED_INPUT_MARKER as usize),
+        ..Settings::default()
+    }))
+});
 
 // global ClipboardContext instance for clipboard access
 pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
@@ -149,6 +157,11 @@ pub fn run() {
                 .clear_targets()
                 .target(Target::new(TargetKind::Stdout))
                 .with_colors(ColoredLevelConfig::default())
+                .filter(|metadata| {
+                    let is_enigo =
+                        metadata.target() == "enigo" || metadata.target().starts_with("enigo::");
+                    !is_enigo || metadata.level() <= log::Level::Info
+                })
                 .level(
                     // load log level from RUST_LOG env variable
                     std::env::var("RUST_LOG")

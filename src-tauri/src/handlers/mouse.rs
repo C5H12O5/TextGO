@@ -7,7 +7,7 @@ use crate::platform;
 use crate::{
     APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
     LONG_PRESS_DURATION, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
-    TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
+    SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
@@ -99,7 +99,7 @@ pub fn handle_mouse_event(event: Event) {
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) > 0 || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         return;
     }
-    detect_user_copy_operation(event.event_type);
+    detect_user_copy_operation(&event);
 
     match event.event_type {
         EventType::ButtonPress(Button::Left) => {
@@ -143,8 +143,13 @@ pub fn handle_mouse_event(event: Event) {
 }
 
 /// Detect user copy operation while shortcut handling is active.
-fn detect_user_copy_operation(event_type: EventType) {
-    match event_type {
+fn detect_user_copy_operation(event: &Event) {
+    // Our copy events can arrive after the selection's suspension guard has been dropped.
+    if event.extra_data as u64 == u64::from(SIMULATED_INPUT_MARKER) {
+        return;
+    }
+
+    match event.event_type {
         EventType::KeyPress(key) => {
             update_copy_modifier_state(key, true);
 
@@ -514,4 +519,51 @@ fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::SystemTime;
+
+    #[test]
+    fn copy_detection_distinguishes_simulated_and_user_input() {
+        #[cfg(target_os = "macos")]
+        let modifier = Key::MetaLeft;
+        #[cfg(target_os = "windows")]
+        let modifier = Key::ControlLeft;
+
+        // A late synthetic event reaches this detector after shortcut handling resumes.
+        // Other applications' injected shortcuts must still count as user copy operations.
+        for (marker, should_interrupt) in [
+            (SIMULATED_INPUT_MARKER, false),
+            (0, true),
+            (enigo::EVENT_MARKER, true),
+        ] {
+            COPY_MODIFIER_PRESSED.set(false);
+            CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
+            for event_type in [
+                EventType::KeyPress(modifier),
+                EventType::KeyPress(Key::KeyC),
+                EventType::KeyRelease(Key::KeyC),
+                EventType::KeyRelease(modifier),
+            ] {
+                let event = Event {
+                    time: SystemTime::now(),
+                    unicode: None,
+                    event_type,
+                    platform_code: 0,
+                    position_code: 0,
+                    usb_hid: 0,
+                    extra_data: marker as _,
+                };
+                detect_user_copy_operation(&event);
+            }
+            assert_eq!(
+                CLIPBOARD_RESTORE_INTERRUPTED.swap(false, Ordering::Relaxed),
+                should_interrupt,
+                "unexpected copy interruption for marker {marker:#x}",
+            );
+        }
+    }
 }
