@@ -12,7 +12,7 @@
   import Setting from '$lib/components/Setting.svelte';
   import { LLM_PROVIDERS } from '$lib/constants';
   import { buildFormSchema } from '$lib/constraint';
-  import { dumpExtension } from '$lib/helpers';
+  import { exportExtensions } from '$lib/helpers';
   import { Anthropic, Gemini, LMStudio, Ollama, OpenAI, OpenRouter, XAI } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
@@ -30,8 +30,8 @@
   import type { CustomLLMProvider, LLMProvider } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
-  import { open, save } from '@tauri-apps/plugin-dialog';
-  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { readTextFile } from '@tauri-apps/plugin-fs';
   import type { IconComponentProps } from 'phosphor-svelte';
   import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
   import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
@@ -183,18 +183,14 @@
         console.error(`Failed to import prompt: ${error}`);
       }
     }}
-    onexport={async (item) => {
+    onexport={async (items) => {
       try {
-        const path = await save({
-          defaultPath: `${item.id}.json`,
-          filters: [{ name: 'JSON', extensions: ['json'] }]
-        });
-        if (path) {
-          await writeTextFile(path, dumpExtension(item));
+        if (await exportExtensions(items)) {
           alert(m.export_success());
         }
       } catch (error) {
         console.error(`Failed to export prompt: ${error}`);
+        alert({ level: 'error', message: m.export_failed() });
       }
     }}
   >

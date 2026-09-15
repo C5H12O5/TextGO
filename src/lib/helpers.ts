@@ -2,6 +2,9 @@ import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/cons
 import { m } from '$lib/paraglide/messages';
 import { getLocale, locales, type Locale } from '$lib/paraglide/runtime';
 import { invoke } from '@tauri-apps/api/core';
+import { join } from '@tauri-apps/api/path';
+import { open, save } from '@tauri-apps/plugin-dialog';
+import { exists, writeTextFile } from '@tauri-apps/plugin-fs';
 import { type } from '@tauri-apps/plugin-os';
 import type { ActionReturn } from 'svelte/action';
 import type { Instance, Props } from 'tippy.js';
@@ -172,16 +175,13 @@ export async function setupTray(locale: Locale = getLocale()) {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Extension<T = Record<string, any>> = { id: string } & T;
-
 /**
  * Serialize extension to JSON string.
  *
  * @param extension - extension object
  * @returns JSON string
  */
-export function dumpExtension(extension: Extension): string {
+export function dumpExtension<T extends { id: string }>(extension: T): string {
   const { id, ...rest } = extension;
   return JSON.stringify(
     {
@@ -201,4 +201,59 @@ export function dumpExtension(extension: Extension): string {
     null,
     2
   );
+}
+
+/**
+ * Export one extension to a chosen file or multiple extensions to a chosen directory.
+ *
+ * @param items - extensions to export in list order
+ * @returns true if all files are exported, false if the selection is empty or export is canceled
+ * @throws if serialization, dialog or file operations fail
+ */
+export async function exportExtensions<T extends { id: string }>(items: T[]): Promise<boolean> {
+  if (!items.length) {
+    return false;
+  }
+  const filters = [{ name: 'JSON', extensions: ['json'] }];
+  // serialize before opening a dialog so later edits cannot change the exported data
+  const files = items.map((item) => ({ id: item.id, contents: dumpExtension(item) }));
+  if (files.length === 1) {
+    const path = await save({ defaultPath: `${files[0].id}.json`, filters });
+    if (!path) {
+      return false;
+    }
+    await writeTextFile(path, files[0].contents);
+    return true;
+  }
+
+  const directory = await open({
+    title: m.export_count({ count: files.length }),
+    directory: true,
+    multiple: false
+  });
+  if (!directory) {
+    return false;
+  }
+  for (const file of files) {
+    // keep generated filenames valid on both macOS and Windows
+    const name =
+      Array.from(file.id, (char) => (char.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(char) ? '_' : char))
+        .join('')
+        .replace(/^[. ]+|[. ]+$/g, '') || 'extension';
+    const reserved = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name);
+    let path = await join(directory, `${reserved ? '_' : ''}${name}.json`);
+    const conflict = await exists(path);
+    if (conflict) {
+      // use the native save dialog to rename files or confirm overwriting
+      const replacement = await save({ defaultPath: path, filters });
+      if (!replacement) {
+        return false;
+      }
+      path = replacement;
+    }
+    // preserve the original ID when filename cleanup or renaming changes the filename
+    const contents = JSON.stringify({ id: file.id, ...JSON.parse(file.contents) }, null, 2);
+    await writeTextFile(path, contents, { createNew: !conflict });
+  }
+  return true;
 }

@@ -6,13 +6,13 @@
   import List from '$lib/components/List.svelte';
   import Regexp from '$lib/components/Regexp.svelte';
   import Setting from '$lib/components/Setting.svelte';
-  import { dumpExtension } from '$lib/helpers';
+  import { exportExtensions } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { regexps } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
-  import { open, save } from '@tauri-apps/plugin-dialog';
-  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { readTextFile } from '@tauri-apps/plugin-fs';
   import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
   import ScrollIcon from 'phosphor-svelte/lib/ScrollIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
@@ -57,18 +57,14 @@
         console.error(`Failed to import regexp: ${error}`);
       }
     }}
-    onexport={async (item) => {
+    onexport={async (items) => {
       try {
-        const path = await save({
-          defaultPath: `${item.id}.json`,
-          filters: [{ name: 'JSON', extensions: ['json'] }]
-        });
-        if (path) {
-          await writeTextFile(path, dumpExtension(item));
+        if (await exportExtensions(items)) {
           alert(m.export_success());
         }
       } catch (error) {
         console.error(`Failed to export regexp: ${error}`);
+        alert({ level: 'error', message: m.export_failed() });
       }
     }}
   >

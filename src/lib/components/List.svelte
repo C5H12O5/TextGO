@@ -12,8 +12,9 @@
   import PlusCircleIcon from 'phosphor-svelte/lib/PlusCircleIcon';
   import ShareIcon from 'phosphor-svelte/lib/ShareIcon';
   import XCircleIcon from 'phosphor-svelte/lib/XCircleIcon';
-  import type { Component, Snippet } from 'svelte';
+  import { onDestroy, type Component, type Snippet } from 'svelte';
   import { flip } from 'svelte/animate';
+  import { SvelteSet } from 'svelte/reactivity';
   import { slide } from 'svelte/transition';
 
   type ListProps = {
@@ -37,12 +38,12 @@
     class?: string;
     /** Callback function when clicking create. */
     oncreate?: () => void;
-    /** Callback function after data deletion. */
+    /** Callback function after each item is deleted, including batch deletion. */
     ondelete?: (item: T) => void;
     /** Callback function for importing data. */
     onimport?: () => void;
-    /** Callback function for exporting data. */
-    onexport?: (item: T) => void;
+    /** Callback function for exporting all selected items in list order. */
+    onexport?: (items: T[]) => void | Promise<void>;
   };
 
   let {
@@ -61,23 +62,124 @@
     onexport
   }: ListProps = $props();
 
-  // selected data ID
-  let selectedId: string = $state('');
-  // selected data number
-  let selectedNum: string = $state('');
-  // selected data element
-  let selectedElement: HTMLLIElement | null = $state(null);
+  // selected data IDs
+  const selectedIds = new SvelteSet<string>();
+  // selected data items in list order
+  const selectedItems = $derived(data.filter((item) => selectedIds.has(item.id)));
+  // number of selected data items
+  const selectedCount = $derived(selectedItems.length);
+  // action labels for single and multiple selections
+  const deleteText = $derived(selectedCount > 1 ? m.delete_count({ count: selectedCount }) : `${m.delete()}${name}`);
+  const exportText = $derived(selectedCount > 1 ? m.export_count({ count: selectedCount }) : `${m.export()}${name}`);
+  // export operation state
+  let exporting = $state(false);
+  // data list element
+  let listElement: HTMLUListElement | undefined = $state();
+  // pending scroll timer
+  let scrollTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // remove selections when the underlying data is deleted or renamed
+  $effect(() => {
+    const ids = new Set(data.map((item) => item.id));
+    for (const id of selectedIds) {
+      if (!ids.has(id)) {
+        selectedIds.delete(id);
+      }
+    }
+  });
+
+  // cancel pending scrolling when the component is destroyed
+  onDestroy(() => clearTimeout(scrollTimer));
 
   /**
-   * Scroll selected row into view.
+   * Toggle selection of a data item.
+   *
+   * @param id - data item ID
    */
-  function scrollIntoView() {
-    if (!selectedElement) {
+  function toggleSelection(id: string) {
+    if (selectedIds.has(id)) {
+      selectedIds.delete(id);
+    } else {
+      selectedIds.add(id);
+    }
+  }
+
+  /**
+   * Confirm and delete selected data items.
+   */
+  function deleteSelected() {
+    if (!selectedCount) {
       return;
     }
-    // execute after FLIP animation completes
-    setTimeout(() => {
-      selectedElement?.scrollIntoView({
+    // preserve the selected IDs while the confirmation dialog is open
+    const ids = new Set(selectedItems.map((item) => item.id));
+    const itemNum = (data.findIndex((item) => ids.has(item.id)) + 1).toString().padStart(2, '0');
+    confirm({
+      title: selectedCount > 1 ? deleteText : `${m.delete()}${name}[${itemNum}]`,
+      message: m.delete_confirm_message(),
+      onconfirm: () => {
+        // delete in list order so each cleanup callback sees the remaining data
+        for (const id of ids) {
+          const index = data.findIndex((item) => item.id === id);
+          if (index !== -1) {
+            const [item] = data.splice(index, 1);
+            ondelete?.(item);
+          }
+          selectedIds.delete(id);
+        }
+      }
+    });
+  }
+
+  /**
+   * Export selected data items in list order.
+   */
+  async function exportSelected() {
+    if (!selectedCount || !onexport || exporting) {
+      return;
+    }
+    // prevent repeated exports while the current operation is pending
+    exporting = true;
+    try {
+      await onexport([...selectedItems]);
+    } finally {
+      exporting = false;
+    }
+  }
+
+  /**
+   * Move selected data items up or down by one position.
+   *
+   * @param direction - move up (-1) or down (1)
+   */
+  function moveSelected(direction: -1 | 1) {
+    if (!selectedCount) {
+      return;
+    }
+    const result = [...data];
+    // preserve selection order by traversing from the top when moving up or the bottom when moving down
+    for (
+      let index = direction === -1 ? 1 : result.length - 2;
+      index >= 0 && index < result.length;
+      index -= direction
+    ) {
+      const neighbor = index + direction;
+      if (
+        neighbor >= 0 &&
+        neighbor < result.length &&
+        selectedIds.has(result[index].id) &&
+        !selectedIds.has(result[neighbor].id)
+      ) {
+        [result[index], result[neighbor]] = [result[neighbor], result[index]];
+      }
+    }
+    data = result;
+    clearTimeout(scrollTimer);
+    // scroll the leading selected row into view after the FLIP animation
+    scrollTimer = setTimeout(() => {
+      const rows = listElement?.querySelectorAll<HTMLLIElement>('[data-selected="true"]');
+      const row = direction === -1 ? rows?.[0] : rows?.[rows.length - 1];
+      row?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
         inline: 'nearest'
@@ -122,65 +224,26 @@
       <Button
         icon={XCircleIcon}
         iconWeight="bold"
-        text="{m.delete()}{name}"
-        class={selectedId ? 'text-red-800' : 'btn-disabled'}
-        onclick={() => {
-          if (!selectedId) {
-            return;
-          }
-          // confirm delete operation
-          confirm({
-            title: `${m.delete()}${name}[${selectedNum}]`,
-            message: m.delete_confirm_message(),
-            onconfirm: () => {
-              const index = data.findIndex((i) => i.id === selectedId);
-              if (index !== -1) {
-                const item = data[index];
-                data.splice(index, 1);
-                ondelete?.(item);
-              }
-              selectedId = '';
-              selectedNum = '';
-              selectedElement = null;
-            }
-          });
-        }}
+        text={deleteText}
+        class={selectedCount ? 'text-red-800' : 'btn-disabled'}
+        disabled={!selectedCount}
+        onclick={deleteSelected}
       />
       <Button
         icon={ArrowCircleUpIcon}
         iconWeight="bold"
         text={m.move_up()}
-        class={selectedId ? 'text-surface' : 'btn-disabled'}
-        onclick={() => {
-          if (!selectedId) {
-            return;
-          }
-          const index = data.findIndex((i) => i.id === selectedId);
-          if (index > 0) {
-            const temp = data[index];
-            data[index] = data[index - 1];
-            data[index - 1] = temp;
-          }
-          scrollIntoView();
-        }}
+        class={selectedCount ? 'text-surface' : 'btn-disabled'}
+        disabled={!selectedCount}
+        onclick={() => moveSelected(-1)}
       />
       <Button
         icon={ArrowCircleDownIcon}
         iconWeight="bold"
         text={m.move_down()}
-        class={selectedId ? 'text-surface' : 'btn-disabled'}
-        onclick={() => {
-          if (!selectedId) {
-            return;
-          }
-          const index = data.findIndex((i) => i.id === selectedId);
-          if (index < data.length - 1) {
-            const temp = data[index];
-            data[index] = data[index + 1];
-            data[index + 1] = temp;
-          }
-          scrollIntoView();
-        }}
+        class={selectedCount ? 'text-surface' : 'btn-disabled'}
+        disabled={!selectedCount}
+        onclick={() => moveSelected(1)}
       />
       {#if onimport || onexport}
         <div class="divider mx-0 my-auto divider-horizontal h-5 w-2 opacity-50"></div>
@@ -195,17 +258,10 @@
         {#if onexport}
           <Button
             icon={ShareIcon}
-            text="{m.export()}{name}"
-            class={selectedId ? 'text-emphasis' : 'btn-disabled'}
-            onclick={() => {
-              if (!selectedId) {
-                return;
-              }
-              const item = data.find((i) => i.id === selectedId);
-              if (item) {
-                onexport(item);
-              }
-            }}
+            text={exportText}
+            class={selectedCount ? 'text-emphasis' : 'btn-disabled'}
+            disabled={!selectedCount || exporting}
+            onclick={exportSelected}
           />
         {/if}
       {/if}
@@ -214,6 +270,7 @@
   <!-- data list -->
   {#if !collapsed}
     <ul
+      bind:this={listElement}
       class="list scrollbar-none overflow-y-auto bg-base-100 [&_.list-row]:min-h-10 [&_.list-row]:py-1"
       transition:slide={{ duration: 300 }}
     >
@@ -229,22 +286,20 @@
         <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <li
           class="list-row cursor-pointer items-center rounded-none hover:bg-base-300 {evenIdx ? '' : 'bg-base-150'}"
-          onclick={(event) => {
-            if (selectedId === item.id) {
-              selectedId = '';
-              selectedNum = '';
-              selectedElement = null;
-            } else {
-              selectedId = item.id;
-              selectedNum = itemNum;
-              selectedElement = event.currentTarget as HTMLLIElement;
-            }
-          }}
+          data-selected={selectedIds.has(item.id)}
+          onclick={() => toggleSelection(item.id)}
           animate:flip={{ duration: 200 }}
         >
           <span class="flex items-center gap-1">
-            <input type="radio" class="pointer-events-none radio radio-xs" checked={selectedId === item.id} />
-            <span class="text-base font-thin {selectedId === item.id ? '' : 'opacity-60'}">{itemNum}</span>
+            <input
+              type="checkbox"
+              class="checkbox rounded-sm checkbox-xs"
+              aria-label="{name}[{itemNum}]"
+              checked={selectedIds.has(item.id)}
+              onclick={(event) => event.stopPropagation()}
+              onchange={() => toggleSelection(item.id)}
+            />
+            <span class="text-base font-thin {selectedIds.has(item.id) ? '' : 'opacity-60'}">{itemNum}</span>
           </span>
           {@render row(item)}
         </li>

@@ -7,13 +7,13 @@
   import List from '$lib/components/List.svelte';
   import Model from '$lib/components/Model.svelte';
   import Setting from '$lib/components/Setting.svelte';
-  import { dumpExtension } from '$lib/helpers';
+  import { exportExtensions } from '$lib/helpers';
   import { m } from '$lib/paraglide/messages';
   import { models } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
   import { basename } from '@tauri-apps/api/path';
-  import { open, save } from '@tauri-apps/plugin-dialog';
-  import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
+  import { open } from '@tauri-apps/plugin-dialog';
+  import { readTextFile } from '@tauri-apps/plugin-fs';
   import ArrowClockwiseIcon from 'phosphor-svelte/lib/ArrowClockwiseIcon';
   import PackageIcon from 'phosphor-svelte/lib/PackageIcon';
   import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
@@ -62,18 +62,14 @@
         console.error(`Failed to import model: ${error}`);
       }
     }}
-    onexport={async (item) => {
+    onexport={async (items) => {
       try {
-        const path = await save({
-          defaultPath: `${item.id}.json`,
-          filters: [{ name: 'JSON', extensions: ['json'] }]
-        });
-        if (path) {
-          await writeTextFile(path, dumpExtension(item));
+        if (await exportExtensions(items)) {
           alert(m.export_success());
         }
       } catch (error) {
         console.error(`Failed to export model: ${error}`);
+        alert({ level: 'error', message: m.export_failed() });
       }
     }}
   >
