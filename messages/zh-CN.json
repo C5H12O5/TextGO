@@ -212,6 +212,8 @@
   "popup_opacity_explain": "调整弹窗背景透明度，数值越低越透明",
   "popup_font_size": "字号",
   "popup_font_size_explain": "调整弹窗结果内容的字体大小",
+  "popup_line_wrapping": "自动换行",
+  "popup_line_wrapping_explain": "非 AI 对话的弹窗结果超出宽度时自动换行",
   "mouse_settings": "鼠标设置",
   "text_selection_settings": "划词设置",
   "clipboard_fallback": "剪贴板回退",

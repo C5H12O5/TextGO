@@ -17,6 +17,8 @@
     tabSize: number;
     /** Maximum line length. */
     lineLength: number;
+    /** Whether to wrap lines to fit the editor width. */
+    lineWrapping: boolean;
     /** Whether the editor is read-only. */
     readOnly: boolean;
     /** Whether to use dark theme. */
@@ -246,6 +248,7 @@
     placeholder: _placeholder,
     tabSize = 4,
     lineLength = 80,
+    lineWrapping = false,
     readOnly = false,
     darkMode = 'auto',
     fontSize = null,
@@ -430,6 +433,21 @@
   });
 
   /**
+   * Extension for wrapping long lines without changing document content.
+   */
+  const editorLineWrapping = new Compartment();
+  const getEditorLineWrapping = () => (lineWrapping ? EditorView.lineWrapping : []);
+  const lineWrappingHandler: Extension = editorLineWrapping.of(getEditorLineWrapping());
+
+  // update line wrapping without recreating the editor or losing its state
+  $effect(() => {
+    const currentEditorLineWrapping = getEditorLineWrapping();
+    if (editorView) {
+      editorView.dispatch({ effects: editorLineWrapping.reconfigure(currentEditorLineWrapping) });
+    }
+  });
+
+  /**
    * Extension for editor theme.
    */
   const editorTheme = new Compartment();
@@ -469,6 +487,7 @@
           tabKeyHandler,
           readOnlyHandler,
           placeholderHandler,
+          lineWrappingHandler,
           themeHandler
         ]
       })
@@ -520,6 +539,7 @@
       placeholder={_placeholder}
       {tabSize}
       {lineLength}
+      {lineWrapping}
       {readOnly}
       {darkMode}
       {fontSize}

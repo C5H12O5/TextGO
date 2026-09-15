@@ -263,6 +263,9 @@ export const popupOpacity = persisted<number>('popupOpacity', POPUP_OPACITY.defa
 // popup font size in pixels
 export const popupFontSize = persisted<number>('popupFontSize', POPUP_FONT_SIZE.default);
 
+// whether to wrap long lines in non-AI popup results
+export const popupLineWrapping = persisted<boolean>('popupLineWrapping', false);
+
 // whether the popup window is pinned
 export const popupPinned = persisted<boolean>('popupPinned', false);
 

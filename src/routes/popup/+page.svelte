@@ -228,6 +228,7 @@
   import {
     popupCornerRadius,
     popupFontSize,
+    popupLineWrapping,
     popupOpacity,
     popupPinned,
     popupWindowSize,
@@ -1016,6 +1017,7 @@
               editorClass="h-full"
               class="popup-result h-full rounded-none border-none"
               fontSize={fontSizeStyle}
+              lineWrapping={popupLineWrapping.current}
             />
           {/await}
         {:else}

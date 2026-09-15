@@ -212,6 +212,8 @@
   "popup_opacity_explain": "Controls the popup background opacity",
   "popup_font_size": "Font Size",
   "popup_font_size_explain": "Controls the font size of popup results",
+  "popup_line_wrapping": "Word Wrap",
+  "popup_line_wrapping_explain": "Wrap long lines in popup results (except AI conversations)",
   "mouse_settings": "Mouse Settings",
   "text_selection_settings": "Text Selection",
   "clipboard_fallback": "Clipboard Fallback",
