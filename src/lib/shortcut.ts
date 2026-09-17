@@ -163,7 +163,7 @@ export class Manager {
   }
 
   /**
-   * Enable or disable a shortcut group.
+   * Enable or disable a shortcut group and expand or collapse its rules.
    *
    * @param shortcut - shortcut string
    * @param enabled - whether the shortcut should be enabled
@@ -185,6 +185,7 @@ export class Manager {
       }
 
       s.disabled = !enabled;
+      s.collapsed = !enabled;
     } catch (error) {
       console.error(`Failed to update shortcut state: ${error}`);
       throw error;
