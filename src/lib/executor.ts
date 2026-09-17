@@ -25,13 +25,13 @@ import {
   upperCase,
   words
 } from 'es-toolkit/string';
-import ArrowsClockwiseIcon from 'phosphor-svelte/lib/ArrowsClockwiseIcon';
 import BrowsersIcon from 'phosphor-svelte/lib/BrowsersIcon';
 import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
 import FolderOpenIcon from 'phosphor-svelte/lib/FolderOpenIcon';
 import FunctionIcon from 'phosphor-svelte/lib/FunctionIcon';
 import ScissorsIcon from 'phosphor-svelte/lib/ScissorsIcon';
 import SelectionBackgroundIcon from 'phosphor-svelte/lib/SelectionBackgroundIcon';
+import SwapIcon from 'phosphor-svelte/lib/SwapIcon';
 
 /**
  * Executor function type.
@@ -215,7 +215,7 @@ export const CONVERT_ACTIONS: Processor[] = [
     label: m.constant_case(),
     process: constantCase
   }
-].map((a) => ({ ...a, icon: ArrowsClockwiseIcon, builtIn: true }));
+].map((a) => ({ ...a, icon: SwapIcon, builtIn: true }));
 
 /**
  * Text processing actions.
