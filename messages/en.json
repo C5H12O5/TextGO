@@ -56,6 +56,8 @@
   "mouse_drag_hint": "Trigger action after drag-selecting text",
   "mouse_dbclick": "Double-Click",
   "mouse_dbclick_hint": "Trigger action after double-clicking to select text",
+  "mouse_triple_click": "Triple-Click",
+  "mouse_triple_click_hint": "Trigger action after triple-clicking to select text",
   "mouse_shift_click": "Shift-Click",
   "mouse_shift_click_hint": "Trigger action after shift-clicking to select text",
   "keyboard_keys": "Keyboard",

@@ -6,8 +6,9 @@ use crate::error::AppError;
 use crate::platform;
 use crate::{
     APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
-    LONG_PRESS_DURATION, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
-    SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
+    LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED,
+    SHORTCUT_SUSPEND, SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
+    TRIPLE_CLICK_REGISTERED,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
@@ -71,8 +72,16 @@ fn macos_command_key_pressed() -> bool {
     left_command_pressed || right_command_pressed
 }
 
-/// Type alias for mouse click data (time, position, is_valid_cursor).
-type Click = (Instant, (f64, f64), bool);
+/// Mouse click data.
+#[derive(Clone, Copy)]
+struct Click {
+    time: Instant,
+    pos: (f64, f64),
+    valid_cursor: bool,
+    count: u8,
+    third_pressed: bool,
+    epoch: u64,
+}
 
 // long press tracking states
 static LONG_PRESS_EPOCH: AtomicU64 = AtomicU64::new(0);
@@ -88,18 +97,33 @@ thread_local! {
     static COPY_MODIFIER_PRESSED: Cell<bool> = const { Cell::new(false) };
 }
 
-// thresholds for drag and double click detection
+// thresholds for drag and consecutive click detection
 const MIN_DRAG_DISTANCE: f64 = 8.0;
 const MAX_DBCLICK_DISTANCE: f64 = 3.0;
 const MAX_DBCLICK_INTERVAL: Duration = Duration::from_millis(500);
+const DBCLICK_SHORTCUT: &str = "MouseClick+MouseClick";
+const TRIPLE_CLICK_SHORTCUT: &str = "MouseClick+MouseClick+MouseClick";
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) > 0 || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
+        if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
+            cancel_pending_click(true);
+        }
         return;
     }
     detect_user_copy_operation(&event);
+
+    if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
+        match event.event_type {
+            EventType::KeyPress(_) | EventType::Wheel { .. } => cancel_pending_click(true),
+            EventType::ButtonPress(button) if button != Button::Left => {
+                cancel_pending_click(true);
+            }
+            _ => (),
+        }
+    }
 
     match event.event_type {
         EventType::ButtonPress(Button::Left) => {
@@ -207,8 +231,14 @@ fn update_copy_modifier_state(key: Key, pressed: bool) {
 
 /// Handle mouse press event (detect drag start).
 fn handle_mouse_press() -> Result<(), AppError> {
+    // cancel pending double click before fetching selection
+    // preserve the click sequence for triple click detection
+    cancel_pending_click(false);
+    let pressed_at = Instant::now();
+
     // start tracking potential drag
     let pos = mouse_pos()?;
+    record_third_press(pressed_at, pos);
     DRAG_START_POS.set(Some(pos));
     IS_DRAGGING.set(false);
 
@@ -233,7 +263,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
             if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {
                 debug!("Long press triggered after {}ms", duration);
                 LONG_PRESS_TRIGGERED.store(true, Ordering::Relaxed);
-                let _ = emit_event("LongPress", None);
+                let _ = emit_event("LongPress", None, None);
             }
         });
     }
@@ -258,13 +288,22 @@ fn handle_mouse_move(x: f64, y: f64) -> Result<(), AppError> {
     Ok(())
 }
 
-/// Handle mouse release event (detect drag end or double click).
+/// Handle mouse release event (detect drag end, double click or triple click).
 fn handle_mouse_release() -> Result<(), AppError> {
     // invalidate long press if mouse is released
     LONG_PRESS_EPOCH.fetch_add(1, Ordering::Relaxed);
 
     // reset drag start position
     DRAG_START_POS.set(None);
+
+    let triple_click_registered = TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed);
+    if triple_click_registered
+        && (LONG_PRESS_TRIGGERED.load(Ordering::Relaxed)
+            || IS_DRAGGING.get()
+            || SHIFT_PRESSED.get())
+    {
+        cancel_pending_click(true);
+    }
 
     // skip other events if long press was triggered
     if LONG_PRESS_TRIGGERED.load(Ordering::Relaxed) {
@@ -282,7 +321,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("Checking for drag end (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit drag end event
-            emit_event("MouseClick+MouseMove", None)?;
+            emit_event("MouseClick+MouseMove", None, None)?;
         }
         IS_DRAGGING.set(false);
         return Ok(());
@@ -293,7 +332,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("Checking for shift+click (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit shift+click event
-            emit_event("Shift+MouseClick", None)?;
+            emit_event("Shift+MouseClick", None, None)?;
         }
 
         // avoid sticky shift state on macOS
@@ -303,30 +342,115 @@ fn handle_mouse_release() -> Result<(), AppError> {
         return Ok(());
     }
 
-    // check for double click
+    // delay double click only if triple click is registered
     let pos = mouse_pos()?;
-    let now = Instant::now();
-    if let Some((last_time, last_pos, last_valid_cursor)) = LAST_CLICK.get() {
-        let valid_cursor = is_valid_cursor || last_valid_cursor;
-        let valid_interval = now.duration_since(last_time) < MAX_DBCLICK_INTERVAL;
-        let valid_distance = distance(pos, last_pos) < MAX_DBCLICK_DISTANCE;
-        debug!(
-            "Checking for double click (cursor: {}, interval: {}, distance: {})",
-            valid_cursor, valid_interval, valid_distance
-        );
-        if valid_cursor && valid_interval && valid_distance {
-            // emit double click event
-            emit_event("MouseClick+MouseClick", None)?;
-            // reset last click state
-            LAST_CLICK.set(None);
-        } else {
-            LAST_CLICK.set(Some((now, pos, is_valid_cursor)));
+    let (count, epoch) = record_click(
+        Instant::now(),
+        pos,
+        is_valid_cursor,
+        triple_click_registered,
+    );
+    match count {
+        2 if triple_click_registered => {
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(MAX_DBCLICK_INTERVAL).await;
+                if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed)
+                    && !SHORTCUT_PAUSED.load(Ordering::Relaxed)
+                    && SHORTCUT_SUSPEND.load(Ordering::Relaxed) == 0
+                {
+                    let _ = emit_event(DBCLICK_SHORTCUT, None, Some(epoch));
+                }
+            });
         }
-    } else {
-        LAST_CLICK.set(Some((now, pos, is_valid_cursor)));
+        2 => emit_event(DBCLICK_SHORTCUT, None, None)?,
+        3 => emit_event(TRIPLE_CLICK_SHORTCUT, None, None)?,
+        _ => (),
     }
 
     Ok(())
+}
+
+/// Record whether the current press qualifies as a third click.
+fn record_third_press(now: Instant, pos: (f64, f64)) {
+    LAST_CLICK.set(LAST_CLICK.get().map(|mut click| {
+        click.third_pressed = click.count == 2
+            && now.duration_since(click.time) < MAX_DBCLICK_INTERVAL
+            && distance(pos, click.pos) < MAX_DBCLICK_DISTANCE;
+        click
+    }));
+}
+
+/// Record mouse release and update consecutive click count.
+fn record_click(
+    now: Instant,
+    pos: (f64, f64),
+    is_valid_cursor: bool,
+    triple_click_registered: bool,
+) -> (u8, u64) {
+    let epoch = *MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
+    let mut click = Click {
+        time: now,
+        pos,
+        valid_cursor: is_valid_cursor,
+        count: 1,
+        third_pressed: false,
+        epoch,
+    };
+    if let Some(last) = LAST_CLICK.get() {
+        let valid_interval = if last.count == 2 {
+            last.third_pressed
+        } else {
+            now.duration_since(last.time) < MAX_DBCLICK_INTERVAL
+        };
+        if last.epoch == epoch
+            && (is_valid_cursor || last.valid_cursor)
+            && valid_interval
+            && distance(pos, last.pos) < MAX_DBCLICK_DISTANCE
+        {
+            click.count = last.count + 1;
+            click.valid_cursor |= last.valid_cursor;
+        }
+    }
+    debug!("Detected mouse click count: {}", click.count);
+    LAST_CLICK.set(
+        if click.count == 3 || (click.count == 2 && !triple_click_registered) {
+            None
+        } else {
+            Some(click)
+        },
+    );
+    (click.count, epoch)
+}
+
+/// Cancel pending double click and optionally reset click sequence.
+fn cancel_pending_click(reset_sequence: bool) {
+    let mut current_epoch = MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
+    let epoch = *current_epoch;
+    *current_epoch = epoch.wrapping_add(1);
+    // only the mouse listener updates its thread-local click state
+    LAST_CLICK.set(
+        LAST_CLICK
+            .get()
+            .filter(|click| !reset_sequence && click.epoch == epoch)
+            .map(|mut click| {
+                click.epoch = epoch.wrapping_add(1);
+                click
+            }),
+    );
+}
+
+/// Dispatch pending double click if its epoch is still valid.
+fn dispatch_pending_double_click(
+    epoch: u64,
+    dispatch: impl FnOnce() -> Result<(), AppError>,
+) -> Result<bool, AppError> {
+    let mut current_epoch = MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
+    if *current_epoch != epoch {
+        return Ok(false);
+    }
+    *current_epoch = epoch.wrapping_add(1);
+    dispatch()?;
+    Ok(true)
 }
 
 /// Calculate distance between two points.
@@ -355,7 +479,11 @@ fn is_ibeam_cursor() -> bool {
 }
 
 /// Emit mouse event to frontend with optional selection fetching.
-fn emit_event(shortcut: &str, with_selection: Option<bool>) -> Result<(), AppError> {
+fn emit_event(
+    shortcut: &str,
+    with_selection: Option<bool>,
+    click_epoch: Option<u64>,
+) -> Result<(), AppError> {
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
         // check if current frontmost application/website is in blacklist
         if let Ok(true) = is_blocked(app.clone()) {
@@ -368,6 +496,15 @@ fn emit_event(shortcut: &str, with_selection: Option<bool>) -> Result<(), AppErr
                 "shortcut": shortcut,
                 "selection": ""
             });
+            if let Some(epoch) = click_epoch {
+                // recheck click epoch after locking APP_HANDLE and checking blacklist
+                // keep the lock until the event is emitted to prevent cancellation races
+                dispatch_pending_double_click(epoch, || {
+                    app.emit("shortcut", event_data)?;
+                    Ok(())
+                })?;
+                return Ok(());
+            }
             let _ = app.emit("shortcut", event_data);
             return Ok(());
         }
@@ -525,6 +662,193 @@ fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
 mod tests {
     use super::*;
     use std::time::SystemTime;
+
+    #[test]
+    fn click_sequences_keep_double_and_triple_clicks_exclusive() {
+        let start = Instant::now();
+        let pos = (10.0, 10.0);
+
+        // check click counts with and without triple click registration
+        for (registered, expected) in [(false, [1, 2, 1, 2]), (true, [1, 2, 3, 1])] {
+            cancel_pending_click(true);
+            for (index, count) in expected.into_iter().enumerate() {
+                cancel_pending_click(false);
+                record_third_press(start + Duration::from_millis(index as u64 * 100), pos);
+                assert_eq!(
+                    record_click(
+                        start + Duration::from_millis(index as u64 * 100),
+                        pos,
+                        true,
+                        registered,
+                    )
+                    .0,
+                    count,
+                );
+            }
+        }
+
+        // check interval, distance and cursor limits for consecutive clicks
+        for (interval, offset, valid_cursor, expected) in [
+            (499, 2.0, true, 3),
+            (500, 0.0, true, 1),
+            (100, 3.0, true, 1),
+            (100, 0.0, false, 1),
+        ] {
+            cancel_pending_click(true);
+            let mut count = 0;
+            for index in 0..3 {
+                cancel_pending_click(false);
+                record_third_press(
+                    start + Duration::from_millis(index * interval),
+                    (pos.0 + index as f64 * offset, pos.1),
+                );
+                count = record_click(
+                    start + Duration::from_millis(index * interval),
+                    (pos.0 + index as f64 * offset, pos.1),
+                    valid_cursor,
+                    true,
+                )
+                .0;
+            }
+            assert_eq!(count, expected);
+        }
+
+        // emit once on timeout and start a new click sequence afterward
+        cancel_pending_click(true);
+        record_click(start, pos, true, true);
+        let (_, epoch) = record_click(start + Duration::from_millis(100), pos, true, true);
+        let mut emitted = 0;
+        assert!(dispatch_pending_double_click(epoch, || {
+            emitted += 1;
+            Ok(())
+        })
+        .unwrap());
+        assert!(
+            !dispatch_pending_double_click(epoch, || panic!("duplicate double click")).unwrap()
+        );
+        assert_eq!(emitted, 1);
+        cancel_pending_click(false);
+        assert_eq!(
+            record_click(start + Duration::from_millis(601), pos, true, true).0,
+            1,
+        );
+
+        // cancel pending double click on third press and preserve the click count
+        let (_, epoch) = record_click(start + Duration::from_millis(700), pos, true, true);
+        cancel_pending_click(false);
+        record_third_press(start + Duration::from_millis(750), pos);
+        assert!(!dispatch_pending_double_click(epoch, || panic!("canceled double click")).unwrap());
+        assert_eq!(
+            record_click(start + Duration::from_millis(800), pos, true, true).0,
+            3,
+        );
+
+        // cancel pending double click and reset the click sequence on other input
+        record_click(start + Duration::from_millis(900), pos, true, true);
+        let (_, epoch) = record_click(start + Duration::from_millis(1000), pos, true, true);
+        cancel_pending_click(true);
+        assert!(!dispatch_pending_double_click(epoch, || panic!("canceled double click")).unwrap());
+        assert_eq!(
+            record_click(start + Duration::from_millis(1100), pos, true, true).0,
+            1,
+        );
+
+        // invalidate click state when registration changes or handling is suspended
+        *MOUSE_CLICK_EPOCH.lock().unwrap() += 1;
+        cancel_pending_click(false);
+        assert_eq!(
+            record_click(start + Duration::from_millis(1200), pos, true, false).0,
+            1,
+        );
+        cancel_pending_click(true);
+
+        // accept a timely third press even if release occurs after 500ms
+        // reject late presses or clicks outside the distance limit
+        for (press_ms, press_offset, release_offset, expected) in [
+            (450, 0.0, 0.0, 3),
+            (499, 0.0, 0.0, 3),
+            (500, 0.0, 0.0, 1),
+            (501, 0.0, 0.0, 1),
+            (450, 3.0, 0.0, 1),
+            (450, 0.0, 3.0, 1),
+        ] {
+            cancel_pending_click(true);
+            record_click(start, pos, true, true);
+            let second_release = start + Duration::from_millis(100);
+            let (_, epoch) = record_click(second_release, pos, true, true);
+            cancel_pending_click(false);
+            record_third_press(
+                second_release + Duration::from_millis(press_ms),
+                (pos.0 + press_offset, pos.1),
+            );
+            assert!(!dispatch_pending_double_click(epoch, || panic!(
+                "double before third release"
+            ))
+            .unwrap());
+            assert_eq!(
+                record_click(
+                    second_release + Duration::from_millis(550),
+                    (pos.0 + release_offset, pos.1),
+                    true,
+                    true,
+                )
+                .0,
+                expected,
+            );
+        }
+
+        // invalidate recorded third press on other gestures or epoch changes
+        for reset_sequence in [false, true] {
+            cancel_pending_click(true);
+            record_click(start, pos, true, true);
+            record_click(start + Duration::from_millis(100), pos, true, true);
+            cancel_pending_click(false);
+            record_third_press(start + Duration::from_millis(550), pos);
+            if reset_sequence {
+                cancel_pending_click(true);
+            } else {
+                *MOUSE_CLICK_EPOCH.lock().unwrap() += 1;
+            }
+            assert_eq!(
+                record_click(start + Duration::from_millis(650), pos, true, true).0,
+                1,
+            );
+        }
+
+        // cancel during blacklist or lock preparation before the final dispatch check
+        cancel_pending_click(true);
+        record_click(start, pos, true, true);
+        let (_, epoch) = record_click(start + Duration::from_millis(100), pos, true, true);
+        std::thread::spawn(|| cancel_pending_click(true))
+            .join()
+            .unwrap();
+        assert!(!dispatch_pending_double_click(epoch, || panic!("stale dispatch")).unwrap());
+
+        // finish event dispatch before another thread can cancel it
+        cancel_pending_click(true);
+        record_click(start, pos, true, true);
+        let (_, epoch) = record_click(start + Duration::from_millis(100), pos, true, true);
+        let (start_cancel, cancel_ready) = std::sync::mpsc::channel();
+        let (lock_checked, lock_result) = std::sync::mpsc::channel();
+        let cancellation = std::thread::spawn(move || {
+            cancel_ready.recv().unwrap();
+            let available = MOUSE_CLICK_EPOCH.try_lock().is_ok();
+            lock_checked.send(available).unwrap();
+            cancel_pending_click(true);
+        });
+        assert!(dispatch_pending_double_click(epoch, || {
+            start_cancel.send(()).unwrap();
+            assert!(
+                !lock_result.recv().unwrap(),
+                "cancellation slipped ahead of emit"
+            );
+            Ok(())
+        })
+        .unwrap());
+        cancellation.join().unwrap();
+        assert!(!dispatch_pending_double_click(epoch, || panic!("replayed dispatch")).unwrap());
+        cancel_pending_click(true);
+    }
 
     #[test]
     fn copy_detection_distinguishes_simulated_and_user_input() {

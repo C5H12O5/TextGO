@@ -56,6 +56,8 @@
   "mouse_drag_hint": "鼠标拖拽选中文本后触发",
   "mouse_dbclick": "鼠标双击选中",
   "mouse_dbclick_hint": "鼠标双击选中文本后触发",
+  "mouse_triple_click": "鼠标三击选中",
+  "mouse_triple_click_hint": "鼠标三击选中文本后触发",
   "mouse_shift_click": "Shift+点击选中",
   "mouse_shift_click_hint": "按住 Shift 键点击选中文本后触发",
   "keyboard_keys": "键盘按键触发",

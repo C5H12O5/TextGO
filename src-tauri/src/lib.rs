@@ -40,6 +40,12 @@ pub static LONG_PRESS: AtomicBool = AtomicBool::new(false);
 // global long press duration threshold
 pub static LONG_PRESS_DURATION: AtomicU64 = AtomicU64::new(2000);
 
+// global triple click registration state
+pub static TRIPLE_CLICK_REGISTERED: AtomicBool = AtomicBool::new(false);
+
+// global mouse click epoch for cancellation and event dispatch
+pub static MOUSE_CLICK_EPOCH: Mutex<u64> = Mutex::new(0);
+
 // global toolbar native menu open state
 pub static TOOLBAR_MENU_OPEN: AtomicBool = AtomicBool::new(false);
 
@@ -198,6 +204,7 @@ pub fn run() {
             resume_shortcut_handling,
             set_long_press_enabled,
             set_long_press_duration,
+            set_triple_click_registered,
             set_ibeam_cursor_enabled,
             set_toolbar_hide_on_scroll,
             set_force_get_selection,

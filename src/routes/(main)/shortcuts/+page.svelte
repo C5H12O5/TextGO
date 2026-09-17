@@ -9,7 +9,7 @@
   import Recorder from '$lib/components/Recorder.svelte';
   import Shortcut from '$lib/components/Shortcut.svelte';
   import Toggle from '$lib/components/Toggle.svelte';
-  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
+  import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT, TRIPLE_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
   import { NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
@@ -26,6 +26,7 @@
   import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
   import KeyboardIcon from 'phosphor-svelte/lib/KeyboardIcon';
   import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
+  import NumberThreeIcon from 'phosphor-svelte/lib/NumberThreeIcon';
   import ProhibitIcon from 'phosphor-svelte/lib/ProhibitIcon';
   import ProhibitInsetIcon from 'phosphor-svelte/lib/ProhibitInsetIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
@@ -74,6 +75,7 @@
     if (
       shortcuts.current[DRAG_SHORTCUT] &&
       shortcuts.current[DBCLICK_SHORTCUT] &&
+      shortcuts.current[TRIPLE_CLICK_SHORTCUT] &&
       shortcuts.current[SHIFT_CLICK_SHORTCUT]
     ) {
       showRecorder(source);
@@ -142,6 +144,8 @@
     if (b === DRAG_SHORTCUT) return 1;
     if (a === DBCLICK_SHORTCUT) return -1;
     if (b === DBCLICK_SHORTCUT) return 1;
+    if (a === TRIPLE_CLICK_SHORTCUT) return -1;
+    if (b === TRIPLE_CLICK_SHORTCUT) return 1;
     if (a === SHIFT_CLICK_SHORTCUT) return -1;
     if (b === SHIFT_CLICK_SHORTCUT) return 1;
     return a.localeCompare(b);
@@ -155,6 +159,7 @@
   function shortcutHint(shortcut: string) {
     if (shortcut === DRAG_SHORTCUT) return m.mouse_drag_hint();
     if (shortcut === DBCLICK_SHORTCUT) return m.mouse_dbclick_hint();
+    if (shortcut === TRIPLE_CLICK_SHORTCUT) return m.mouse_triple_click_hint();
     if (shortcut === SHIFT_CLICK_SHORTCUT) return m.mouse_shift_click_hint();
     return m.keyboard_shortcut_hint();
   }
@@ -197,6 +202,16 @@
           <MouseLeftClickIcon class="size-4" />
         </span>
         <span class="mx-auto tracking-wider">{m.mouse_dbclick()}</span>
+      </button>
+    </li>
+    <!-- mouse triple-click option -->
+    <li class={shortcuts.current[TRIPLE_CLICK_SHORTCUT] ? 'hidden' : ''}>
+      <button class="btn px-1 btn-sm" onclick={() => register(TRIPLE_CLICK_SHORTCUT, source)}>
+        <span class="flex">
+          <MouseLeftClickIcon class="size-4" />
+          <NumberThreeIcon class="size-4" />
+        </span>
+        <span class="mx-auto tracking-wider">{m.mouse_triple_click()}</span>
       </button>
     </li>
     <!-- mouse shift-click option -->

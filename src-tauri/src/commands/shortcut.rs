@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use crate::{
-    IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, REGISTERED_SHORTCUTS, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL,
+    IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, REGISTERED_SHORTCUTS,
+    SHORTCUT_PAUSED, SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL, TRIPLE_CLICK_REGISTERED,
 };
 use std::sync::atomic::Ordering;
 use tauri::AppHandle;
@@ -12,7 +12,11 @@ pub struct ShortcutHandlerGuard;
 
 impl ShortcutHandlerGuard {
     pub fn suspend() -> Self {
+        let mut epoch = MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
         SHORTCUT_SUSPEND.fetch_add(1, Ordering::Relaxed);
+        if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
+            *epoch = epoch.wrapping_add(1);
+        }
         ShortcutHandlerGuard
     }
 }
@@ -36,7 +40,13 @@ pub fn pause_shortcut_handling(
     }
 
     // set paused flag to true
-    SHORTCUT_PAUSED.store(true, Ordering::Relaxed);
+    {
+        let mut epoch = MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
+        SHORTCUT_PAUSED.store(true, Ordering::Relaxed);
+        if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
+            *epoch = epoch.wrapping_add(1);
+        }
+    }
 
     // unregister all shortcuts
     if unregister_all.unwrap_or(false) {
@@ -168,6 +178,16 @@ pub fn set_long_press_enabled(enabled: bool) -> Result<(), AppError> {
 #[tauri::command]
 pub fn set_long_press_duration(duration: u64) -> Result<(), AppError> {
     LONG_PRESS_DURATION.store(duration, Ordering::Relaxed);
+    Ok(())
+}
+
+/// Set the triple click registration state.
+#[tauri::command]
+pub fn set_triple_click_registered(registered: bool) -> Result<(), AppError> {
+    let mut epoch = MOUSE_CLICK_EPOCH.lock().unwrap_or_else(|e| e.into_inner());
+    if TRIPLE_CLICK_REGISTERED.swap(registered, Ordering::Relaxed) != registered {
+        *epoch = epoch.wrapping_add(1);
+    }
     Ok(())
 }
 

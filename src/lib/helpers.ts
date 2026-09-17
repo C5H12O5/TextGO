@@ -1,4 +1,4 @@
-import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT } from '$lib/constants';
+import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT, TRIPLE_CLICK_SHORTCUT } from '$lib/constants';
 import { m } from '$lib/paraglide/messages';
 import { getLocale, locales, type Locale } from '$lib/paraglide/runtime';
 import { invoke } from '@tauri-apps/api/core';
@@ -77,7 +77,12 @@ export function getKbdLabel(code: string): string {
  * @returns true if mouse shortcut, false otherwise
  */
 export function isMouseShortcut(shortcut: string): boolean {
-  return shortcut === DRAG_SHORTCUT || shortcut === DBCLICK_SHORTCUT || shortcut === SHIFT_CLICK_SHORTCUT;
+  return (
+    shortcut === DRAG_SHORTCUT ||
+    shortcut === DBCLICK_SHORTCUT ||
+    shortcut === TRIPLE_CLICK_SHORTCUT ||
+    shortcut === SHIFT_CLICK_SHORTCUT
+  );
 }
 
 /**
@@ -91,6 +96,8 @@ export function formatShortcut(shortcut: string): string {
     return m.mouse_drag();
   } else if (shortcut === DBCLICK_SHORTCUT) {
     return m.mouse_dbclick();
+  } else if (shortcut === TRIPLE_CLICK_SHORTCUT) {
+    return m.mouse_triple_click();
   } else if (shortcut === SHIFT_CLICK_SHORTCUT) {
     return m.mouse_shift_click();
   }

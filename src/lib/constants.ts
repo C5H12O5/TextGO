@@ -14,6 +14,11 @@ export const DRAG_SHORTCUT = 'MouseClick+MouseMove';
 export const DBCLICK_SHORTCUT = 'MouseClick+MouseClick';
 
 /**
+ * Mouse triple-click shortcut.
+ */
+export const TRIPLE_CLICK_SHORTCUT = 'MouseClick+MouseClick+MouseClick';
+
+/**
  * Shift + Mouse click shortcut.
  */
 export const SHIFT_CLICK_SHORTCUT = 'Shift+MouseClick';
