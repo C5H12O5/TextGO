@@ -138,6 +138,15 @@ unsafe fn objc_call_bool_usize(obj: *const c_void, sel: *const c_void, arg: usiz
     func(obj, sel, arg) != 0
 }
 
+/// Native pasteboard generation, used only to guard a one-shot copy repair.
+pub(super) fn clipboard_change_count() -> u64 {
+    unsafe {
+        let class = objc_getClass(c"NSPasteboard".as_ptr());
+        let board = objc_call_ptr(class, sel_registerName(c"generalPasteboard".as_ptr()));
+        objc_call!(board, sel_registerName(c"changeCount".as_ptr()), isize) as u64
+    }
+}
+
 /// Check if two NSPoint values are equal with floating point tolerance.
 #[inline]
 fn ns_point_equals(p1: NSPoint, p2: NSPoint) -> bool {

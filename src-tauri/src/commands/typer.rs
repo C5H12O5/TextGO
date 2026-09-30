@@ -1,4 +1,4 @@
-use crate::commands::clipboard::{set_clipboard_text, with_clipboard_backup};
+use crate::commands::clipboard::{complete_clipboard_operation, ClipboardTransaction};
 use crate::commands::keyboard::send_paste_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
@@ -18,27 +18,35 @@ pub async fn enter_text(
     if text.is_empty() {
         return Ok(());
     }
+    // Cancellation while queued must not deliver an unwanted paste later.
+    let mut clipboard = ClipboardTransaction::begin(!clipboard.unwrap_or(false)).await?;
+    let chars = text.chars().count();
+    clipboard.set_text(text)?;
+    // Once mutated, let queued paste and target consumption finish if the caller goes away.
+    complete_clipboard_operation(enter_text_inner(app, chars, clipboard)).await
+}
 
+async fn enter_text_inner(
+    app: AppHandle,
+    chars: usize,
+    clipboard: ClipboardTransaction,
+) -> Result<(), AppError> {
     // suspend shortcut handling to avoid interference
     let _guard = ShortcutHandlerGuard::suspend();
 
-    // calculate number of characters before moving text
-    let chars = text.chars().count();
-
-    // core logic for entering text
-    let do_enter_text = || async move {
-        // set clipboard text
-        set_clipboard_text(text)?;
-
+    let result = async {
         // send paste shortcut
         let (sender, receiver) = tokio::sync::oneshot::channel();
+        let check_input = clipboard.input_check();
         app.run_on_main_thread(move || {
-            let _ = sender.send(send_paste_keys(Some(false), Some(true)));
+            let _ =
+                sender.send(check_input().and_then(|()| send_paste_keys(Some(false), Some(true))));
         })?;
-        receiver.await.map_err(|error| error.to_string())??;
+        let pasted = receiver.await.map_err(|error| error.to_string());
 
-        // allow 100 ms for the target to process paste after the keys have been sent
+        // Even a partially failed key sequence may have delivered paste to the target.
         tokio::time::sleep(Duration::from_millis(100)).await;
+        pasted??;
 
         // if cursor position is editable, try to select entered text
         if platform::is_cursor_editable()? {
@@ -62,12 +70,8 @@ pub async fn enter_text(
         }
 
         Ok(())
-    };
-
-    // keep text in clipboard if clipboard is true, otherwise backup and restore
-    if clipboard.unwrap_or(false) {
-        do_enter_text().await
-    } else {
-        with_clipboard_backup(do_enter_text).await
     }
+    .await;
+    let restored = clipboard.finish();
+    result.and(restored)
 }

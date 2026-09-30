@@ -2,7 +2,6 @@ use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
 use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
-#[cfg(not(target_os = "macos"))]
 use std::sync::atomic::Ordering;
 use std::time::Duration;
 use tauri::AppHandle;
@@ -20,6 +19,7 @@ pub async fn send_key(
     key: String,
     modifiers: Option<Vec<String>>,
 ) -> Result<(), AppError> {
+    crate::commands::clipboard::invalidate_clipboard_repair();
     let key = parse_key(&key)?;
     let mut modifier_keys = Vec::new();
 
@@ -66,6 +66,7 @@ pub fn send_cut_keys(
     suspend_shortcuts: Option<bool>,
     release_modifiers: Option<bool>,
 ) -> Result<(), AppError> {
+    crate::CLIPBOARD_CHANGE_EPOCH.fetch_add(1, Ordering::SeqCst);
     let _guard = if suspend_shortcuts.unwrap_or(false) {
         Some(ShortcutHandlerGuard::suspend())
     } else {
@@ -98,6 +99,35 @@ pub fn send_copy_keys(
     suspend_shortcuts: Option<bool>,
     release_modifiers: Option<bool>,
 ) -> Result<(), AppError> {
+    crate::CLIPBOARD_CHANGE_EPOCH.fetch_add(1, Ordering::SeqCst);
+    copy_selection_keys(suspend_shortcuts, release_modifiers)
+}
+
+/// Internal capture must not invalidate its own clipboard transaction.
+pub(super) fn copy_selection_keys(
+    suspend_shortcuts: Option<bool>,
+    release_modifiers: Option<bool>,
+) -> Result<(), AppError> {
+    copy_keys(suspend_shortcuts, release_modifiers, None)
+}
+
+pub(super) fn replay_copy_keys(insert: bool) -> Result<(), AppError> {
+    copy_keys(
+        Some(true),
+        Some(true),
+        Some(if insert {
+            Key::Insert
+        } else {
+            Key::Unicode('c')
+        }),
+    )
+}
+
+fn copy_keys(
+    suspend_shortcuts: Option<bool>,
+    release_modifiers: Option<bool>,
+    key_override: Option<Key>,
+) -> Result<(), AppError> {
     let _guard = if suspend_shortcuts.unwrap_or(false) {
         Some(ShortcutHandlerGuard::suspend())
     } else {
@@ -123,11 +153,13 @@ pub fn send_copy_keys(
         }
     };
 
-    enigo.key(modifier, Direction::Press)?;
-    enigo.key(key, Direction::Click)?;
-    enigo.key(modifier, Direction::Release)?;
-
-    Ok(())
+    let key = key_override.unwrap_or(key);
+    let result = (|| -> Result<(), AppError> {
+        enigo.key(modifier, Direction::Press)?;
+        enigo.key(key, Direction::Click)?;
+        Ok(())
+    })();
+    result.and(release_keys(enigo, &[modifier, key]))
 }
 
 /// Send paste shortcut keys.
@@ -155,14 +187,14 @@ pub fn send_paste_keys(
     #[cfg(not(target_os = "macos"))]
     let modifier = Key::Control;
 
-    enigo.key(modifier, Direction::Press)?;
-    enigo.key(Key::Unicode('v'), Direction::Press)?;
-    // allow paste to arrive before keyup removes a rich-text editor's paste bin
-    std::thread::sleep(Duration::from_millis(100));
-    enigo.key(Key::Unicode('v'), Direction::Release)?;
-    enigo.key(modifier, Direction::Release)?;
-
-    Ok(())
+    let result = (|| -> Result<(), AppError> {
+        enigo.key(modifier, Direction::Press)?;
+        enigo.key(Key::Unicode('v'), Direction::Press)?;
+        // allow paste to arrive before keyup removes a rich-text editor's paste bin
+        std::thread::sleep(Duration::from_millis(100));
+        Ok(())
+    })();
+    result.and(release_keys(enigo, &[modifier, Key::Unicode('v')]))
 }
 
 /// Release modifier keys to avoid interference.

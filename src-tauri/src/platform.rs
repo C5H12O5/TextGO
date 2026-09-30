@@ -15,3 +15,6 @@ pub use windows::{
     get_frontmost_url, get_selection, get_text_scale_factor, is_cursor_editable,
     is_focus_target_active, is_ibeam_cursor, select_backward_chars, FocusTarget,
 };
+
+mod clipboard_input;
+pub use clipboard_input::{record_copy_input, ClipboardInputObserver, CopyInputKey, CopyObservation};

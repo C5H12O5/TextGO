@@ -13,7 +13,6 @@ use rdev::listen;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize};
 use std::sync::{LazyLock, Mutex};
-use std::time::Instant;
 use tauri::{App, AppHandle, Emitter, Manager, RunEvent, WebviewWindow, WindowEvent};
 use tauri_plugin_deep_link::DeepLinkExt;
 use tauri_plugin_log::{Target, TargetKind};
@@ -72,12 +71,8 @@ pub static ENIGO: LazyLock<Mutex<Result<Enigo, enigo::NewConError>>> = LazyLock:
 pub static CLIPBOARD: LazyLock<Mutex<Result<ClipboardContext, String>>> =
     LazyLock::new(|| Mutex::new(ClipboardContext::new().map_err(|e| e.to_string())));
 
-// global clipboard interrupted state for backup-restore flow
-pub static CLIPBOARD_RESTORE_INTERRUPTED: AtomicBool = AtomicBool::new(false);
-
-// global selected text cache with timestamp
-pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
-    LazyLock::new(|| Mutex::new(None));
+// Monotonic epoch: one operation must never clear another operation's interruption.
+pub static CLIPBOARD_CHANGE_EPOCH: AtomicU64 = AtomicU64::new(0);
 
 // global force get selection state (clipboard fallback)
 pub static FORCE_GET_SELECTION: AtomicBool = AtomicBool::new(true);

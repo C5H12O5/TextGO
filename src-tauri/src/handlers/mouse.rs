@@ -1,13 +1,10 @@
-use crate::commands::{
-    get_clipboard_text, get_selection, is_blocked, send_copy_keys, set_clipboard_text,
-    ShortcutHandlerGuard,
-};
+use crate::commands::{get_selection, is_blocked, send_copy_keys, ShortcutHandlerGuard};
 use crate::error::AppError;
 use crate::platform;
+use crate::SIMULATED_INPUT_MARKER;
 use crate::{
-    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
-    LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND, SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
+    APP_HANDLE, ENIGO, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH,
+    SHORTCUT_PAUSED, SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
     TRIPLE_CLICK_REGISTERED,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
@@ -94,7 +91,7 @@ thread_local! {
     static IS_DRAGGING: Cell<bool> = const { Cell::new(false) };
     static IS_VALID_CURSOR: Cell<bool> = const { Cell::new(false) };
     static SHIFT_PRESSED: Cell<bool> = const { Cell::new(false) };
-    static COPY_MODIFIER_PRESSED: Cell<bool> = const { Cell::new(false) };
+    static COPY_MODIFIERS: Cell<u8> = const { Cell::new(0) };
 }
 
 // thresholds for drag and consecutive click detection
@@ -106,6 +103,9 @@ const TRIPLE_CLICK_SHORTCUT: &str = "MouseClick+MouseClick+MouseClick";
 
 /// Handle mouse event.
 pub fn handle_mouse_event(event: Event) {
+    // Clipboard protection must keep observing input while shortcuts are suspended.
+    detect_user_copy_operation(&event);
+
     // check if shortcut handling is suspended or paused
     if SHORTCUT_SUSPEND.load(Ordering::Relaxed) > 0 || SHORTCUT_PAUSED.load(Ordering::Relaxed) {
         if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
@@ -113,8 +113,6 @@ pub fn handle_mouse_event(event: Event) {
         }
         return;
     }
-    detect_user_copy_operation(&event);
-
     if TRIPLE_CLICK_REGISTERED.load(Ordering::Relaxed) {
         match event.event_type {
             EventType::KeyPress(_) | EventType::Wheel { .. } => cancel_pending_click(true),
@@ -166,7 +164,7 @@ pub fn handle_mouse_event(event: Event) {
     }
 }
 
-/// Detect user copy operation while shortcut handling is active.
+/// Detect clipboard-changing shortcuts independently of shortcut suspension.
 fn detect_user_copy_operation(event: &Event) {
     // Our copy events can arrive after the selection's suspension guard has been dropped.
     if event.extra_data as u64 == u64::from(SIMULATED_INPUT_MARKER) {
@@ -177,56 +175,58 @@ fn detect_user_copy_operation(event: &Event) {
         EventType::KeyPress(key) => {
             update_copy_modifier_state(key, true);
 
-            if matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get() {
-                CLIPBOARD_RESTORE_INTERRUPTED.store(true, Ordering::Relaxed);
-                debug!("Copy shortcut detected, marking clipboard restore as interrupted");
-
-                let cached_text = SELECTION_TEXT_CACHE.lock().ok().and_then(|cache| {
-                    cache.as_ref().and_then(|(text, cached_at)| {
-                        if cached_at.elapsed() < Duration::from_secs(1) {
-                            Some(text.clone())
-                        } else {
-                            None
-                        }
-                    })
-                });
-                if let Some(cached_text) = cached_text {
-                    tauri::async_runtime::spawn(async move {
-                        // wait briefly for OS to finish processing the copy shortcut
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                        // check if clipboard content matches cached selection
-                        if let Ok(current) = get_clipboard_text() {
-                            if current.trim() != cached_text.trim() {
-                                // clipboard was overwritten by restore before interrupt fired
-                                // compensate by writing the cached selection back
-                                debug!(
-                                    "Copy shortcut compensation: restoring cached selection to clipboard"
-                                );
-                                let _ = set_clipboard_text(cached_text);
-                            }
-                        }
-                    });
-                }
-            }
+            record_copy_input(key, true);
         }
         EventType::KeyRelease(key) => {
             update_copy_modifier_state(key, false);
+            record_copy_input(key, false);
+        }
+        EventType::ButtonPress(_) => {
+            platform::record_copy_input(platform::CopyInputKey::Other, true)
         }
         _ => (),
     }
 }
 
+fn record_copy_input(key: Key, pressed: bool) {
+    use platform::CopyInputKey as Input;
+    #[cfg(target_os = "macos")]
+    let (left, right) = (Key::MetaLeft, Key::MetaRight);
+    #[cfg(target_os = "windows")]
+    let (left, right) = (Key::ControlLeft, Key::ControlRight);
+    let input = if key == left {
+        Input::ControlLeft
+    } else if key == right {
+        Input::ControlRight
+    } else {
+        match key {
+            Key::KeyC => Input::Copy,
+            Key::Insert => Input::Insert,
+            _ => Input::Other,
+        }
+    };
+    platform::record_copy_input(input, pressed);
+}
+
 /// Update platform copy modifier state (Ctrl on Windows, Command on macOS).
 fn update_copy_modifier_state(key: Key, pressed: bool) {
     #[cfg(target_os = "windows")]
-    if matches!(key, Key::ControlLeft | Key::ControlRight) {
-        COPY_MODIFIER_PRESSED.set(pressed);
-    }
-
+    let bit = match key {
+        Key::ControlLeft => 1,
+        Key::ControlRight => 2,
+        _ => 0,
+    };
     #[cfg(target_os = "macos")]
-    if matches!(key, Key::MetaLeft | Key::MetaRight) {
-        COPY_MODIFIER_PRESSED.set(pressed);
-    }
+    let bit = match key {
+        Key::MetaLeft => 1,
+        Key::MetaRight => 2,
+        _ => 0,
+    };
+    COPY_MODIFIERS.set(if pressed {
+        COPY_MODIFIERS.get() | bit
+    } else {
+        COPY_MODIFIERS.get() & !bit
+    });
 }
 
 /// Handle mouse press event (detect drag start).
@@ -558,11 +558,11 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
 
     #[cfg(target_os = "windows")]
     let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == WINDOWS_KEY_C)
-        && (COPY_MODIFIER_PRESSED.get() || windows_control_key_pressed());
+        && ((COPY_MODIFIERS.get() != 0) || windows_control_key_pressed());
 
     #[cfg(target_os = "macos")]
     let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == MACOS_KEY_C)
-        && (COPY_MODIFIER_PRESSED.get() || macos_command_key_pressed());
+        && ((COPY_MODIFIERS.get() != 0) || macos_command_key_pressed());
 
     if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) {
         tauri::async_runtime::spawn(async move {
@@ -851,6 +851,21 @@ mod tests {
     }
 
     #[test]
+    fn releasing_one_copy_modifier_keeps_the_other_pressed() {
+        #[cfg(target_os = "macos")]
+        let (left, right) = (Key::MetaLeft, Key::MetaRight);
+        #[cfg(not(target_os = "macos"))]
+        let (left, right) = (Key::ControlLeft, Key::ControlRight);
+        COPY_MODIFIERS.set(0);
+        update_copy_modifier_state(left, true);
+        update_copy_modifier_state(right, true);
+        update_copy_modifier_state(left, false);
+        assert_ne!(COPY_MODIFIERS.get(), 0);
+        update_copy_modifier_state(right, false);
+        assert_eq!(COPY_MODIFIERS.get(), 0);
+    }
+
+    #[test]
     fn copy_detection_distinguishes_simulated_and_user_input() {
         #[cfg(target_os = "macos")]
         let modifier = Key::MetaLeft;
@@ -864,8 +879,8 @@ mod tests {
             (0, true),
             (enigo::EVENT_MARKER, true),
         ] {
-            COPY_MODIFIER_PRESSED.set(false);
-            CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
+            COPY_MODIFIERS.set(0);
+            let observer = platform::ClipboardInputObserver::new().unwrap();
             for event_type in [
                 EventType::KeyPress(modifier),
                 EventType::KeyPress(Key::KeyC),
@@ -881,10 +896,15 @@ mod tests {
                     usb_hid: 0,
                     extra_data: marker as _,
                 };
+                // Real input must be seen during suspension, and delayed synthetic input
+                // must remain harmless after suspension ends.
+                SHORTCUT_SUSPEND.fetch_add(1, Ordering::Relaxed);
+                handle_mouse_event(event.clone());
+                SHORTCUT_SUSPEND.fetch_sub(1, Ordering::Relaxed);
                 detect_user_copy_operation(&event);
             }
             assert_eq!(
-                CLIPBOARD_RESTORE_INTERRUPTED.swap(false, Ordering::Relaxed),
+                observer.observe().unwrap().copies != 0,
                 should_interrupt,
                 "unexpected copy interruption for marker {marker:#x}",
             );
