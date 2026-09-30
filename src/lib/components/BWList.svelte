@@ -63,7 +63,8 @@
         defaultPath: osType === 'macos' ? '/Applications' : undefined,
         multiple: false,
         directory: false,
-        filters: [{ name: 'Application', extensions: [osType === 'macos' ? 'app' : 'exe'] }]
+        filters:
+          osType === 'linux' ? undefined : [{ name: 'Application', extensions: [osType === 'macos' ? 'app' : 'exe'] }]
       });
       if (path) {
         const appId = await invoke<string>('get_app_id', { appPath: path });

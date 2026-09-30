@@ -289,11 +289,15 @@ export const forceGetSelection = persisted<boolean>('forceGetSelection', true, {
 });
 
 // copy key combination (macOS: 'command_c'; Windows: 'ctrl_insert' | 'ctrl_c')
-export const copyKey = persisted<string>('copyKey', type() === 'macos' ? 'command_c' : 'ctrl_insert', {
-  onchange: (key) => {
-    invoke('set_copy_key', { key });
+export const copyKey = persisted<string>(
+  'copyKey',
+  type() === 'macos' ? 'command_c' : type() === 'linux' ? 'ctrl_c' : 'ctrl_insert',
+  {
+    onchange: (key) => {
+      invoke('set_copy_key', { key });
+    }
   }
-});
+);
 
 // whether to enable long press trigger
 export const longPress = persisted<boolean>('longPress', false, {

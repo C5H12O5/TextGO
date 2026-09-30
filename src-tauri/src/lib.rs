@@ -83,7 +83,7 @@ pub static SELECTION_TEXT_CACHE: LazyLock<Mutex<Option<(String, Instant)>>> =
 pub static FORCE_GET_SELECTION: AtomicBool = AtomicBool::new(true);
 
 // global copy key setting (true = Ctrl+C, false = Ctrl+Insert)
-pub static USE_CTRL_C: AtomicBool = AtomicBool::new(false);
+pub static USE_CTRL_C: AtomicBool = AtomicBool::new(cfg!(target_os = "linux"));
 
 #[cfg(target_os = "macos")]
 use tauri_nspanel::{
@@ -127,6 +127,27 @@ tauri_panel! {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(target_os = "linux")]
+    if let Err(error) = platform::check_session() {
+        eprintln!("{error}");
+        std::process::exit(1);
+    }
+
+    #[allow(unused_mut)]
+    let mut context = tauri::generate_context!();
+    // Tao reapplies the initial resizable flag on first map. Set it before creating
+    // GTK's undecorated toolbar so its HTML-driven size can shrink after that map.
+    #[cfg(target_os = "linux")]
+    if let Some(toolbar) = context
+        .config_mut()
+        .app
+        .windows
+        .iter_mut()
+        .find(|w| w.label == "toolbar")
+    {
+        toolbar.resizable = true;
+    }
+
     // register single instance plugin
     #[allow(unused_mut)]
     let mut builder =
@@ -232,7 +253,7 @@ pub fn run() {
             get_app_id,
             is_blocked
         ])
-        .build(tauri::generate_context!())
+        .build(context)
         .expect("error while running tauri application")
         .run(handle_run_event);
 }

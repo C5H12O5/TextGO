@@ -134,7 +134,7 @@ pub fn show_popup(app: AppHandle, payload: String, mouse: Option<bool>) -> Resul
 
     if let Some(window) = app.get_webview_window("popup") {
         // position window near cursor
-        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
+        position_window_near_cursor(&window, mouse.unwrap_or(false), None)?;
 
         // show and focus window
         if !POPUP_INITIALIZED.load(Ordering::Relaxed) {
@@ -215,9 +215,21 @@ pub fn show_popup_sameplace(
 
 /// Position toolbar window near the mouse or selection.
 #[tauri::command]
-pub fn position_toolbar(app: AppHandle, mouse: Option<bool>) -> Result<(), AppError> {
+pub fn position_toolbar(
+    app: AppHandle,
+    mouse: Option<bool>,
+    size: Option<LogicalSize<f64>>,
+) -> Result<(), AppError> {
+    if size.is_some_and(|size| {
+        !size.width.is_finite()
+            || !size.height.is_finite()
+            || size.width <= 0.0
+            || size.height <= 0.0
+    }) {
+        return Err("Invalid toolbar size".into());
+    }
     if let Some(window) = app.get_webview_window("toolbar") {
-        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
+        position_window_near_cursor(&window, mouse.unwrap_or(false), size)?;
     } else {
         return Err("Toolbar window not found".into());
     }
@@ -232,7 +244,7 @@ pub fn show_toolbar(app: AppHandle, payload: String, mouse: Option<bool>) -> Res
 
     if let Some(window) = app.get_webview_window("toolbar") {
         // position before setup so native-menu actions also inherit the current placement
-        position_window_near_cursor(&window, mouse.unwrap_or(false))?;
+        position_window_near_cursor(&window, mouse.unwrap_or(false), None)?;
 
         // show window without focusing
         if !TOOLBAR_INITIALIZED.load(Ordering::Relaxed) {
@@ -335,7 +347,11 @@ fn wait_and_emit(flag: &'static AtomicBool, window: WebviewWindow, payload: Stri
 }
 
 /// Position a window near the mouse or selection with safe area constraints.
-fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<(), AppError> {
+fn position_window_near_cursor(
+    window: &WebviewWindow,
+    mouse: bool,
+    size: Option<LogicalSize<f64>>,
+) -> Result<(), AppError> {
     // get cursor position (may be physical or logical depending on platform)
     let mut mouse_position = true;
 
@@ -368,14 +384,14 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
             let size = m.size();
 
             // check against physical coordinates on Windows, logical on macOS
-            #[cfg(target_os = "windows")]
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             {
                 x >= pos.x
                     && x < pos.x + size.width as i32
                     && y >= pos.y
                     && y < pos.y + size.height as i32
             }
-            #[cfg(not(target_os = "windows"))]
+            #[cfg(target_os = "macos")]
             {
                 let scale = m.scale_factor();
                 let logical_x = (pos.x as f64 / scale) as i32;
@@ -397,14 +413,20 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     let scale_factor = monitor.scale_factor();
 
     // convert physical pixels to logical pixels
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     {
         x = (x as f64 / scale_factor) as i32;
         y = (y as f64 / scale_factor) as i32;
     }
 
-    let window_width = (window_width as f64 / scale_factor) as i32;
-    let window_height = (window_height as f64 / scale_factor) as i32;
+    // GTK resize requests are asynchronous. The toolbar can supply its measured
+    // logical size instead of clamping against the previous native allocation.
+    let window_width = size
+        .map(|s| s.width)
+        .unwrap_or(window_width as f64 / scale_factor) as i32;
+    let window_height = size
+        .map(|s| s.height)
+        .unwrap_or(window_height as f64 / scale_factor) as i32;
     let screen_width = (monitor_size.width as f64 / scale_factor) as i32;
     let screen_height = (monitor_size.height as f64 / scale_factor) as i32;
     let screen_x = (monitor_position.x as f64 / scale_factor) as i32;

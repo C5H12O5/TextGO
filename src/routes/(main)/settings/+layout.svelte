@@ -72,7 +72,7 @@
     }
 
     const cleaned = { ...settings };
-    cleaned.copyKey = targetOsType === 'macos' ? 'command_c' : 'ctrl_insert';
+    cleaned.copyKey = targetOsType === 'macos' ? 'command_c' : targetOsType === 'linux' ? 'ctrl_c' : 'ctrl_insert';
     cleaned.nodePath = '';
     cleaned.denoPath = '';
     cleaned.pythonPath = '';

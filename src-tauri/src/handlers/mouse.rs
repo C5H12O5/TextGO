@@ -4,11 +4,12 @@ use crate::commands::{
 };
 use crate::error::AppError;
 use crate::platform;
+#[cfg(not(target_os = "linux"))]
+use crate::SIMULATED_INPUT_MARKER;
 use crate::{
     APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
     LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND, SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
-    TRIPLE_CLICK_REGISTERED,
+    SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN, TRIPLE_CLICK_REGISTERED,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
@@ -169,6 +170,7 @@ pub fn handle_mouse_event(event: Event) {
 /// Detect user copy operation while shortcut handling is active.
 fn detect_user_copy_operation(event: &Event) {
     // Our copy events can arrive after the selection's suspension guard has been dropped.
+    #[cfg(not(target_os = "linux"))]
     if event.extra_data as u64 == u64::from(SIMULATED_INPUT_MARKER) {
         return;
     }
@@ -218,7 +220,7 @@ fn detect_user_copy_operation(event: &Event) {
 
 /// Update platform copy modifier state (Ctrl on Windows, Command on macOS).
 fn update_copy_modifier_state(key: Key, pressed: bool) {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     if matches!(key, Key::ControlLeft | Key::ControlRight) {
         COPY_MODIFIER_PRESSED.set(pressed);
     }
@@ -532,7 +534,7 @@ fn emit_event(
 /// Close native action menu if it is open.
 /// Returns true when the key was handled and should not hide the toolbar.
 fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
-    #[cfg(target_os = "windows")]
+    #[cfg(not(target_os = "macos"))]
     let _ = platform_code;
 
     if !TOOLBAR_MENU_OPEN.load(Ordering::Relaxed) {
@@ -544,7 +546,7 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
         return Ok(false);
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     if matches!(key, Key::ControlLeft | Key::ControlRight) {
         return Ok(true);
     }
@@ -563,6 +565,9 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
     #[cfg(target_os = "macos")]
     let copy_shortcut = (matches!(key, Key::KeyC) || platform_code == MACOS_KEY_C)
         && (COPY_MODIFIER_PRESSED.get() || macos_command_key_pressed());
+
+    #[cfg(target_os = "linux")]
+    let copy_shortcut = matches!(key, Key::KeyC) && COPY_MODIFIER_PRESSED.get();
 
     if TOOLBAR_MENU_OPEN.swap(false, Ordering::Relaxed) {
         tauri::async_runtime::spawn(async move {
@@ -627,9 +632,9 @@ fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
     let (click_x, click_y) = mouse_pos()?;
 
     // get scale factor for coordinate conversion
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     let scale_factor = 1.0;
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     let scale_factor = toolbar
         .current_monitor()?
         .map(|m| m.scale_factor())
@@ -661,6 +666,7 @@ fn hide_toolbar(check_position: bool) -> Result<(), AppError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(not(target_os = "linux"))]
     use std::time::SystemTime;
 
     #[test]
@@ -850,6 +856,7 @@ mod tests {
         cancel_pending_click(true);
     }
 
+    #[cfg(not(target_os = "linux"))]
     #[test]
     fn copy_detection_distinguishes_simulated_and_user_input() {
         #[cfg(target_os = "macos")]

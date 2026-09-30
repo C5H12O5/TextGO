@@ -313,7 +313,9 @@
     // mark as initialized
     initialized = true;
 
-    await resizeToolbar(data.mouse ?? false, true);
+    if (osType !== 'linux') {
+      await resizeToolbar(data.mouse ?? false, true);
+    }
 
     return true;
   }
@@ -344,7 +346,7 @@
       // keep separate IPC calls so native geometry updates can run between stages
       await currentWindow.setSize(new LogicalSize(width, height));
       if (reposition) {
-        await invoke('position_toolbar', { mouse });
+        await invoke('position_toolbar', { mouse, size: osType === 'linux' ? { width, height } : undefined });
       } else if (menuMode) {
         await clampToolbarToSafeArea();
       }
@@ -651,7 +653,8 @@
       pointerInside = false;
       clearAutoHideTimer();
       initialized = false;
-      setup(JSON.parse(event.payload))
+      const data = JSON.parse(event.payload);
+      setup(data)
         .then(async (showToolbar) => {
           if (!showToolbar) {
             await currentWindow.hide();
@@ -659,6 +662,10 @@
           }
           // still try showing after a resize/position failure, using the existing placement
           await invoke('show_toolbar_regardless', { onlyIfHidden: true });
+          // GTK applies hidden-window defaults on first map; resize after showing.
+          if (osType === 'linux') {
+            await resizeToolbar(data.mouse ?? false, true);
+          }
           autoHideReady = true;
         })
         .catch((error) => {

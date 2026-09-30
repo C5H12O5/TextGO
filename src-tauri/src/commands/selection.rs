@@ -53,30 +53,16 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
 
         // send copy shortcut
         // https://github.com/enigo-rs/enigo/issues/153
-        let _ = app.run_on_main_thread(move || {
+        let (sender, receiver) = tokio::sync::oneshot::channel();
+        app.run_on_main_thread(move || {
             // mouse-triggered selections don't need to release modifier keys
-            let _ = send_copy_keys(Some(false), Some(!mouse));
-        });
+            let _ = sender.send(send_copy_keys(Some(false), Some(!mouse)));
+        })?;
+        receiver.await.map_err(|error| error.to_string())??;
 
         // wait for clipboard content to change in a loop
         let max_wait_time = Duration::from_millis(MAX_WAIT_TIME.load(Ordering::Relaxed));
-        let check_interval = Duration::from_millis(5); // check interval 5ms
-        let max_attempts = max_wait_time.as_millis() / check_interval.as_millis();
-
-        let mut selected_text = String::new();
-
-        for _attempt in 0..max_attempts {
-            tokio::time::sleep(check_interval).await;
-
-            // read current clipboard text
-            if let Ok(current_text) = get_clipboard_text() {
-                if !current_text.is_empty() {
-                    // if clipboard content changed, copy operation completed
-                    selected_text = current_text;
-                    break;
-                }
-            }
-        }
+        let selected_text = wait_for_copied_text(max_wait_time, get_clipboard_text).await;
 
         if selected_text.is_empty() {
             warn!(
@@ -104,4 +90,45 @@ async fn get_selection_fallback(app: AppHandle, mouse: bool) -> Result<String, A
         Ok(selected_text)
     })
     .await
+}
+
+/// Stop retrying after the deadline; a single native read can still block past it.
+async fn wait_for_copied_text(
+    timeout: Duration,
+    mut read: impl FnMut() -> Result<String, AppError>,
+) -> String {
+    let deadline = std::time::Instant::now() + timeout;
+    while std::time::Instant::now() < deadline {
+        tokio::time::sleep(Duration::from_millis(5)).await;
+        if let Ok(text) = read() {
+            if !text.is_empty() {
+                return text;
+            }
+        }
+    }
+    String::new()
+}
+
+#[cfg(test)]
+#[test]
+fn slow_clipboard_reads_do_not_extend_the_retry_budget() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        let mut reads = 0;
+        let text = wait_for_copied_text(Duration::from_millis(10), || {
+            reads += 1;
+            std::thread::sleep(Duration::from_millis(20));
+            Ok(String::new())
+        })
+        .await;
+        assert!(text.is_empty());
+        assert_eq!(reads, 1);
+        assert_eq!(
+            wait_for_copied_text(Duration::from_secs(1), || Ok("selected".into())).await,
+            "selected"
+        );
+    });
 }

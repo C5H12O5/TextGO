@@ -32,7 +32,7 @@ tauri-plugin-autostart = "2.6.0"
 tauri-plugin-deep-link = "2.5.0"
 tauri-plugin-global-shortcut = "2.4.0"
 tauri-plugin-single-instance = { version = "2.5.0", features = ["deep-link"] }
-tauri-plugin-http = { version = "2.8.0", features = ["unsafe-headers"] }
+tauri-plugin-http = { version = "=2.7.0", features = ["unsafe-headers"] }
 tauri-plugin-log = { version = "2.10.0", features = ["colored"] }
 log = "0.4.34"
 fern = "0.7.1"
@@ -72,3 +72,6 @@ windows = { version = "0.62.2", features = [
   "Win32_UI_WindowsAndMessaging",
   "UI_ViewManagement",
 ] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+x11rb = "0.13.2"

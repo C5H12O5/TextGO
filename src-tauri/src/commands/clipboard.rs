@@ -44,11 +44,24 @@ where
     CLIPBOARD_RESTORE_INTERRUPTED.store(false, Ordering::Relaxed);
 
     // backup all format contents
-    let contents = run(|| Ok(CLIPBOARD.lock()?.as_ref()?.get(&ALL_FORMATS)?))?;
+    let contents = run(|| {
+        let guard = CLIPBOARD.lock()?;
+        let clipboard = guard.as_ref()?;
+        // X11 returns empty payloads for absent formats; do not advertise them on restore.
+        #[cfg(target_os = "linux")]
+        let formats: Vec<_> = ALL_FORMATS
+            .iter()
+            .filter(|format| clipboard.has((*format).clone()))
+            .cloned()
+            .collect();
+        #[cfg(not(target_os = "linux"))]
+        let formats = ALL_FORMATS;
+        Ok(clipboard.get(&formats)?)
+    })?;
     debug!("Clipboard backup: saved original clipboard contents");
 
     // execute operation
-    let result = operation().await?;
+    let result = operation().await;
 
     // check if restore was interrupted by user copy shortcut during the operation
     if CLIPBOARD_RESTORE_INTERRUPTED.swap(false, Ordering::Relaxed) {
@@ -56,14 +69,17 @@ where
     } else {
         // restore original clipboard contents
         debug!("Clipboard restore: restoring original clipboard contents");
-        if !contents.is_empty() {
-            run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))?;
+        let restored = if !contents.is_empty() {
+            run(|| Ok(CLIPBOARD.lock()?.as_ref()?.set(contents)?))
         } else {
-            clear_clipboard()?;
+            clear_clipboard()
+        };
+        if result.is_ok() {
+            restored?;
         }
     }
 
-    Ok(result)
+    result
 }
 
 /// Run function on main thread if on macOS, otherwise run directly.

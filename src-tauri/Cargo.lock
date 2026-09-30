@@ -36,6 +36,7 @@ dependencies = [
  "tokio",
  "wildmatch",
  "windows 0.62.2",
+ "x11rb",
 ]
 
 [[package]]
@@ -5128,9 +5129,9 @@ dependencies = [
 
 [[package]]
 name = "tauri-plugin-http"
-version = "2.8.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "93e9d6b3319e101bc1be27cfa0fb4054d7784a12509c67ead0033b82180e5ed1"
+checksum = "fa402aca4e2ec043f4ced841b74f24b2b8c5bf8c16e2ae2fa494b651da765e07"
 dependencies = [
  "bytes",
  "cookie_store",
