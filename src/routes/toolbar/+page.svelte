@@ -27,6 +27,7 @@
     toolbarCornerRadius,
     toolbarMaxActions,
     toolbarOpacity,
+    toolbarPosition,
     toolbarSize
   } from '$lib/stores.svelte';
   import type { Rule, WindowPlacement } from '$lib/types';
@@ -649,7 +650,8 @@
   }
 
   onMount(async () => {
-    await toolbarSize.ready;
+    await Promise.all([toolbarSize.ready, toolbarPosition.ready]);
+    await invoke('set_toolbar_position', { position: toolbarPosition.current });
     // mark toolbar as initialized
     await invoke('mark_toolbar_initialized');
   });

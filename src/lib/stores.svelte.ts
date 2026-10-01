@@ -244,6 +244,17 @@ export const toolbarMaxActions = persisted<number>('toolbarMaxActions', TOOLBAR_
 // toolbar size preset
 export const toolbarSize = persisted<'small' | 'medium' | 'large'>('toolbarSize', 'medium');
 
+// toolbar position relative to the mouse or selection
+export const toolbarPosition = persisted<'top' | 'top-right' | 'right' | 'bottom' | 'bottom-right'>(
+  'toolbarPosition',
+  'bottom-right',
+  {
+    onchange: (position) => {
+      invoke('set_toolbar_position', { position });
+    }
+  }
+);
+
 // toolbar corner radius in pixels
 export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOLBAR_CORNER_RADIUS.default);
 
