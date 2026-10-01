@@ -23,7 +23,8 @@
     toolbarCornerRadius,
     toolbarHideOnScroll,
     toolbarMaxActions,
-    toolbarOpacity
+    toolbarOpacity,
+    toolbarSize
   } from '$lib/stores.svelte';
   import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
   import DeviceMobileSpeakerIcon from 'phosphor-svelte/lib/DeviceMobileSpeakerIcon';
@@ -52,6 +53,15 @@
 
 <div class="flex flex-col gap-2">
   <Setting icon={DeviceMobileSpeakerIcon} iconClass="rotate-270" title={m.toolbar_settings()}>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label>{m.toolbar_size()}</Label>
+      <Select bind:value={toolbarSize.current} class="w-24 select-sm">
+        <option value="large">{m.toolbar_size_large()}</option>
+        <option value="medium">{m.toolbar_size_medium()}</option>
+        <option value="small">{m.toolbar_size_small()}</option>
+      </Select>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
       <Label tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
       <Select options={toolbarActionCountOptions} bind:value={toolbarMaxActions.current} class="w-24 select-sm" />

@@ -26,7 +26,8 @@
     toolbarAutoHideDelay,
     toolbarCornerRadius,
     toolbarMaxActions,
-    toolbarOpacity
+    toolbarOpacity,
+    toolbarSize
   } from '$lib/stores.svelte';
   import type { Rule, WindowPlacement } from '$lib/types';
   import { invoke } from '@tauri-apps/api/core';
@@ -44,7 +45,7 @@
   import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
   import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
   import type { Component } from 'svelte';
-  import { mount, onMount, tick, unmount } from 'svelte';
+  import { mount, onMount, tick, unmount, untrack } from 'svelte';
   import { fly } from 'svelte/transition';
 
   // operating system type
@@ -97,6 +98,18 @@
   });
   let visibleActions: Action[] = $derived(actions.slice(0, maxVisibleActions));
   let overflowActions: Action[] = $derived(actions.slice(maxVisibleActions));
+
+  // scale rem-based toolbar dimensions together and resize an already visible window
+  $effect(() => {
+    const size = toolbarSize.current;
+    document.documentElement.style.fontSize = `${size === 'small' ? 14 : size === 'large' ? 18 : 16}px`;
+    untrack(() => {
+      if (initialized) {
+        void resizeToolbar(false, false);
+      }
+    });
+    return () => document.documentElement.style.removeProperty('font-size');
+  });
 
   // toolbar corner radius style
   let cornerRadiusStyle = $derived.by(() => {
@@ -636,6 +649,7 @@
   }
 
   onMount(async () => {
+    await toolbarSize.ready;
     // mark toolbar as initialized
     await invoke('mark_toolbar_initialized');
   });
@@ -694,7 +708,7 @@
 </script>
 
 <main
-  class="bg-transparent p-1 select-none"
+  class="bg-transparent p-[4px] select-none"
   onpointerenter={() => (pointerInside = true)}
   onpointerleave={() => (pointerInside = false)}
 >
@@ -761,7 +775,7 @@
         {/each}
         {#if overflowActions.length > 0}
           <button
-            class="h-8 shrink-0 cursor-pointer opacity-30 transition-all"
+            class="h-8 shrink-0 cursor-pointer opacity-30 transition"
             class:hover:bg-btn-hover={hoverEnabled}
             class:hover:opacity-100={hoverEnabled}
             style:background-image={actionBackgroundStyle}

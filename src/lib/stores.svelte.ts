@@ -241,6 +241,9 @@ export const accessibility = persisted<boolean>('accessibility', false);
 // maximum number of visible toolbar actions
 export const toolbarMaxActions = persisted<number>('toolbarMaxActions', TOOLBAR_ACTION_COUNT.default);
 
+// toolbar size preset
+export const toolbarSize = persisted<'small' | 'medium' | 'large'>('toolbarSize', 'medium');
+
 // toolbar corner radius in pixels
 export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOLBAR_CORNER_RADIUS.default);
 
