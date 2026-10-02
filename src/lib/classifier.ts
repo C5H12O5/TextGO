@@ -13,29 +13,55 @@ const STORAGE = {
  * Training parameters configuration.
  */
 export interface TrainingConfig {
-  epochs?: number; // training epochs, default 50
-  batchSize?: number; // batch size, default 8
+  epochs?: number; // maximum training epochs, default 100
+  batchSize?: number; // batch size, default 16
   validationSplit?: number; // validation split ratio, default 0.2
-  learningRate?: number; // learning rate, default 0.001
-  maxSequenceLength?: number; // max sequence length, default 50
-  embeddingDim?: number; // embedding dimension, default 32
+  learningRate?: number; // learning rate, default 0.03
+  maxSequenceLength?: number; // legacy sequence model configuration
+  embeddingDim?: number; // legacy sequence model configuration
   negativeRatio?: number; // negative samples ratio relative to positive, default 1.0
-  maxNegativeSamples?: number; // max negative samples, default 50
+  maxNegativeSamples?: number; // synthetic negative sample limit, default 1000
+  maxFeatures?: number; // vocabulary limit, default 4096
+  patience?: number; // epochs without validation improvement, default 12
+  seed?: number; // seed for reproducible data preparation, default 42
 }
 
 /**
  * Default training configuration.
  */
 const DEFAULT_TRAINING_CONFIG: Required<TrainingConfig> = {
-  epochs: 50,
-  batchSize: 8,
+  epochs: 100,
+  batchSize: 16,
   validationSplit: 0.2,
-  learningRate: 0.001,
+  learningRate: 0.03,
   maxSequenceLength: 50,
   embeddingDim: 32,
   negativeRatio: 1.0,
-  maxNegativeSamples: 50
+  maxNegativeSamples: 1000,
+  maxFeatures: 4096,
+  patience: 12,
+  seed: 42
 };
+
+export interface TrainingReport {
+  training: { positive: number; negative: number };
+  validation: { positive: number; negative: number };
+  syntheticNegatives: boolean;
+  epochs: number;
+  bestEpoch: number;
+  precision: number;
+  recall: number;
+  falsePositiveRate: number;
+}
+
+type FormatProfile = { kind: 'email' | 'http-url' | 'version' } | { kind: 'pattern'; source: string };
+
+// HTML's practical email syntax; this checks shape, not mailbox existence.
+// https://html.spec.whatwg.org/dev/input.html#email-state-(type=email)
+const EMAIL_FORMAT =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+// Numeric v-prefixed version tags have variable-width components, unlike fixed-width identifiers.
+const VERSION_FORMAT = /^v[0-9]+\.[0-9]+\.[0-9]+$/;
 
 /**
  * Model cache interface.
@@ -48,9 +74,17 @@ interface ModelCache {
     embeddingDim: number;
     modelTrained: boolean;
     tokenizerSize: number;
+    featureVersion?: number;
+    format?: FormatProfile;
   };
   lastUsed: number; // last used time, for cache cleanup
 }
+
+// New saves commit all model data in the existing config key. The optional fields preserve legacy reads.
+type SavedModel = ModelCache['config'] & {
+  tokenizer?: [string, number][];
+  artifacts?: Omit<tf.io.ModelArtifacts, 'weightData'> & { weightData: string };
+};
 
 /**
  * Global model cache map.
@@ -60,11 +94,13 @@ interface ModelCache {
 const MODEL_CACHE = new Map<string, ModelCache>();
 // share active reads only; saving or deleting an ID invalidates its older load
 const MODEL_LOADS = new Map<string, Promise<void>>();
+// Only the latest unfinished training for an ID may publish its result.
+const MODEL_TRAININGS = new Map<string, symbol>();
 const MODEL_CACHE_MAX_AGE = 60 * 60 * 1000;
 let cleanupTimer: ReturnType<typeof setTimeout> | undefined;
 
 /**
- * Text classifier based on synthetic negative samples.
+ * Text classifier with automatically generated negative samples.
  */
 export class Classifier {
   private id: string;
@@ -74,13 +110,40 @@ export class Classifier {
   private maxSequenceLength: number;
   private trainingConfig: Required<TrainingConfig>;
   private modelTrained = false; // whether the model has been trained
+  private featureVersion = 4;
+  private format?: FormatProfile;
+  private randomState: number;
+  trainingReport: TrainingReport | null = null;
 
   // create a new classifier instance with optional configuration
   constructor(id: string, config?: TrainingConfig) {
     this.id = id;
     this.trainingConfig = { ...DEFAULT_TRAINING_CONFIG, ...config };
+    const {
+      epochs,
+      batchSize,
+      validationSplit,
+      learningRate,
+      negativeRatio,
+      maxNegativeSamples,
+      maxFeatures,
+      patience
+    } = this.trainingConfig;
+    if (
+      ![epochs, batchSize, maxNegativeSamples, maxFeatures, patience].every(
+        (value) => Number.isInteger(value) && value > 0
+      ) ||
+      !(validationSplit > 0 && validationSplit < 1) ||
+      !Number.isFinite(learningRate) ||
+      learningRate <= 0 ||
+      !Number.isFinite(negativeRatio) ||
+      negativeRatio <= 0
+    ) {
+      throw new Error('Invalid classifier training configuration');
+    }
     this.maxSequenceLength = this.trainingConfig.maxSequenceLength;
     this.embeddingDim = this.trainingConfig.embeddingDim;
+    this.randomState = this.trainingConfig.seed >>> 0;
   }
 
   // create classifier instance from cache
@@ -92,6 +155,8 @@ export class Classifier {
     classifier.model = cached.model;
     classifier.tokenizer = new Map(cached.tokenizer);
     classifier.modelTrained = cached.config.modelTrained;
+    classifier.featureVersion = cached.config.featureVersion ?? 1;
+    classifier.format = cached.config.format;
     return classifier;
   }
 
@@ -103,63 +168,111 @@ export class Classifier {
    * @returns training history after saving succeeds; rejects on validation, training or storage failure
    */
   async trainModel(positiveTrainingData: string[] | string): Promise<tf.History> {
-    console.debug('Preparing training data for single-class model...');
-
-    // 0. validate and preprocess training data
-    const processedData = Classifier.validateTrainingData(positiveTrainingData);
-    if (!processedData) {
-      throw new Error('Training data format invalid or insufficient samples');
+    const positive = Classifier.validateTrainingData(positiveTrainingData);
+    if (!positive) {
+      throw new Error('Training requires at least 3 positive samples');
     }
 
-    let inputs: tf.Tensor2D | undefined;
-    let labels: tf.Tensor1D | undefined;
+    const training = Symbol();
+    MODEL_TRAININGS.set(this.id, training);
+    const isCurrent = () => MODEL_TRAININGS.get(this.id) === training;
+    const assertCurrent = () => {
+      if (!isCurrent()) throw new DOMException('Model training was cancelled', 'AbortError');
+    };
     let trainedModel: tf.LayersModel | undefined;
     let optimizer: tf.Optimizer | undefined;
+    let tensors: tf.Tensor[] = [];
+    let bestWeights: tf.Tensor[] = [];
+    this.trainingReport = null;
+    this.featureVersion = 4;
+    this.randomState = this.trainingConfig.seed >>> 0;
     try {
-      // 1. build vocabulary
-      this.buildVocabulary(processedData);
+      const data = this.prepareTrainingData(positive);
+      // Validation examples must never contribute to the vocabulary.
+      this.buildVocabulary([...data.training.positive, ...data.training.negative]);
+      const training = this.encodeTrainingData(data.training);
+      tensors.push(training.inputs, training.labels);
+      const validation = this.encodeTrainingData(data.validation);
+      tensors.push(validation.inputs, validation.labels);
 
-      // 2. generate negative samples and prepare training data
-      ({ inputs, labels } = tf.tidy(() => this.prepareTrainingData(processedData)));
-
-      console.debug(`Input shape: ${inputs.shape}, dtype: ${inputs.dtype}`);
-      console.debug(`Labels shape: ${labels.shape}, dtype: ${labels.dtype}`);
-
-      // 3. create model
       trainedModel = this.createModel();
       optimizer = trainedModel.optimizer;
       this.model = trainedModel;
-
-      // 4. train
-      const { epochs, batchSize, validationSplit } = this.trainingConfig;
-      console.debug(`Starting to train single-class model (epochs=${epochs}, batchSize=${batchSize})...`);
-      const history = await this.model.fit(inputs, labels, {
+      let bestLoss = Infinity;
+      let bestEpoch = 0;
+      let waiting = 0;
+      const { epochs, batchSize, patience } = this.trainingConfig;
+      const positiveCount = data.training.positive.length;
+      const negativeCount = data.training.negative.length;
+      const history = await trainedModel.fit(training.inputs, training.labels, {
         epochs,
         batchSize,
-        validationSplit,
-        shuffle: true,
-        verbose: 1,
+        // The rows have already been shuffled with the configured seed.
+        shuffle: false,
+        validationData: [validation.inputs, validation.labels],
+        classWeight: {
+          0: (positiveCount + negativeCount) / (2 * negativeCount),
+          1: (positiveCount + negativeCount) / (2 * positiveCount)
+        },
+        verbose: 0,
         callbacks: {
+          onBatchEnd: () => {
+            if (!isCurrent()) trainedModel!.stopTraining = true;
+          },
           onEpochEnd: (epoch, logs) => {
-            console.debug(`Epoch ${epoch + 1}: loss=${logs?.loss?.toFixed(4)}, acc=${logs?.acc?.toFixed(4)}`);
-            if (logs?.val_loss) {
-              console.debug(`  val_loss=${logs.val_loss.toFixed(4)}, val_acc=${logs?.val_acc?.toFixed(4)}`);
+            if (!isCurrent()) {
+              trainedModel!.stopTraining = true;
+              return;
+            }
+            const loss = logs?.val_loss;
+            if (loss === undefined || !Number.isFinite(loss)) {
+              throw new Error('Training produced an invalid validation loss');
+            }
+            if (loss < bestLoss - 0.0001) {
+              tf.dispose(bestWeights);
+              // getWeights() exposes model-owned tensors; keep independent snapshots.
+              bestWeights = trainedModel!.getWeights().map((weight) => weight.clone());
+              bestLoss = loss;
+              bestEpoch = epoch + 1;
+              waiting = 0;
+            } else if (++waiting >= patience) {
+              trainedModel!.stopTraining = true;
             }
           }
         }
       });
-
-      // 5. release training data before serialization; finally also handles failed fits
-      inputs.dispose();
-      labels.dispose();
-      inputs = undefined;
-      labels = undefined;
-
-      // 6. save model and tokenizer
+      assertCurrent();
+      // TF.js 4.22 does not implement EarlyStopping.restoreBestWeights.
+      trainedModel.setWeights(bestWeights);
+      this.trainingReport = tf.tidy(() => {
+        const scores = (trainedModel!.predict(validation.inputs) as tf.Tensor).dataSync();
+        const labels = validation.labels.dataSync();
+        let truePositive = 0;
+        let falsePositive = 0;
+        for (let i = 0; i < scores.length; i++) {
+          if (scores[i] >= 0.5) {
+            if (labels[i] === 1) truePositive++;
+            else falsePositive++;
+          }
+        }
+        return {
+          training: { positive: positiveCount, negative: negativeCount },
+          validation: {
+            positive: data.validation.positive.length,
+            negative: data.validation.negative.length
+          },
+          syntheticNegatives: true,
+          epochs: history.epoch.length,
+          bestEpoch,
+          precision: truePositive / Math.max(1, truePositive + falsePositive),
+          recall: truePositive / data.validation.positive.length,
+          falsePositiveRate: falsePositive / data.validation.negative.length
+        };
+      });
+      tf.dispose(tensors);
+      tensors = [];
       this.modelTrained = true;
-      await this.saveModel();
-
-      console.debug('Single-class model trained successfully!');
+      await this.saveModel(assertCurrent);
       return history;
     } catch (error) {
       if (trainedModel && MODEL_CACHE.get(this.id)?.model !== trainedModel) {
@@ -167,50 +280,29 @@ export class Classifier {
         this.model = null;
         this.modelTrained = false;
       }
-      console.error(`Training failed: ${error}`);
-      this.debugInfo();
+      this.trainingReport = null;
       throw error;
     } finally {
-      inputs?.dispose();
-      labels?.dispose();
-      // explicit optimizers are caller-owned in TensorFlow.js; model.dispose() does not release them
+      tf.dispose(tensors);
+      tf.dispose(bestWeights);
       optimizer?.dispose();
+      if (isCurrent()) MODEL_TRAININGS.delete(this.id);
     }
   }
 
-  /**
-   * Create and compile a model with a caller-owned Adam optimizer.
-   *
-   * @returns compiled model; the training caller releases its optimizer, and compilation failures release both
-   */
+  /** Train a regularized binary feature classifier without padding or sequence truncation. */
   private createModel(): tf.LayersModel {
-    console.debug(`Creating single-class model, vocabulary size: ${this.tokenizer.size}`);
-
     const model = tf.sequential({
       layers: [
-        // embedding layer
-        tf.layers.embedding({
-          inputDim: this.tokenizer.size + 1,
-          outputDim: this.embeddingDim,
-          inputLength: this.maxSequenceLength
-        }),
-
-        // global average pooling
-        tf.layers.globalAveragePooling1d(),
-
-        // hidden layer
-        tf.layers.dense({ units: 16, activation: 'relu' }),
-        tf.layers.dropout({ rate: 0.3 }),
-
-        // output layer: single neuron, sigmoid activation for binary classification
         tf.layers.dense({
+          inputShape: [this.tokenizer.size],
           units: 1,
-          activation: 'sigmoid'
+          activation: 'sigmoid',
+          kernelInitializer: 'zeros',
+          kernelRegularizer: tf.regularizers.l2({ l2: 0.001 })
         })
       ]
     });
-
-    // use binary classification loss function
     const optimizer = tf.train.adam(this.trainingConfig.learningRate);
     try {
       model.compile({ optimizer, loss: 'binaryCrossentropy', metrics: ['accuracy'] });
@@ -222,27 +314,34 @@ export class Classifier {
     }
   }
 
-  // build vocabulary (only process positive samples)
-  private buildVocabulary(positiveData: string[]) {
-    const vocabulary = new Set<string>();
-
-    // extract feature vocabulary
-    positiveData.forEach((text) => {
-      const tokens = this.tokenizeText(text);
-      tokens.forEach((token) => vocabulary.add(token));
-    });
-
-    // build mapping
-    let tokenIndex = 1; // 0 reserved for unknown words
-    vocabulary.forEach((token) => {
-      this.tokenizer.set(token, tokenIndex++);
-    });
-
-    console.debug(`Vocabulary size: ${this.tokenizer.size}`);
+  private buildVocabulary(texts: string[]): void {
+    const frequency = new Map<string, number>();
+    for (const text of texts) {
+      for (const token of this.tokenizeText(text)) {
+        frequency.set(token, (frequency.get(token) ?? 0) + 1);
+      }
+    }
+    // Reserve structural features before selecting frequent lexical features.
+    const isLexical = (token: string) => /^(NGRAM_|WORD_|PREFIX_|SUFFIX_)/.test(token);
+    const ranked = [...frequency]
+      // One-off fragments mostly memorize individual identifiers in small datasets.
+      .filter(([token, count]) => !isLexical(token) || count >= 2)
+      .sort(
+        ([a, countA], [b, countB]) =>
+          Number(isLexical(a)) - Number(isLexical(b)) || countB - countA || a.localeCompare(b)
+      );
+    this.tokenizer.clear();
+    for (const [token] of ranked.slice(0, this.trainingConfig.maxFeatures)) {
+      this.tokenizer.set(token, this.tokenizer.size + 1);
+    }
   }
 
   // universal text tokenization (applicable to any type of text pattern)
   private tokenizeText(text: string): string[] {
+    // Version component values and widths do not identify the category. Keep earlier encodings intact.
+    if (this.featureVersion >= 4 && this.format?.kind === 'version' && VERSION_FORMAT.test(text)) {
+      text = 'v0.0.0';
+    }
     // extract pattern features
     const patternFeatures = this.extractPatternFeatures(text);
 
@@ -254,8 +353,7 @@ export class Classifier {
     charFeatures.forEach((feature) => tokens.add(feature));
 
     // 2. n-gram features (character-level)
-    const charNgrams = this.extractCharNgrams(text, 2, 4);
-    charNgrams.forEach((ngram) => tokens.add(ngram));
+    this.addCharNgrams(text, 2, 4, tokens);
 
     // 3. word-level features
     const wordTokens = this.extractWordTokens(text);
@@ -267,6 +365,21 @@ export class Classifier {
     // 5. position features
     const positionFeatures = this.extractPositionFeatures(text);
     positionFeatures.forEach((feature) => tokens.add(feature));
+
+    if (this.featureVersion >= 2) {
+      tokens.add(`LENGTH_${text.length}`);
+      // Exact shapes describe short structured values without storing long text in feature names.
+      if (text.length <= 80) tokens.add(`SHAPE_${this.characterShape(text)}`);
+      const normalized = text.toLowerCase();
+      for (let length = 1; length <= Math.min(4, text.length); length++) {
+        tokens.add(`PREFIX_${normalized.slice(0, length)}`);
+        tokens.add(`SUFFIX_${normalized.slice(-length)}`);
+      }
+    }
+
+    if (this.featureVersion >= 3 && this.format) {
+      tokens.add(this.matchesFormat(text) ? 'FORMAT_MATCH' : 'FORMAT_MISMATCH');
+    }
 
     return Array.from(tokens);
   }
@@ -316,7 +429,7 @@ export class Classifier {
 
     // repeated character patterns
     if (/(.)\1{2,}/.test(text)) features.push('HAS_REPEATED_CHARS');
-    if (/^(.+)\1+$/.test(text)) features.push('REPEATING_PATTERN');
+    if (this.hasRepeatingPattern(text)) features.push('REPEATING_PATTERN');
 
     // special characters
     if (/[!@#$%^&*(),.?":{}|<>]/.test(text)) features.push('HAS_SPECIAL_CHARS');
@@ -324,6 +437,21 @@ export class Classifier {
     if (/[\u4e00-\u9fa5]/.test(text)) features.push('HAS_CHINESE');
 
     return features;
+  }
+
+  private hasRepeatingPattern(text: string): boolean {
+    // Preserve the regex's UTF-16 and line-terminator semantics without backtracking.
+    if (text.length < 2 || /[\r\n\u2028\u2029]/.test(text)) return false;
+
+    // Prefix lengths give the shortest possible repeating period in linear time.
+    const prefixes = new Uint32Array(text.length);
+    for (let i = 1, matched = 0; i < text.length; i++) {
+      while (matched > 0 && text[i] !== text[matched]) matched = prefixes[matched - 1];
+      if (text[i] === text[matched]) matched++;
+      prefixes[i] = matched;
+    }
+    const period = text.length - prefixes[text.length - 1];
+    return period < text.length && text.length % period === 0;
   }
 
   // extract character-level features
@@ -358,19 +486,16 @@ export class Classifier {
     return features;
   }
 
-  // extract character n-gram features
-  private extractCharNgrams(text: string, minN: number, maxN: number): string[] {
-    const ngrams: string[] = [];
+  // Add directly to the feature set, preserving first occurrence order for legacy encodings.
+  private addCharNgrams(text: string, minN: number, maxN: number, tokens: Set<string>): void {
     const normalizedText = text.toLowerCase();
 
     for (let n = minN; n <= maxN; n++) {
+      const prefix = `NGRAM_${n}_`;
       for (let i = 0; i <= normalizedText.length - n; i++) {
-        const ngram = normalizedText.substring(i, i + n);
-        ngrams.push(`NGRAM_${n}_${ngram}`);
+        tokens.add(prefix + normalizedText.substring(i, i + n));
       }
     }
-
-    return ngrams;
   }
 
   // extract word-level features
@@ -433,188 +558,220 @@ export class Classifier {
     return features;
   }
 
-  // prepare single-class training data
-  private prepareTrainingData(positiveData: string[]) {
-    const sequences: number[][] = [];
-    const labels: number[] = [];
+  private random(): number {
+    // Local PRNG: training must not replace the application's Math.random.
+    this.randomState = (Math.imul(this.randomState, 1664525) + 1013904223) >>> 0;
+    return this.randomState / 4294967296;
+  }
 
-    // process positive samples
-    positiveData.forEach((text) => {
-      const tokens = this.tokenizeText(text);
-      const sequence = tokens.map((token) => this.tokenizer.get(token) || 0).slice(0, this.maxSequenceLength);
+  private shuffle<T>(values: T[]): T[] {
+    const result = [...values];
+    for (let i = result.length - 1; i > 0; i--) {
+      const j = Math.floor(this.random() * (i + 1));
+      [result[i], result[j]] = [result[j], result[i]];
+    }
+    return result;
+  }
 
-      // pad or truncate to fixed length
-      while (sequence.length < this.maxSequenceLength) {
-        sequence.push(0);
-      }
+  private splitSamples(values: string[]): { training: string[]; validation: string[] } {
+    const shuffled = this.shuffle(values);
+    const count = Math.max(
+      1,
+      Math.min(values.length - 1, Math.floor(values.length * this.trainingConfig.validationSplit))
+    );
+    return { training: shuffled.slice(count), validation: shuffled.slice(0, count) };
+  }
 
-      sequences.push(sequence);
-      labels.push(1); // mark positive samples as 1
-    });
-
-    // generate negative samples using improved data augmentation
-    const { negativeRatio, maxNegativeSamples } = this.trainingConfig;
-    const targetNegativeCount = Math.min(Math.ceil(positiveData.length * negativeRatio), maxNegativeSamples);
-    const negativeSamples = this.generateNegativeSamples(positiveData, targetNegativeCount);
-
-    negativeSamples.forEach((negativeSequence) => {
-      sequences.push(negativeSequence);
-      labels.push(0); // mark negative samples as 0
-    });
-
-    // convert to tensors
-    const inputTensor = tf.tensor2d(sequences, [sequences.length, this.maxSequenceLength], 'float32');
-    const labelsTensor = tf.tensor1d(labels, 'float32');
-
-    console.debug(`Creating tensors - Input: shape=${inputTensor.shape}, dtype=${inputTensor.dtype}`);
-    console.debug(`Creating tensors - Labels: shape=${labelsTensor.shape}, dtype=${labelsTensor.dtype}`);
-    console.debug(`Creating tensors - Samples: positive=${positiveData.length}, negative=${negativeSamples.length}`);
-
+  private prepareTrainingData(positive: string[]) {
+    const positives = this.splitSamples(positive);
+    this.format = this.inferFormat(positives.training);
+    // Held-out positives may veto an overly narrow format, but never supply its literals or vocabulary.
+    if (this.format && positives.validation.some((text) => !this.matchesFormat(text))) {
+      this.format = this.inferFormat(positives.training, positives.validation);
+      if (positives.validation.some((text) => !this.matchesFormat(text))) this.format = undefined;
+    }
+    const diversify = this.format || this.isContinuousChinese(positives.training);
+    // A few randomly chosen counterexamples cannot represent all the nearby invalid formats.
+    const countFor = (count: number, minimum: number) =>
+      Math.min(
+        this.trainingConfig.maxNegativeSamples,
+        Math.max(minimum, Math.ceil(count * this.trainingConfig.negativeRatio))
+      );
+    // Split the source examples first. Augmentations stay on their source's side.
+    const trainingNegative = this.generateNegativeSamples(
+      positives.training,
+      countFor(positives.training.length, diversify ? 32 : 2),
+      positive
+    );
+    const validationNegative = this.generateNegativeSamples(
+      positives.validation,
+      countFor(positives.validation.length, diversify ? 16 : 2),
+      [...positive, ...trainingNegative],
+      positives.training
+    );
     return {
-      inputs: inputTensor,
-      labels: labelsTensor
+      training: { positive: positives.training, negative: trainingNegative },
+      validation: { positive: positives.validation, negative: validationNegative }
     };
   }
 
-  // generate negative samples using data augmentation
-  private generateNegativeSamples(positiveData: string[], count: number): number[][] {
-    const negativeSamples: number[][] = [];
-    const strategies = [
-      this.augmentByShuffling.bind(this),
-      this.augmentByDeletion.bind(this),
-      this.augmentByInsertion.bind(this),
-      this.augmentByReplacement.bind(this),
-      this.augmentByTruncation.bind(this),
-      this.generateRandomSample.bind(this)
-    ];
+  private encodeTrainingData(data: { positive: string[]; negative: string[] }) {
+    const rows = this.shuffle([
+      ...data.positive.map((text) => ({ text, label: 1 })),
+      ...data.negative.map((text) => ({ text, label: 0 }))
+    ]);
+    return tf.tidy(() => ({
+      inputs: tf.tensor2d(rows.map(({ text }) => this.textToSequence(text))),
+      labels: tf.tensor1d(rows.map(({ label }) => label))
+    }));
+  }
 
-    let attempts = 0;
-    const maxAttempts = count * 3; // prevent infinite loop
+  /** Infer compact structures; held-out examples can relax individual length constraints. */
+  private inferFormat(positive: string[], lengthChecks: string[] = []): FormatProfile | undefined {
+    if (positive.every((text) => EMAIL_FORMAT.test(text))) return { kind: 'email' };
+    if (positive.every((text) => this.isHttpUrl(text))) return { kind: 'http-url' };
+    if (positive.every((text) => VERSION_FORMAT.test(text))) return { kind: 'version' };
+    if (positive.some((text) => text.length > 80 || !/^[A-Za-z0-9._:/-]+$/.test(text))) return;
+    if (!positive.every((text) => /\d/.test(text))) return;
 
-    while (negativeSamples.length < count && attempts < maxAttempts) {
-      attempts++;
+    const parts = positive.map((text) => text.match(/[A-Za-z]+|\d+|[^A-Za-z\d]/g)!);
+    const kind = (part: string) => (/^\d+$/.test(part) ? 'digit' : /^[A-Za-z]+$/.test(part) ? 'letter' : part);
+    const first = parts[0];
+    const checkedParts = lengthChecks.map((text) => text.match(/[A-Za-z]+|\d+|[^A-Za-z\d]/g) ?? []);
+    if (parts.some((row) => row.length !== first.length || row.some((part, i) => kind(part) !== kind(first[i]))))
+      return;
+    const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const source = first
+      .map((part, i) => {
+        const column = parts.map((row) => row[i]);
+        if (kind(part) !== 'digit' && kind(part) !== 'letter') return escape(part);
+        // Keep a shared leading label (e.g. a project prefix), but never memorize a shared year or ID.
+        if (i === 0 && kind(part) === 'letter' && column.every((value) => value === part)) return escape(part);
+        let alphabet = '[A-Za-z]';
+        if (kind(part) === 'digit') alphabet = '[0-9]';
+        else if (column.every((value) => /^[A-Z]+$/.test(value))) alphabet = '[A-Z]';
+        else if (column.every((value) => /^[a-z]+$/.test(value))) alphabet = '[a-z]';
+        const length =
+          column.every((value) => value.length === part.length) &&
+          checkedParts.every((row) => row[i]?.length === part.length)
+            ? `{${part.length}}`
+            : '+';
+        return alphabet + length;
+      })
+      .join('');
+    return { kind: 'pattern', source: `^(?:${source})$` };
+  }
 
-      // select a random positive sample as base
-      const baseText = positiveData[Math.floor(Math.random() * positiveData.length)];
+  private isHttpUrl(text: string): boolean {
+    // URL() repairs missing slashes and whitespace; require an explicit, intact input first.
+    if (!/^https?:\/\/[^/\s?#][^\s\\]*$/i.test(text)) return false;
+    try {
+      const url = new URL(text);
+      return Boolean(url.hostname) && (url.protocol === 'http:' || url.protocol === 'https:');
+    } catch {
+      return false;
+    }
+  }
 
-      // select a random augmentation strategy
-      const strategy = strategies[Math.floor(Math.random() * strategies.length)];
-      const augmentedSequence = strategy(baseText);
+  private matchesFormat(text: string): boolean {
+    if (this.format?.kind === 'email') return EMAIL_FORMAT.test(text);
+    if (this.format?.kind === 'http-url') return this.isHttpUrl(text);
+    if (this.format?.kind === 'version') return VERSION_FORMAT.test(text);
+    return this.format?.kind !== 'pattern' || new RegExp(this.format.source).test(text);
+  }
 
-      if (augmentedSequence) {
-        negativeSamples.push(augmentedSequence);
+  private isContinuousChinese(samples: string[]): boolean {
+    // Whole-content corruption is useful for continuous Chinese. In Latin/mixed prose it can
+    // teach topic overlap instead of intent (e.g. scheduling versus cancelling the same meeting).
+    // Two training examples after the minimum-size split do not support this broader augmentation.
+    return samples.length >= 3 && samples.every((text) => /[\u4e00-\u9fa5]/.test(text) && !/[A-Za-z]/.test(text));
+  }
+
+  /** Generate negatives outside the inferred format; matching shapes alone cannot protect valid emails/URLs. */
+  private generateNegativeSamples(
+    positive: string[],
+    count: number,
+    excluded: string[],
+    reference: string[] = positive
+  ): string[] {
+    const forbidden = new Set(excluded);
+    const negatives = new Set<string>();
+    const fixedLength = new Set(reference.map((text) => text.length)).size === 1;
+    const signature = (text: string) => {
+      const shape = this.characterShape(text);
+      return fixedLength ? shape : shape.replace(/(.)\1+/g, '$1');
+    };
+    const positiveShapes = new Set(reference.map(signature));
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz0123456789-_/.:@中文测试';
+    const naturalText = !this.format && this.isContinuousChinese(reference);
+    const chinese = [...new Set(reference.join('').match(/[\u4e00-\u9fa5]/g) ?? [])];
+    for (let attempt = 0; negatives.size < count && attempt < count * 100; attempt++) {
+      const base = positive[Math.floor(this.random() * positive.length)];
+      const position = Math.floor(this.random() * base.length);
+      const character = alphabet[Math.floor(this.random() * alphabet.length)];
+      let candidate: string;
+      if (naturalText && attempt % 5 !== 4) {
+        // A typo or a different tracking number may still express the same intent. Replace the
+        // complete lexical content while retaining layout and numbers, so those cannot separate classes.
+        candidate = base.replace(/[A-Za-z\u4e00-\u9fa5]/g, (char) => {
+          if (/[\u4e00-\u9fa5]/.test(char)) return chinese[Math.floor(this.random() * chinese.length)];
+          return String.fromCharCode((char === char.toUpperCase() ? 65 : 97) + Math.floor(this.random() * 26));
+        });
+      } else
+        switch (attempt % 5) {
+          case 0:
+            candidate = base.slice(0, position) + base.slice(position + 1);
+            break;
+          case 1:
+            candidate = base.slice(0, position) + character + base.slice(position);
+            break;
+          case 2:
+            candidate = base.slice(0, position) + character + base.slice(position + 1);
+            break;
+          case 3:
+            candidate = this.shuffle(Array.from(base)).join('');
+            break;
+          default: {
+            const length = 1 + Math.floor(this.random() * Math.min(80, base.length * 2));
+            candidate = Array.from({ length }, () => alphabet[Math.floor(this.random() * alphabet.length)]).join('');
+          }
+        }
+      candidate = candidate.trim();
+      // A shuffled number (or an unchanged string) is not evidence of a negative class.
+      if (
+        candidate &&
+        !forbidden.has(candidate) &&
+        (this.format ? !this.matchesFormat(candidate) : naturalText || !positiveShapes.has(signature(candidate)))
+      ) {
+        negatives.add(candidate);
       }
     }
-
-    // fill remaining with random samples if needed
-    while (negativeSamples.length < count) {
-      negativeSamples.push(this.generateRandomSample());
+    if (negatives.size < count) {
+      throw new Error('Unable to generate distinct negative samples from the training data');
     }
-
-    console.debug(`Generated ${negativeSamples.length} negative samples using data augmentation`);
-    return negativeSamples;
+    return [...negatives];
   }
 
-  // augment by shuffling characters
-  private augmentByShuffling(text: string): number[] {
-    const chars = text.split('');
-    // Fisher-Yates shuffle
-    for (let i = chars.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
-    return this.textToSequence(chars.join(''));
+  private characterShape(text: string): string {
+    return text
+      .replace(/[A-Za-z]/g, 'L')
+      .replace(/\d/g, 'D')
+      .replace(/[\u4e00-\u9fa5]/g, 'H');
   }
 
-  // augment by deleting random characters (30-70%)
-  private augmentByDeletion(text: string): number[] {
-    const deleteRatio = 0.3 + Math.random() * 0.4; // 30-70% deletion
-    const chars = text.split('');
-    const keepCount = Math.max(1, Math.floor(chars.length * (1 - deleteRatio)));
-    const indices = new Set<number>();
-
-    while (indices.size < keepCount) {
-      indices.add(Math.floor(Math.random() * chars.length));
-    }
-
-    const result = chars.filter((_, i) => indices.has(i)).join('');
-    return this.textToSequence(result);
-  }
-
-  // augment by inserting random characters
-  private augmentByInsertion(text: string): number[] {
-    const chars = text.split('');
-    const insertCount = Math.floor(Math.random() * text.length * 0.5) + 1;
-    const randomChars = 'abcdefghijklmnopqrstuvwxyz0123456789-_.';
-
-    for (let i = 0; i < insertCount; i++) {
-      const pos = Math.floor(Math.random() * (chars.length + 1));
-      const char = randomChars[Math.floor(Math.random() * randomChars.length)];
-      chars.splice(pos, 0, char);
-    }
-
-    return this.textToSequence(chars.join(''));
-  }
-
-  // augment by replacing random characters
-  private augmentByReplacement(text: string): number[] {
-    const replaceRatio = 0.2 + Math.random() * 0.3; // 20-50% replacement
-    const chars = text.split('');
-    const replaceCount = Math.max(1, Math.floor(chars.length * replaceRatio));
-    const randomChars = 'abcdefghijklmnopqrstuvwxyz0123456789-_.';
-
-    for (let i = 0; i < replaceCount; i++) {
-      const pos = Math.floor(Math.random() * chars.length);
-      chars[pos] = randomChars[Math.floor(Math.random() * randomChars.length)];
-    }
-
-    return this.textToSequence(chars.join(''));
-  }
-
-  // augment by truncating from start or end
-  private augmentByTruncation(text: string): number[] {
-    if (text.length <= 2) {
-      return this.generateRandomSample();
-    }
-
-    const truncateRatio = 0.3 + Math.random() * 0.4; // 30-70% truncation
-    const keepLength = Math.max(1, Math.floor(text.length * (1 - truncateRatio)));
-
-    // randomly truncate from start or end
-    const fromStart = Math.random() > 0.5;
-    const result = fromStart ? text.slice(text.length - keepLength) : text.slice(0, keepLength);
-
-    return this.textToSequence(result);
-  }
-
-  // generate completely random sample
-  private generateRandomSample(): number[] {
-    const sequence: number[] = [];
-    const vocabSize = this.tokenizer.size;
-
-    // generate random sequence with varying density
-    const density = 0.1 + Math.random() * 0.4; // 10-50% non-zero
-    for (let i = 0; i < this.maxSequenceLength; i++) {
-      if (Math.random() < density) {
-        sequence.push(Math.floor(Math.random() * vocabSize) + 1);
-      } else {
-        sequence.push(0);
-      }
-    }
-
-    return sequence;
-  }
-
-  // helper function to convert text to sequence
   private textToSequence(text: string): number[] {
     const tokens = this.tokenizeText(text);
-    const sequence = tokens.map((token) => this.tokenizer.get(token) || 0).slice(0, this.maxSequenceLength);
-
-    // pad to fixed length
-    while (sequence.length < this.maxSequenceLength) {
-      sequence.push(0);
+    if (this.featureVersion >= 2) {
+      const features = new Array<number>(this.tokenizer.size).fill(0);
+      for (const token of tokens) {
+        const id = this.tokenizer.get(token);
+        if (id !== undefined) features[id - 1] = 1;
+      }
+      return features;
     }
-
+    // Preserve the exact encoding used by models saved before feature version 2.
+    const sequence = tokens.map((token) => this.tokenizer.get(token) || 0).slice(0, this.maxSequenceLength);
+    while (sequence.length < this.maxSequenceLength) sequence.push(0);
     return sequence;
   }
 
@@ -622,7 +779,7 @@ export class Classifier {
    * Predict whether text belongs to the target category and refresh the cached model's idle time.
    *
    * @param text - text to classify
-   * @returns synchronous positive-class probability, or zero for an unavailable model or empty/unknown input
+   * @returns synchronous classification score, or zero for an unavailable model or empty/unknown input
    */
   predict(text: string): number {
     if (!this.model || !this.modelTrained) {
@@ -641,82 +798,66 @@ export class Classifier {
       cached.lastUsed = Date.now();
     }
 
-    const tokens = this.tokenizeText(text);
-    console.debug(`Extracted tokens: ${tokens.slice(0, 10).join(', ')}`);
-
-    const sequence = tokens.map((token) => this.tokenizer.get(token) || 0).slice(0, this.maxSequenceLength);
-    console.debug(`Token sequence (first 10): ${sequence.slice(0, 10).join(', ')}`);
-    console.debug(`Non-zero token count: ${sequence.filter((x) => x > 0).length}`);
-
-    // pad to fixed length
-    while (sequence.length < this.maxSequenceLength) {
-      sequence.push(0);
+    const normalized = this.featureVersion >= 2 ? text.trim() : text;
+    if (this.featureVersion >= 3 && !this.matchesFormat(normalized)) return 0;
+    const sequence = this.textToSequence(normalized);
+    if (sequence.every((value) => value === 0)) {
+      // Legacy models also accepted a known token beyond the truncated sequence.
+      if (this.featureVersion >= 2 || !this.tokenizeText(text).some((token) => this.tokenizer.has(token))) return 0;
     }
-
-    // check if sequence is all zeros
-    const nonZeroCount = sequence.filter((x) => x > 0).length;
-    if (nonZeroCount === 0) {
-      console.warn(`Input text contains no known tokens: text="${text}"`);
-      console.debug(`Tokenizer size: ${this.tokenizer.size}`);
-      console.debug(`Extracted tokens (first 10): ${tokens.slice(0, 10).join(', ')}`);
-      console.debug(
-        `Vocab sample: ${Array.from(this.tokenizer.entries())
-          .slice(0, 5)
-          .map(([k, v]) => `${k}:${v}`)
-          .join(', ')}`
-      );
-
-      // try to find at least one matching token
-      const matchingTokens = tokens.filter((token) => this.tokenizer.has(token));
-      console.debug(`Matching tokens found: ${matchingTokens.slice(0, 5).join(', ')}`);
-
-      if (matchingTokens.length === 0) {
-        console.warn('No matching tokens found');
-        return 0;
-      }
-    }
-
-    // use tf.tidy to ensure proper memory cleanup even if errors occur
     return tf.tidy(() => {
-      const input = tf.tensor2d([sequence], [1, this.maxSequenceLength], 'float32');
+      const input = tf.tensor2d([sequence]);
       const prediction = this.model!.predict(input) as tf.Tensor;
-      const confidence = prediction.dataSync()[0]; // probability value of sigmoid output
-
-      console.debug(`Raw prediction confidence: ${confidence}`);
-
-      return confidence;
+      return prediction.dataSync()[0];
     });
   }
 
   /**
    * Save the current model and replace its cached predecessor only after persistence succeeds.
    *
+   * @param assertCurrent - reject results invalidated by deletion, renaming or a newer training run
    * @returns promise resolving after storage and cache updates; rejects on storage failure
    */
-  async saveModel(): Promise<void> {
+  async saveModel(assertCurrent?: () => void): Promise<void> {
     if (!this.model) {
       console.warn('No model to save');
       return;
     }
 
     try {
-      const storageKey = `${STORAGE.CLASSIFIER}_${this.id}`;
-      await this.model.save(`localstorage://${storageKey}`);
-
-      // save tokenizer and config
-      const tokenizerData = Array.from(this.tokenizer.entries());
-
-      localStorage.setItem(`${STORAGE.TOKENIZER}_${this.id}`, JSON.stringify(tokenizerData));
-
       const config = {
         maxSequenceLength: this.maxSequenceLength,
         embeddingDim: this.embeddingDim,
         modelTrained: this.modelTrained,
-        tokenizerSize: this.tokenizer.size
+        tokenizerSize: this.tokenizer.size,
+        featureVersion: this.featureVersion,
+        format: this.format
       };
+      const legacyKeys = [`${STORAGE.TOKENIZER}_${this.id}`, ...Classifier.getModelStorageKeys(this.id)];
+      await this.model.save(
+        tf.io.withSaveHandler(async (artifacts) => {
+          const { weightData, ...metadata } = artifacts;
+          const bytes = new Uint8Array(
+            (Array.isArray(weightData) ? tf.io.concatenateArrayBuffers(weightData) : weightData) ?? new ArrayBuffer(0)
+          );
+          let binary = '';
+          for (let offset = 0; offset < bytes.length; offset += 32768) {
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+          }
+          const saved: SavedModel = {
+            ...config,
+            tokenizer: Array.from(this.tokenizer.entries()),
+            artifacts: { ...metadata, weightData: btoa(binary) }
+          };
+          const result = { modelArtifactsInfo: tf.io.getModelArtifactsInfoForJSON(artifacts) };
+          // setItem either replaces this complete record or leaves the previous model intact.
+          assertCurrent?.();
+          localStorage.setItem(`${STORAGE.CONFIG}_${this.id}`, JSON.stringify(saved));
+          return result;
+        })
+      );
 
-      localStorage.setItem(`${STORAGE.CONFIG}_${this.id}`, JSON.stringify(config));
-
+      assertCurrent?.();
       // invalidate older reads before replacing the cache with the newly saved model
       MODEL_LOADS.delete(this.id);
       const previous = MODEL_CACHE.get(this.id);
@@ -730,6 +871,13 @@ export class Classifier {
         previous.model.dispose();
       }
       scheduleCleanup();
+
+      // Migration cleanup cannot turn a successful commit into a reported training failure.
+      try {
+        legacyKeys.forEach((key) => localStorage.removeItem(key));
+      } catch (error) {
+        console.warn(`Failed to remove obsolete model storage: ${error}`);
+      }
 
       console.debug(`Model saved and cached successfully, tokenizer size: ${this.tokenizer.size}`);
     } catch (error) {
@@ -751,24 +899,35 @@ export class Classifier {
         let pending = MODEL_LOADS.get(this.id);
         if (!pending) {
           pending = (async () => {
-            const tokenizerData = localStorage.getItem(`${STORAGE.TOKENIZER}_${this.id}`);
             const configData = localStorage.getItem(`${STORAGE.CONFIG}_${this.id}`);
-            if (!tokenizerData || !configData) {
-              return;
-            }
+            if (!configData) return;
+            const { tokenizer: savedTokenizer, artifacts, ...config }: SavedModel = JSON.parse(configData);
+            const tokenizerData = artifacts
+              ? savedTokenizer
+              : JSON.parse(localStorage.getItem(`${STORAGE.TOKENIZER}_${this.id}`) ?? 'null');
+            if (!tokenizerData) return;
 
             let loadedModel: tf.LayersModel | undefined;
             try {
-              loadedModel = await tf.loadLayersModel(`localstorage://${STORAGE.CLASSIFIER}_${this.id}`);
+              loadedModel = await tf.loadLayersModel(
+                artifacts
+                  ? tf.io.fromMemory({
+                      ...artifacts,
+                      weightData: Uint8Array.from(atob(artifacts.weightData), (char) => char.charCodeAt(0)).buffer
+                    })
+                  : `localstorage://${STORAGE.CLASSIFIER}_${this.id}`
+              );
               // deletion or a successful save may have invalidated this read while weights were loading
               if (MODEL_LOADS.get(this.id) !== pending) {
                 return;
               }
 
-              const tokenizer = new Map<string, number>(JSON.parse(tokenizerData));
-              const config: ModelCache['config'] = JSON.parse(configData);
+              const tokenizer = new Map<string, number>(tokenizerData);
               if (config.tokenizerSize && config.tokenizerSize !== tokenizer.size) {
-                console.warn(`Tokenizer size mismatch: expected=${config.tokenizerSize}, actual=${tokenizer.size}`);
+                throw new Error(`Tokenizer size mismatch: expected=${config.tokenizerSize}, actual=${tokenizer.size}`);
+              }
+              if ((config.featureVersion ?? 1) >= 2 && loadedModel.inputs[0].shape[1] !== tokenizer.size) {
+                throw new Error('Model input size does not match its tokenizer');
               }
 
               MODEL_CACHE.set(this.id, {
@@ -804,6 +963,8 @@ export class Classifier {
       this.maxSequenceLength = cached.config.maxSequenceLength;
       this.embeddingDim = cached.config.embeddingDim;
       this.modelTrained = cached.config.modelTrained;
+      this.featureVersion = cached.config.featureVersion ?? 1;
+      this.format = cached.config.format;
       cached.lastUsed = Date.now();
       return true;
     } catch (error) {
@@ -838,45 +999,21 @@ export class Classifier {
     console.debug(`Memory: ${JSON.stringify(tf.memory())}`);
   }
 
-  // validate training data format
+  static normalizeSamples(data: string[] | string): string[] {
+    const values = typeof data === 'string' ? data.split('\n') : Array.isArray(data) ? data : [];
+    return [
+      ...new Set(
+        values
+          .filter((value) => typeof value === 'string')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      )
+    ];
+  }
+
   static validateTrainingData(data: string[] | string): string[] | null {
-    let processedData: string[];
-
-    // process input data type
-    if (typeof data === 'string') {
-      // if string, split by newline
-      processedData = data
-        .split('\n')
-        .map((line) => line.trim())
-        .filter((line) => line.length > 0);
-    } else if (Array.isArray(data)) {
-      // if array, use directly
-      processedData = [...data];
-    } else {
-      console.error('Training data must be string or string array');
-      return null;
-    }
-
-    // filter invalid text
-    let validData = processedData.filter((item) => {
-      if (!item || typeof item !== 'string' || item.trim().length === 0) {
-        console.debug(`Filtering invalid text: ${item}`);
-        return false;
-      }
-      return true;
-    });
-
-    // remove duplicate data
-    validData = Array.from(new Set(validData));
-
-    // check final sample count
-    if (validData.length < 3) {
-      console.error(`Training requires at least 3 positive samples, got ${validData.length} valid samples`);
-      return null;
-    }
-
-    console.debug(`Training data validated: ${validData.length} positive samples`);
-    return validData;
+    const samples = Classifier.normalizeSamples(data);
+    return samples.length >= 3 ? samples : null;
   }
 
   // get model detailed info (including storage size and vocabulary count)
@@ -884,7 +1021,7 @@ export class Classifier {
     let sizeKB = 0;
     let vocabulary = 0;
 
-    if (typeof window !== 'undefined' && window.localStorage) {
+    if (typeof localStorage !== 'undefined') {
       try {
         // vocabulary count
         const configKey = `${STORAGE.CONFIG}_${id}`;
@@ -897,7 +1034,7 @@ export class Classifier {
 
         // storage size
         let totalSize = 0;
-        for (const key of Classifier.getModelStorageKeys(id)) {
+        for (const key of [configKey, `${STORAGE.TOKENIZER}_${id}`, ...Classifier.getModelStorageKeys(id)]) {
           const value = localStorage.getItem(key);
           if (value) {
             // estimate UTF-16 encoded byte size (JavaScript strings are UTF-16)
@@ -967,6 +1104,8 @@ export class Classifier {
 
     MODEL_LOADS.delete(id);
     MODEL_LOADS.delete(newId);
+    MODEL_TRAININGS.delete(id);
+    MODEL_TRAININGS.delete(newId);
     const cached = MODEL_CACHE.get(id);
     if (cached) {
       MODEL_CACHE.delete(id);
@@ -977,7 +1116,7 @@ export class Classifier {
   }
 
   /**
-   * Delete a model's storage and cache, invalidating any unfinished load for the same ID.
+   * Delete a model's storage and cache, invalidating unfinished loading and training for the same ID.
    *
    * @param id - model ID to remove
    * @returns immediately after synchronous removal; storage failures are logged
@@ -985,6 +1124,7 @@ export class Classifier {
   static clearSavedModel(id: string): void {
     try {
       MODEL_LOADS.delete(id);
+      MODEL_TRAININGS.delete(id);
       // remove from cache and clean up resources
       const cached = MODEL_CACHE.get(id);
       if (cached) {
@@ -1000,9 +1140,7 @@ export class Classifier {
       localStorage.removeItem(`${STORAGE.TOKENIZER}_${id}`);
 
       // clear TensorFlow model
-      if (typeof window !== 'undefined' && window.localStorage) {
-        Classifier.getModelStorageKeys(id).forEach((key) => localStorage.removeItem(key));
-      }
+      Classifier.getModelStorageKeys(id).forEach((key) => localStorage.removeItem(key));
 
       console.debug('Cleared saved model data from localStorage');
     } catch (error) {
@@ -1022,7 +1160,7 @@ export class Classifier {
  *
  * @param modelId - model ID
  * @param text - text to predict
- * @returns prediction result (positive class probability)
+ * @returns classification score, or null when the model is unavailable
  */
 export async function predict(modelId: string, text: string): Promise<number | null> {
   try {

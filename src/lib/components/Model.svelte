@@ -126,12 +126,11 @@
     modal.close();
     if (model) {
       const retrain = model.sample !== modelSample;
-      model.sample = modelSample;
       model.icon = modelIcon;
       model.threshold = modelThreshold;
       if (retrain) {
         // retrain model if necessary
-        train(modelName);
+        train(modelName, false, modelSample);
       } else {
         // only update other info
         alert(m.model_info_updated());
@@ -154,8 +153,9 @@
    *
    * @param id - model ID
    * @param reset - whether to reset the form
+   * @param sample - replacement samples, committed only after successful training
    */
-  export async function train(id: string, reset: boolean = false) {
+  export async function train(id: string, reset: boolean = false, sample?: string) {
     if (training) {
       return;
     }
@@ -163,8 +163,11 @@
     if (!model) {
       return;
     }
+    const trainingSample = sample ?? model.sample;
+    const isCurrent = () => models.includes(model) && model.id === id;
     // mark model as training
     training = true;
+    const previouslyTrained = model.modelTrained === true;
     model.modelTrained = undefined;
     try {
       // tick() updates the DOM; two frames allow it to paint before synchronous TensorFlow setup.
@@ -189,7 +192,10 @@
           });
         });
       }
-      await new Classifier(id).trainModel(model.sample);
+      if (!isCurrent()) return;
+      await new Classifier(id).trainModel(trainingSample);
+      if (!isCurrent()) return;
+      model.sample = trainingSample;
       model.modelTrained = true;
       alert(m.model_training_success());
       // reset form after training
@@ -200,8 +206,9 @@
         modelThreshold = DEFAULT_THRESHOLD;
       }
     } catch (error) {
+      if (!isCurrent() || (error instanceof DOMException && error.name === 'AbortError')) return;
       console.error(`Failed to train model: ${error}`);
-      model.modelTrained = false;
+      model.modelTrained = previouslyTrained;
       alert({ level: 'error', message: m.model_training_failed() });
     } finally {
       training = false;
