@@ -10,7 +10,8 @@
     TOOLBAR_ACTION_COUNT,
     TOOLBAR_AUTO_HIDE_DELAY,
     TOOLBAR_CORNER_RADIUS,
-    TOOLBAR_OPACITY
+    TOOLBAR_OPACITY,
+    TOOLBAR_POSITION_OFFSET
   } from '$lib/constants';
   import { m } from '$lib/paraglide/messages';
   import {
@@ -25,6 +26,8 @@
     toolbarMaxActions,
     toolbarOpacity,
     toolbarPosition,
+    toolbarPositionOffsetX,
+    toolbarPositionOffsetY,
     toolbarSize
   } from '$lib/stores.svelte';
   import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
@@ -43,6 +46,7 @@
   const createRangeMarks = ({ min, max }: { min: number; max: number }, count: number) =>
     Array.from({ length: count }, (_, index) => Math.round(min + ((max - min) * index) / (count - 1)));
 
+  const toolbarPositionOffsetMarks = createRangeMarks(TOOLBAR_POSITION_OFFSET, 3);
   const toolbarCornerRadiusMarks = createRangeMarks(TOOLBAR_CORNER_RADIUS, 4);
   const toolbarOpacityMarks = createRangeMarks(TOOLBAR_OPACITY, 3);
   const toolbarAutoHideDelayMarks = createRangeMarks(TOOLBAR_AUTO_HIDE_DELAY, 4);
@@ -72,6 +76,52 @@
         <option value="bottom-right">{m.toolbar_position_bottom_right()}</option>
         <option value="bottom">{m.toolbar_position_bottom()}</option>
       </Select>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.toolbar_position_offset_x_explain()} tipPlacement="duplex">
+        {m.toolbar_position_offset_x()}
+        <span class="ml-1 text-xs opacity-70">{toolbarPositionOffsetX.current}px</span>
+      </Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={TOOLBAR_POSITION_OFFSET.min}
+          max={TOOLBAR_POSITION_OFFSET.max}
+          step={TOOLBAR_POSITION_OFFSET.step}
+          aria-label={m.toolbar_position_offset_x()}
+          bind:value={toolbarPositionOffsetX.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each toolbarPositionOffsetMarks as offset (offset)}
+            <span>{offset}px</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.toolbar_position_offset_y_explain()} tipPlacement="duplex">
+        {m.toolbar_position_offset_y()}
+        <span class="ml-1 text-xs opacity-70">{toolbarPositionOffsetY.current}px</span>
+      </Label>
+      <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={TOOLBAR_POSITION_OFFSET.min}
+          max={TOOLBAR_POSITION_OFFSET.max}
+          step={TOOLBAR_POSITION_OFFSET.step}
+          aria-label={m.toolbar_position_offset_y()}
+          bind:value={toolbarPositionOffsetY.current}
+        />
+        <div class="flex justify-between text-xs opacity-70">
+          {#each toolbarPositionOffsetMarks as offset (offset)}
+            <span>{offset}px</span>
+          {/each}
+        </div>
+      </label>
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">

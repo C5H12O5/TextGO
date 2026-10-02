@@ -1,5 +1,5 @@
 import { createExecutionGuard, execute } from '$lib/executor';
-import { shortcuts } from '$lib/stores.svelte';
+import { shortcuts, toolbarPositionOffsetX, toolbarPositionOffsetY } from '$lib/stores.svelte';
 import type { Rule } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
@@ -82,7 +82,7 @@ export class Manager {
   private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
     try {
       const isCurrent = createExecutionGuard();
-      await shortcuts.ready;
+      await Promise.all([shortcuts.ready, toolbarPositionOffsetX.ready, toolbarPositionOffsetY.ready]);
       if (!isCurrent()) {
         return;
       }

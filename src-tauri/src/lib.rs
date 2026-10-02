@@ -191,6 +191,7 @@ pub fn run() {
             get_toolbar_zoom_factor,
             set_toolbar_menu_open,
             set_toolbar_position,
+            set_toolbar_position_offset,
             show_popup,
             show_popup_sameplace,
             focus_popup_source,

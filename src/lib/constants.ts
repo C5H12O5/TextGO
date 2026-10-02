@@ -63,6 +63,16 @@ export const TOOLBAR_ACTION_COUNT = {
 };
 
 /**
+ * Additional toolbar position offset in logical pixels.
+ */
+export const TOOLBAR_POSITION_OFFSET = {
+  min: -200,
+  default: 0,
+  max: 200,
+  step: 1
+};
+
+/**
  * Toolbar auto-hide delay in seconds.
  */
 export const TOOLBAR_AUTO_HIDE_DELAY = {

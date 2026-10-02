@@ -7,6 +7,7 @@ import {
   TOOLBAR_AUTO_HIDE_DELAY,
   TOOLBAR_CORNER_RADIUS,
   TOOLBAR_OPACITY,
+  TOOLBAR_POSITION_OFFSET,
   TRIPLE_CLICK_SHORTCUT
 } from '$lib/constants';
 import { isSystemTheme, type Theme, type ThemeSetting } from '$lib/theme';
@@ -254,6 +255,18 @@ export const toolbarPosition = persisted<'top' | 'top-right' | 'right' | 'bottom
     }
   }
 );
+
+// additional toolbar position offsets in logical pixels
+export const toolbarPositionOffsetX = persisted<number>('toolbarPositionOffsetX', TOOLBAR_POSITION_OFFSET.default, {
+  onchange: (x) => {
+    invoke('set_toolbar_position_offset', { x });
+  }
+});
+export const toolbarPositionOffsetY = persisted<number>('toolbarPositionOffsetY', TOOLBAR_POSITION_OFFSET.default, {
+  onchange: (y) => {
+    invoke('set_toolbar_position_offset', { y });
+  }
+});
 
 // toolbar corner radius in pixels
 export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOLBAR_CORNER_RADIUS.default);

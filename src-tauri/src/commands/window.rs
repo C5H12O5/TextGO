@@ -31,6 +31,10 @@ pub enum ToolbarPosition {
 // window position offset from cursor
 const WINDOW_OFFSET: i32 = 5;
 
+// additional toolbar offset range in logical pixels, matching TOOLBAR_POSITION_OFFSET
+const TOOLBAR_POSITION_OFFSET_MIN: i32 = -200;
+const TOOLBAR_POSITION_OFFSET_MAX: i32 = 200;
+
 // bottom safe area offset to avoid taskbar/dock
 const SAFE_AREA_BOTTOM: i32 = 80;
 
@@ -47,6 +51,7 @@ const FOCUS_RESTORE_INTERVAL_MS: u64 = 10;
 static POPUP_INITIALIZED: AtomicBool = AtomicBool::new(false);
 static TOOLBAR_INITIALIZED: AtomicBool = AtomicBool::new(false);
 static TOOLBAR_POSITION: Mutex<ToolbarPosition> = Mutex::new(ToolbarPosition::BottomRight);
+static TOOLBAR_POSITION_OFFSET: Mutex<(i32, i32)> = Mutex::new((0, 0));
 static POPUP_SOURCE_FOCUS: LazyLock<Mutex<Option<platform::FocusTarget>>> =
     LazyLock::new(|| Mutex::new(None));
 
@@ -142,6 +147,19 @@ pub fn set_toolbar_menu_open(open: bool) {
 #[tauri::command]
 pub fn set_toolbar_position(position: ToolbarPosition) -> Result<(), AppError> {
     *TOOLBAR_POSITION.lock()? = position;
+    Ok(())
+}
+
+/// Update either toolbar offset without resetting the other axis.
+#[tauri::command]
+pub fn set_toolbar_position_offset(x: Option<i32>, y: Option<i32>) -> Result<(), AppError> {
+    let mut offset = TOOLBAR_POSITION_OFFSET.lock()?;
+    if let Some(x) = x {
+        offset.0 = x.clamp(TOOLBAR_POSITION_OFFSET_MIN, TOOLBAR_POSITION_OFFSET_MAX);
+    }
+    if let Some(y) = y {
+        offset.1 = y.clamp(TOOLBAR_POSITION_OFFSET_MIN, TOOLBAR_POSITION_OFFSET_MAX);
+    }
     Ok(())
 }
 
@@ -358,14 +376,21 @@ fn toolbar_position_offset(
     width: i32,
     height: i32,
     default_offset: i32,
+    additional_offset: (i32, i32),
 ) -> (i32, i32) {
-    match position {
+    let (x, y) = match position {
         ToolbarPosition::Top => (-width / 2, -height - WINDOW_OFFSET),
         ToolbarPosition::TopRight => (WINDOW_OFFSET, -height - WINDOW_OFFSET),
         ToolbarPosition::Right => (WINDOW_OFFSET, -height / 2),
         ToolbarPosition::Bottom => (-width / 2, WINDOW_OFFSET),
         ToolbarPosition::BottomRight => (default_offset, default_offset),
-    }
+    };
+    let offset_y = if matches!(position, ToolbarPosition::Top | ToolbarPosition::TopRight) {
+        -additional_offset.1
+    } else {
+        additional_offset.1
+    };
+    (x + additional_offset.0, y + offset_y)
 }
 
 /// Position a window near the mouse or selection with safe area constraints.
@@ -463,6 +488,7 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
             window_width,
             window_height,
             window_offset,
+            *TOOLBAR_POSITION_OFFSET.lock()?,
         )
     } else {
         (window_offset, window_offset)
@@ -553,7 +579,7 @@ mod tests {
         ];
         for (value, expected) in cases {
             let position = serde_json::from_value(serde_json::json!(value)).unwrap();
-            let (dx, dy) = toolbar_position_offset(position, 240, 42, WINDOW_OFFSET);
+            let (dx, dy) = toolbar_position_offset(position, 240, 42, WINDOW_OFFSET, (0, 0));
             assert_eq!((400 + dx, 300 + dy), expected, "{value}");
         }
     }
@@ -562,7 +588,7 @@ mod tests {
     fn default_toolbar_position_preserves_mouse_and_selection_offsets() {
         for offset in [WINDOW_OFFSET, -WINDOW_OFFSET] {
             assert_eq!(
-                toolbar_position_offset(ToolbarPosition::BottomRight, 240, 42, offset),
+                toolbar_position_offset(ToolbarPosition::BottomRight, 240, 42, offset, (0, 0)),
                 (offset, offset)
             );
         }
@@ -572,13 +598,47 @@ mod tests {
     fn centered_toolbar_positions_follow_window_size() {
         for (width, height) in [(409, 38), (466, 42), (523, 46)] {
             for position in [ToolbarPosition::Top, ToolbarPosition::Bottom] {
-                let (dx, _) = toolbar_position_offset(position, width, height, WINDOW_OFFSET);
+                let (dx, _) =
+                    toolbar_position_offset(position, width, height, WINDOW_OFFSET, (0, 0));
                 assert!((2 * dx + width).abs() <= 1);
             }
-            let (dx, dy) =
-                toolbar_position_offset(ToolbarPosition::Right, width, height, WINDOW_OFFSET);
+            let (dx, dy) = toolbar_position_offset(
+                ToolbarPosition::Right,
+                width,
+                height,
+                WINDOW_OFFSET,
+                (0, 0),
+            );
             assert_eq!(dx, WINDOW_OFFSET);
             assert!((2 * dy + height).abs() <= 1);
         }
+    }
+
+    #[test]
+    fn toolbar_offsets_follow_selected_direction_with_both_signs() {
+        let cases = [
+            ("top", (300, 223), (260, 283)),
+            ("top-right", (425, 223), (385, 283)),
+            ("right", (425, 309), (385, 249)),
+            ("bottom", (300, 335), (260, 275)),
+            ("bottom-right", (425, 335), (385, 275)),
+        ];
+        for (value, positive, negative) in cases {
+            let position = serde_json::from_value(serde_json::json!(value)).unwrap();
+            for (offset, expected) in [((20, 30), positive), ((-20, -30), negative)] {
+                let (dx, dy) = toolbar_position_offset(position, 240, 42, WINDOW_OFFSET, offset);
+                assert_eq!((400 + dx, 300 + dy), expected, "{value}: {offset:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn toolbar_offset_updates_preserve_other_axis_and_clamp_values() {
+        set_toolbar_position_offset(Some(25), Some(-30)).unwrap();
+        set_toolbar_position_offset(Some(250), None).unwrap();
+        assert_eq!(*TOOLBAR_POSITION_OFFSET.lock().unwrap(), (200, -30));
+        set_toolbar_position_offset(None, Some(-250)).unwrap();
+        assert_eq!(*TOOLBAR_POSITION_OFFSET.lock().unwrap(), (200, -200));
+        set_toolbar_position_offset(Some(0), Some(0)).unwrap();
     }
 }
