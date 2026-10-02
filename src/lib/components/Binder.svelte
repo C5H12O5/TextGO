@@ -67,12 +67,12 @@
   import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
   import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
   import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
+  import ArrowLineDownLeftIcon from 'phosphor-svelte/lib/ArrowLineDownLeftIcon';
   import ArrowSquareInIcon from 'phosphor-svelte/lib/ArrowSquareInIcon';
   import ClipboardTextIcon from 'phosphor-svelte/lib/ClipboardTextIcon';
   import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
   import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
-  import TextItalicIcon from 'phosphor-svelte/lib/TextItalicIcon';
   import { untrack } from 'svelte';
 
   // loading status
@@ -492,7 +492,7 @@
             <Radio
               bind:group={outputMode}
               value="replace"
-              icon={TextItalicIcon}
+              icon={ArrowLineDownLeftIcon}
               iconClass="size-5"
               label={m.replace_selection()}
               labelClass="text-sm"

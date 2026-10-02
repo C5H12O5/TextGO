@@ -11,29 +11,29 @@
   import Toggle from '$lib/components/Toggle.svelte';
   import { DBCLICK_SHORTCUT, DRAG_SHORTCUT, SHIFT_CLICK_SHORTCUT, TRIPLE_CLICK_SHORTCUT } from '$lib/constants';
   import { formatShortcut, isMouseShortcut } from '$lib/helpers';
-  import { NoData } from '$lib/icons';
+  import { KeyboardMouse, NoData } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { manager } from '$lib/shortcut';
   import { blacklist, longPress, shortcuts } from '$lib/stores.svelte';
   import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
   import ArrowCircleRightIcon from 'phosphor-svelte/lib/ArrowCircleRightIcon';
-  import ArrowCounterClockwiseIcon from 'phosphor-svelte/lib/ArrowCounterClockwiseIcon';
   import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
   import ArrowFatUpIcon from 'phosphor-svelte/lib/ArrowFatUpIcon';
   import ArrowsClockwiseIcon from 'phosphor-svelte/lib/ArrowsClockwiseIcon';
+  import ArrowsHorizontalIcon from 'phosphor-svelte/lib/ArrowsHorizontalIcon';
   import BrowserIcon from 'phosphor-svelte/lib/BrowserIcon';
+  import CopySimpleIcon from 'phosphor-svelte/lib/CopySimpleIcon';
   import CursorClickIcon from 'phosphor-svelte/lib/CursorClickIcon';
   import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
   import KeyboardIcon from 'phosphor-svelte/lib/KeyboardIcon';
   import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
   import NumberThreeIcon from 'phosphor-svelte/lib/NumberThreeIcon';
+  import PowerIcon from 'phosphor-svelte/lib/PowerIcon';
   import ProhibitIcon from 'phosphor-svelte/lib/ProhibitIcon';
   import ProhibitInsetIcon from 'phosphor-svelte/lib/ProhibitInsetIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
-  import StackPlusIcon from 'phosphor-svelte/lib/StackPlusIcon';
   import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
   import WarningIcon from 'phosphor-svelte/lib/WarningIcon';
-  import WaveSineIcon from 'phosphor-svelte/lib/WaveSineIcon';
   import { onMount, tick } from 'svelte';
   import { fly } from 'svelte/transition';
 
@@ -189,7 +189,7 @@
       <button class="btn px-1 btn-sm" onclick={() => register(DRAG_SHORTCUT, source)}>
         <span class="flex">
           <MouseLeftClickIcon class="size-4" />
-          <WaveSineIcon class="size-4" />
+          <ArrowsHorizontalIcon class="size-4" />
         </span>
         <span class="mx-auto tracking-wider">{m.mouse_drag()}</span>
       </button>
@@ -259,7 +259,7 @@
           toggleDropdown();
         }}
       >
-        <StackPlusIcon class="size-5" />{m.register_shortcut()}
+        <KeyboardMouse class="size-5" />{m.register_shortcut()}
       </summary>
       {@render shortcutMenu()}
     </details>
@@ -302,11 +302,12 @@
             {/if}
           </span>
         </button>
+        <!-- Power's visible bounds sit 4 units below center in its 256-unit SVG viewBox. -->
         <Button
-          icon={disabled ? ArrowCounterClockwiseIcon : ProhibitInsetIcon}
+          icon={disabled ? PowerIcon : ProhibitInsetIcon}
           size="sm"
           class="ml-auto {disabled ? 'text-inactive' : 'text-emphasis'}"
-          iconClass={disabled ? '' : 'rotate-90'}
+          iconClass={disabled ? '-translate-y-[calc(1.25rem/64)]' : 'rotate-90'}
           text={disabled ? m.enable_shortcut() : m.disable_shortcut()}
           onclick={async () => {
             try {
@@ -316,9 +317,13 @@
             }
           }}
         />
-        <div class="dropdown dropdown-end ml-1" class:dropdown-open={dropdownOpen === shortcut} data-shortcut-dropdown>
+        <div
+          class="dropdown dropdown-end dropdown-bottom ml-1 flex"
+          class:dropdown-open={dropdownOpen === shortcut}
+          data-shortcut-dropdown
+        >
           <Button
-            icon={StackPlusIcon}
+            icon={CopySimpleIcon}
             size="sm"
             class={disabled ? 'text-inactive' : 'text-emphasis'}
             text={m.copy_shortcut()}
@@ -328,10 +333,12 @@
             {@render shortcutMenu(shortcut)}
           {/if}
         </div>
+        <!-- Trash's visible bounds sit 8 units above center in its 256-unit SVG viewBox. -->
         <Button
           icon={TrashIcon}
           size="sm"
           class="ml-1 {disabled ? 'text-inactive' : 'text-emphasis'}"
+          iconClass="translate-y-[calc(1.25rem/32)]"
           text={m.delete_shortcut()}
           onclick={() => {
             const clear = () => ruleBinder?.clear(shortcut);

@@ -4,7 +4,7 @@
   import Title from '$lib/components/Title.svelte';
   import { modals } from '$lib/components/Modal.svelte';
   import { checkForUpdates } from '$lib/components/Updater.svelte';
-  import { Moon, Sun } from '$lib/icons';
+  import { KeyboardMouse, Moon, Sun } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { autoUpdate, theme } from '$lib/stores.svelte';
   import { isSystemTheme } from '$lib/theme';
@@ -13,7 +13,6 @@
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
   import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
-  import StackIcon from 'phosphor-svelte/lib/StackIcon';
   import { onMount, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -128,7 +127,7 @@
     {#snippet fallback()}
       <!-- shortcuts -->
       <div class="pointer-events-none flex items-center gap-1 rounded-field gradient bg-base-300 px-2 py-0.5">
-        <StackIcon class="size-5 opacity-80" weight="duotone" />
+        <KeyboardMouse class="size-5 opacity-80" />
         <span class="tracking-wider">{m.shortcuts()}</span>
       </div>
       <div class="ml-auto flex items-center gap-2">

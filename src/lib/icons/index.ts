@@ -5,6 +5,7 @@ export { default as Gemini } from './Gemini.svelte';
 export { default as GitHub } from './GitHub.svelte';
 export { default as JavaScript } from './JavaScript.svelte';
 export { default as Keyboard } from './Keyboard.svelte';
+export { default as KeyboardMouse } from './KeyboardMouse.svelte';
 export { default as LMStudio } from './LMStudio.svelte';
 export { default as Moon } from './Moon.svelte';
 export { default as NoData } from './NoData.svelte';

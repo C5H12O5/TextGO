@@ -7,12 +7,12 @@
   import ArrowLineRightIcon from 'phosphor-svelte/lib/ArrowLineRightIcon';
   import ArrowRightIcon from 'phosphor-svelte/lib/ArrowRightIcon';
   import ArrowUpIcon from 'phosphor-svelte/lib/ArrowUpIcon';
+  import ArrowsHorizontalIcon from 'phosphor-svelte/lib/ArrowsHorizontalIcon';
   import BackspaceIcon from 'phosphor-svelte/lib/BackspaceIcon';
   import CommandIcon from 'phosphor-svelte/lib/CommandIcon';
   import ControlIcon from 'phosphor-svelte/lib/ControlIcon';
   import MouseLeftClickIcon from 'phosphor-svelte/lib/MouseLeftClickIcon';
   import OptionIcon from 'phosphor-svelte/lib/OptionIcon';
-  import WaveSineIcon from 'phosphor-svelte/lib/WaveSineIcon';
   import WindowsLogoIcon from 'phosphor-svelte/lib/WindowsLogoIcon';
   import type { IconComponentProps } from 'phosphor-svelte';
   import type { Component } from 'svelte';
@@ -20,7 +20,7 @@
   // mapping of key labels to icon components
   const ICON_MAP: Record<string, Component<IconComponentProps>> = {
     MouseClick: MouseLeftClickIcon,
-    MouseMove: WaveSineIcon,
+    MouseMove: ArrowsHorizontalIcon,
     Win: WindowsLogoIcon,
     '⌘': CommandIcon,
     '⌃': ControlIcon,
