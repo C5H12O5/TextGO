@@ -55,7 +55,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.long_press_duration()}</Label>
+      <Label>
+        {m.long_press_duration()}
+        <span class="ml-1 text-xs opacity-70">{(longPressDuration.current / 1000).toFixed(1)}s</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"

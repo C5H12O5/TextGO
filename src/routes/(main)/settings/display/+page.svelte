@@ -130,7 +130,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_corner_radius_explain()} tipPlacement="duplex">{m.toolbar_corner_radius()}</Label>
+      <Label tip={m.toolbar_corner_radius_explain()} tipPlacement="duplex">
+        {m.toolbar_corner_radius()}
+        <span class="ml-1 text-xs opacity-70">{toolbarCornerRadius.current}px</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"
@@ -149,7 +152,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_opacity_explain()} tipPlacement="duplex">{m.toolbar_opacity()}</Label>
+      <Label tip={m.toolbar_opacity_explain()} tipPlacement="duplex">
+        {m.toolbar_opacity()}
+        <span class="ml-1 text-xs opacity-70">{toolbarOpacity.current}%</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"
@@ -173,7 +179,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.toolbar_auto_hide_delay()}</Label>
+      <Label>
+        {m.toolbar_auto_hide_delay()}
+        <span class="ml-1 text-xs opacity-70">{toolbarAutoHideDelay.current}s</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2" class:opacity-50={!toolbarAutoHide.current}>
         <input
           class="range w-full text-emphasis range-xs"
@@ -199,7 +208,10 @@
   </Setting>
   <Setting icon={AppWindowIcon} title={m.popup_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_corner_radius_explain()} tipPlacement="duplex">{m.popup_corner_radius()}</Label>
+      <Label tip={m.popup_corner_radius_explain()} tipPlacement="duplex">
+        {m.popup_corner_radius()}
+        <span class="ml-1 text-xs opacity-70">{popupCornerRadius.current}px</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"
@@ -218,7 +230,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_opacity_explain()} tipPlacement="duplex">{m.popup_opacity()}</Label>
+      <Label tip={m.popup_opacity_explain()} tipPlacement="duplex">
+        {m.popup_opacity()}
+        <span class="ml-1 text-xs opacity-70">{popupOpacity.current}%</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"
@@ -237,7 +252,10 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_font_size_explain()} tipPlacement="duplex">{m.popup_font_size()}</Label>
+      <Label tip={m.popup_font_size_explain()} tipPlacement="duplex">
+        {m.popup_font_size()}
+        <span class="ml-1 text-xs opacity-70">{popupFontSize.current}px</span>
+      </Label>
       <label class="flex max-w-2/5 grow flex-col gap-2 pt-2">
         <input
           class="range w-full text-emphasis range-xs"
