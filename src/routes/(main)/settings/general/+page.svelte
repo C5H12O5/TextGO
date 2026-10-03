@@ -59,7 +59,7 @@
 <div class="flex flex-col gap-2">
   <Setting icon={MonitorIcon} title={m.appearance_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.language_settings()}</Label>
+      <Label inline>{m.language_settings()}</Label>
       <Select
         value={locale}
         options={[
@@ -77,7 +77,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.theme_settings()}</Label>
+      <Label inline>{m.theme_settings()}</Label>
       <Select
         options={[
           { value: 'light', label: m.light_theme() },
@@ -94,7 +94,7 @@
   </Setting>
   <Setting icon={ClockCounterClockwiseIcon} title={m.history()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.history_limit()}</Label>
+      <Label inline>{m.history_limit()}</Label>
       <Select
         options={[
           { value: 0, label: m.history_none() },

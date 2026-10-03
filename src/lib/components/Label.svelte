@@ -14,6 +14,8 @@
     tipPlacement?: Placement | 'duplex';
     /** Whether to mark as required. */
     required?: boolean;
+    /** Keep the title on one line and let the tip wrap before adjacent controls shrink. */
+    inline?: boolean;
     /** Custom style class name. */
     class?: string;
   };
@@ -23,10 +25,18 @@
   import { tooltip } from '$lib/helpers';
   import QuestionIcon from 'phosphor-svelte/lib/QuestionIcon';
 
-  let { children, icon, tip, tipPlacement = 'left', required = false, class: _class }: LabelProps = $props();
+  let {
+    children,
+    icon,
+    tip,
+    tipPlacement = 'left',
+    required = false,
+    inline = false,
+    class: _class
+  }: LabelProps = $props();
 </script>
 
-<div class="flex items-center justify-between gap-2 p-1 {_class}">
+<div class="flex items-center justify-between gap-2 p-1 {_class}" class:flex-1={inline}>
   <span class="flex items-center gap-1">
     {#if required}
       <span class="h-6 text-lg text-error">*</span>
@@ -36,7 +46,7 @@
       <Icon class="mr-1 h-5" />
     {/if}
     <span class="flex flex-col gap-1">
-      <div class="text-base tracking-wide opacity-90">{@render children()}</div>
+      <div class="text-base tracking-wide opacity-90" class:whitespace-nowrap={inline}>{@render children()}</div>
       <!-- duplex tip -->
       {#if tip && tipPlacement == 'duplex'}
         <div class="pr-1 text-xs italic opacity-30">{tip}</div>

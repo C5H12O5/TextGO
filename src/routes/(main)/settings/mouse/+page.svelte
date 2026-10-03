@@ -20,8 +20,8 @@
       <Toggle bind:value={forceGetSelection.current} />
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
-    <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.copy_key_explain()} tipPlacement="duplex">{m.copy_key()}</Label>
+    <fieldset class="flex min-w-0 items-center justify-between gap-1">
+      <Label inline tip={m.copy_key_explain()} tipPlacement="duplex">{m.copy_key()}</Label>
       {#if osType === 'macos'}
         <Select
           options={[{ value: 'command_c', label: m.command_c() }]}
@@ -55,7 +55,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>
+      <Label inline>
         {m.long_press_duration()}
         <span class="ml-1 text-xs opacity-70">{(longPressDuration.current / 1000).toFixed(1)}s</span>
       </Label>
@@ -69,7 +69,7 @@
           bind:value={longPressDuration.current}
           disabled={!longPress.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           <span>0.5s</span>
           <span>1.0s</span>
           <span>1.5s</span>

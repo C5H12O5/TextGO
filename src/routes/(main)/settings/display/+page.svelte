@@ -59,12 +59,12 @@
 <div class="flex flex-col gap-2">
   <Setting icon={DeviceMobileSpeakerIcon} iconClass="rotate-270" title={m.toolbar_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
+      <Label inline tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
       <Select options={toolbarActionCountOptions} bind:value={toolbarMaxActions.current} class="w-36 select-sm" />
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.toolbar_size()}</Label>
+      <Label inline>{m.toolbar_size()}</Label>
       <Select bind:value={toolbarSize.current} class="w-36 select-sm">
         <option value="large">{m.toolbar_size_large()}</option>
         <option value="medium">{m.toolbar_size_medium()}</option>
@@ -73,7 +73,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>{m.toolbar_position()}</Label>
+      <Label inline>{m.toolbar_position()}</Label>
       <Select bind:value={toolbarPosition.current} class="w-36 select-sm">
         <option value="top">{m.toolbar_position_top()}</option>
         <option value="top-right">{m.toolbar_position_top_right()}</option>
@@ -84,7 +84,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_position_offset_x_explain()} tipPlacement="duplex">
+      <Label inline tip={m.toolbar_position_offset_x_explain()} tipPlacement="duplex">
         {m.toolbar_position_offset_x()}
         <span class="ml-1 text-xs opacity-70">{toolbarPositionOffsetX.current}px</span>
       </Label>
@@ -98,7 +98,7 @@
           aria-label={m.toolbar_position_offset_x()}
           bind:value={toolbarPositionOffsetX.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarPositionOffsetMarks as offset (offset)}
             <span>{offset}px</span>
           {/each}
@@ -107,7 +107,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_position_offset_y_explain()} tipPlacement="duplex">
+      <Label inline tip={m.toolbar_position_offset_y_explain()} tipPlacement="duplex">
         {m.toolbar_position_offset_y()}
         <span class="ml-1 text-xs opacity-70">{toolbarPositionOffsetY.current}px</span>
       </Label>
@@ -121,7 +121,7 @@
           aria-label={m.toolbar_position_offset_y()}
           bind:value={toolbarPositionOffsetY.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarPositionOffsetMarks as offset (offset)}
             <span>{offset}px</span>
           {/each}
@@ -130,7 +130,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_corner_radius_explain()} tipPlacement="duplex">
+      <Label inline tip={m.toolbar_corner_radius_explain()} tipPlacement="duplex">
         {m.toolbar_corner_radius()}
         <span class="ml-1 text-xs opacity-70">{toolbarCornerRadius.current}px</span>
       </Label>
@@ -143,7 +143,7 @@
           step={TOOLBAR_CORNER_RADIUS.step}
           bind:value={toolbarCornerRadius.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarCornerRadiusMarks as radius (radius)}
             <span>{radius}px</span>
           {/each}
@@ -152,7 +152,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.toolbar_opacity_explain()} tipPlacement="duplex">
+      <Label inline tip={m.toolbar_opacity_explain()} tipPlacement="duplex">
         {m.toolbar_opacity()}
         <span class="ml-1 text-xs opacity-70">{toolbarOpacity.current}%</span>
       </Label>
@@ -165,7 +165,7 @@
           step={TOOLBAR_OPACITY.step}
           bind:value={toolbarOpacity.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarOpacityMarks as opacity (opacity)}
             <span>{opacity}%</span>
           {/each}
@@ -179,7 +179,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label>
+      <Label inline>
         {m.toolbar_auto_hide_delay()}
         <span class="ml-1 text-xs opacity-70">{toolbarAutoHideDelay.current}s</span>
       </Label>
@@ -193,7 +193,7 @@
           bind:value={toolbarAutoHideDelay.current}
           disabled={!toolbarAutoHide.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarAutoHideDelayMarks as delay (delay)}
             <span>{delay}s</span>
           {/each}
@@ -208,7 +208,7 @@
   </Setting>
   <Setting icon={AppWindowIcon} title={m.popup_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_corner_radius_explain()} tipPlacement="duplex">
+      <Label inline tip={m.popup_corner_radius_explain()} tipPlacement="duplex">
         {m.popup_corner_radius()}
         <span class="ml-1 text-xs opacity-70">{popupCornerRadius.current}px</span>
       </Label>
@@ -221,7 +221,7 @@
           step={POPUP_CORNER_RADIUS.step}
           bind:value={popupCornerRadius.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each popupCornerRadiusMarks as radius (radius)}
             <span>{radius}px</span>
           {/each}
@@ -230,7 +230,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_opacity_explain()} tipPlacement="duplex">
+      <Label inline tip={m.popup_opacity_explain()} tipPlacement="duplex">
         {m.popup_opacity()}
         <span class="ml-1 text-xs opacity-70">{popupOpacity.current}%</span>
       </Label>
@@ -243,7 +243,7 @@
           step={POPUP_OPACITY.step}
           bind:value={popupOpacity.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each popupOpacityMarks as opacity (opacity)}
             <span>{opacity}%</span>
           {/each}
@@ -252,7 +252,7 @@
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.popup_font_size_explain()} tipPlacement="duplex">
+      <Label inline tip={m.popup_font_size_explain()} tipPlacement="duplex">
         {m.popup_font_size()}
         <span class="ml-1 text-xs opacity-70">{popupFontSize.current}px</span>
       </Label>
@@ -265,7 +265,7 @@
           step={POPUP_FONT_SIZE.step}
           bind:value={popupFontSize.current}
         />
-        <div class="flex justify-between text-xs opacity-70">
+        <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each popupFontSizeMarks as size (size)}
             <span>{size}px</span>
           {/each}
