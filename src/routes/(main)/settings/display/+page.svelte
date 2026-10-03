@@ -59,6 +59,11 @@
 <div class="flex flex-col gap-2">
   <Setting icon={DeviceMobileSpeakerIcon} iconClass="rotate-270" title={m.toolbar_settings()}>
     <fieldset class="flex items-center justify-between gap-1">
+      <Label tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
+      <Select options={toolbarActionCountOptions} bind:value={toolbarMaxActions.current} class="w-36 select-sm" />
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
       <Label>{m.toolbar_size()}</Label>
       <Select bind:value={toolbarSize.current} class="w-36 select-sm">
         <option value="large">{m.toolbar_size_large()}</option>
@@ -122,11 +127,6 @@
           {/each}
         </div>
       </label>
-    </fieldset>
-    <div class="divider my-0 opacity-60"></div>
-    <fieldset class="flex items-center justify-between gap-1">
-      <Label tip={m.max_action_count_explain()} tipPlacement="duplex">{m.max_action_count()}</Label>
-      <Select options={toolbarActionCountOptions} bind:value={toolbarMaxActions.current} class="w-36 select-sm" />
     </fieldset>
     <div class="divider my-0 opacity-60"></div>
     <fieldset class="flex items-center justify-between gap-1">
