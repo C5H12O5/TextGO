@@ -160,6 +160,11 @@ def process(data):
   function save(form: HTMLFormElement) {
     // validate inputs
     scriptName = scriptName.trim();
+    if (!scriptName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let script = scripts.find((s) => s.id === scriptName);
     if (script && script.id !== scriptId) {
       alert({ level: 'error', message: m.name_already_used() });

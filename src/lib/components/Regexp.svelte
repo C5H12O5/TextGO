@@ -79,6 +79,11 @@
   function save(form: HTMLFormElement) {
     // validate inputs
     regexpName = regexpName.trim();
+    if (!regexpName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let regexp = regexps.find((p) => p.id === regexpName);
     if (regexp && regexp.id !== regexpId) {
       alert({ level: 'error', message: m.name_already_used() });

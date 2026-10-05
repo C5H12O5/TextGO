@@ -106,9 +106,14 @@
   function saveProvider(form: HTMLFormElement) {
     // validate inputs
     customProvider.name = customProvider.name.trim();
+    if (!customProvider.name) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     customProvider.baseUrl = customProvider.baseUrl.trim();
     customProvider.apiKey = customProvider.apiKey.trim();
-    if (!customProvider.name || !customProvider.baseUrl || !customProvider.apiKey) {
+    if (!customProvider.baseUrl || !customProvider.apiKey) {
       return;
     }
 

@@ -62,6 +62,11 @@ function matches(data) {
   /** Save the predicate and keep existing rule references in sync after renaming. */
   function save(form: HTMLFormElement) {
     predicateName = predicateName.trim();
+    if (!predicateName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let predicate = predicates.find((p) => p.id === predicateName);
     if (predicate && predicate.id !== predicateId) {
       alert({ level: 'error', message: m.name_already_used() });

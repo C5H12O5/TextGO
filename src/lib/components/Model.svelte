@@ -95,6 +95,11 @@
     }
     // validate inputs
     modelName = modelName.trim();
+    if (!modelName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let model = models.find((p) => p.id === modelName);
     if (model && model.id !== modelId) {
       alert({ level: 'error', message: m.name_already_used() });

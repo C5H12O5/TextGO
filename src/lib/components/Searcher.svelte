@@ -115,6 +115,11 @@
   function save(form: HTMLFormElement) {
     // validate inputs
     searcherName = searcherName.trim();
+    if (!searcherName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let searcher = searchers.find((s) => s.id === searcherName);
     if (searcher && searcher.id !== searcherId) {
       alert({ level: 'error', message: m.name_already_used() });

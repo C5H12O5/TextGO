@@ -124,6 +124,11 @@ ${m.prompt_variables_tip()}
   function save(form: HTMLFormElement) {
     // validate inputs
     promptName = promptName.trim();
+    if (!promptName) {
+      alert({ level: 'error', message: m.name_empty() });
+      form.querySelector<HTMLInputElement>('input[name="name"]')?.focus();
+      return;
+    }
     let prompt = prompts.find((p) => p.id === promptName);
     if (prompt && prompt.id !== promptId) {
       alert({ level: 'error', message: m.name_already_used() });

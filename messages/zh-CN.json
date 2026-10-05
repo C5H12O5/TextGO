@@ -38,6 +38,7 @@
   "execute_action": "执行动作",
   "rule_already_used": "该规则已被使用！",
   "name_already_used": "该名称已被使用！",
+  "name_empty": "名称不能为空！",
   "default_confirm_title": "确认操作",
   "default_confirm_message": "是否确定要继续？",
   "delete_confirm_message": "数据删除后无法恢复，是否继续？",

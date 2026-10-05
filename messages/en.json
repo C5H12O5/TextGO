@@ -38,6 +38,7 @@
   "execute_action": "Execute Action",
   "rule_already_used": "This rule is already in use!",
   "name_already_used": "This name is already in use!",
+  "name_empty": "Name cannot be empty!",
   "default_confirm_title": "Confirm Operation",
   "default_confirm_message": "Are you sure you want to continue?",
   "delete_confirm_message": "Data cannot be recovered after deletion. Continue?",
