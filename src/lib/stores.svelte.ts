@@ -15,6 +15,7 @@ import type {
   CustomLLMProvider,
   Entry,
   Model,
+  Predicate,
   Prompt,
   Regexp,
   Script,
@@ -351,6 +352,9 @@ export const models = persisted<Model[]>('models', []);
 
 // regular expressions
 export const regexps = persisted<Regexp[]>('regexps', []);
+
+// JavaScript predicates
+export const predicates = persisted<Predicate[]>('predicates', []);
 
 // scripts
 export const scripts = persisted<Script[]>('scripts', []);

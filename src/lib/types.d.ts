@@ -252,6 +252,28 @@ export type Regexp = {
 };
 
 /**
+ * Input to a JavaScript predicate function.
+ */
+export type PredicateData = {
+  /** Selected text, without trimming. */
+  selection: string;
+  /** Source application ID from the blacklist lookup; empty when unavailable. */
+  appId: string;
+};
+
+/**
+ * JavaScript predicate, executed in the WebView.
+ */
+export type Predicate = {
+  /** Predicate ID. */
+  id: string;
+  /** Predicate icon. */
+  icon?: string;
+  /** JavaScript defining matches(data), which returns a boolean. */
+  script: string;
+};
+
+/**
  * Script action.
  */
 export type Script = {

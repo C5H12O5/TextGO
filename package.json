@@ -13,6 +13,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:classifier": "node --test scripts/classifier.test.mjs",
+    "test:predicate": "node --test scripts/predicate.test.mjs",
     "format": "prettier --write .",
     "lint": "prettier --check . && eslint .",
     "tauri": "tauri",

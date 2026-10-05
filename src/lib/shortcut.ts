@@ -63,8 +63,8 @@ export class Manager {
       try {
         // listen for shortcut triggered events from Rust backend
         await listen('shortcut', async (event) => {
-          const payload = event.payload as { shortcut: string; selection: string };
-          await this.handleShortcutEvent(payload.shortcut, payload.selection);
+          const payload = event.payload as { shortcut: string; selection: string; appId?: string };
+          await this.handleShortcutEvent(payload.shortcut, payload.selection, payload.appId);
         });
       } catch (error) {
         console.error(`Failed to initialize shortcut event listener: ${error}`);
@@ -77,9 +77,10 @@ export class Manager {
    *
    * @param shortcut - triggered shortcut string
    * @param selection - selected text
+   * @param appId - source application identifier captured by the native shortcut handler
    * @returns promise resolving after matching/execution; superseded selections are discarded
    */
-  private async handleShortcutEvent(shortcut: string, selection: string): Promise<void> {
+  private async handleShortcutEvent(shortcut: string, selection: string, appId = ''): Promise<void> {
     try {
       const isCurrent = createExecutionGuard();
       await Promise.all([shortcuts.ready, toolbarPositionOffsetX.ready, toolbarPositionOffsetY.ready]);
@@ -118,7 +119,7 @@ export class Manager {
       }
       if (s.mode === 'toolbar') {
         // find all matching rules
-        const rules = await matchAll(selection, s.rules);
+        const rules = await matchAll(selection, s.rules, appId);
         if (!isCurrent()) {
           return;
         }
@@ -145,7 +146,7 @@ export class Manager {
         }
       } else {
         // find first matching rule
-        const rule = await matchOne(selection, s.rules);
+        const rule = await matchOne(selection, s.rules, appId);
         if (!isCurrent()) {
           return;
         }

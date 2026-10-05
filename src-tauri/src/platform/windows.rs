@@ -1,7 +1,7 @@
 use crate::error::AppError;
 use std::fs;
 use std::path::Path;
-use windows::core::{Interface, PWSTR};
+use windows::core::{Interface, Owned, PWSTR};
 use windows::Win32::Foundation::{HWND, MAX_PATH};
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
@@ -396,13 +396,14 @@ pub fn get_frontmost_app_id() -> Option<String> {
         }
 
         // open process with query information permission
-        let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;
+        let process_handle =
+            Owned::new(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?);
 
         // get process executable path
         let mut buffer = vec![0u16; MAX_PATH as usize];
         let mut size = buffer.len() as u32;
         let result = QueryFullProcessImageNameW(
-            process_handle,
+            *process_handle,
             PROCESS_NAME_WIN32,
             PWSTR(buffer.as_mut_ptr()),
             &mut size,

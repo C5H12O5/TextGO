@@ -21,6 +21,7 @@
   import ArrowLeftIcon from 'phosphor-svelte/lib/ArrowLeftIcon';
   import CodeIcon from 'phosphor-svelte/lib/CodeIcon';
   import DownloadIcon from 'phosphor-svelte/lib/DownloadIcon';
+  import FileJsIcon from 'phosphor-svelte/lib/FileJsIcon';
   import GearIcon from 'phosphor-svelte/lib/GearIcon';
   import GearSixIcon from 'phosphor-svelte/lib/GearSixIcon';
   import MagnifyingGlassIcon from 'phosphor-svelte/lib/MagnifyingGlassIcon';
@@ -381,6 +382,7 @@
       <li class="menu-title pl-1 text-xs">{m.custom_recognitions()}</li>
       {@render menu(SphereIcon, m.model(), resolve('/settings/model'))}
       {@render menu(ScrollIcon, m.regexp(), resolve('/settings/regexp'))}
+      {@render menu(FileJsIcon, m.predicate(), resolve('/settings/predicate'))}
       <div class="divider my-0 opacity-50"></div>
       <li class="menu-title pl-1 text-xs">{m.custom_actions()}</li>
       {@render menu(RobotIcon, m.ai_conversation(), resolve('/settings/prompt'))}

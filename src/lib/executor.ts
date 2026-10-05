@@ -555,9 +555,9 @@ async function executeScript(script: Script, entry: Entry): Promise<Result> {
       if (useWebView) {
         try {
           // load the script environment only when executing JavaScript in the WebView
-          const { evalAsync } = await import('$lib/evaluator');
+          const { evaluateAction } = await import('$lib/evaluator');
           console.debug('Executing JavaScript in WebView');
-          return { text: await evalAsync(data, code) };
+          return { text: await evaluateAction(data, code) };
         } catch (error) {
           if (hasKeyboardApi) {
             throw new Error(`JavaScript execution failed in WebView: ${String(error)}`, { cause: error });

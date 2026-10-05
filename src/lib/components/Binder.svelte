@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { MODEL_MARK, PROMPT_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
+  import { MODEL_MARK, PROMPT_MARK, PREDICATE_MARK, REGEXP_MARK, SCRIPT_MARK, SEARCHER_MARK } from '$lib/constants';
   import { CONVERT_ACTIONS, DEFAULT_ACTIONS, GENERAL_ACTIONS, PROCESS_ACTIONS } from '$lib/executor';
   import { GENERAL_CASES, NATURAL_CASES, PROGRAMMING_CASES, TEXT_CASES } from '$lib/matcher';
   import type { ActOption, DisplayMode, Option, OutputMode, Rule } from '$lib/types';
@@ -63,7 +63,7 @@
   import { m } from '$lib/paraglide/messages';
   import { manager } from '$lib/shortcut';
   import { Loading } from '$lib/states.svelte';
-  import { models, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
+  import { models, predicates, prompts, regexps, scripts, searchers, shortcuts } from '$lib/stores.svelte';
   import AppWindowIcon from 'phosphor-svelte/lib/AppWindowIcon';
   import ArrowArcRightIcon from 'phosphor-svelte/lib/ArrowArcRightIcon';
   import ArrowFatLineRightIcon from 'phosphor-svelte/lib/ArrowFatLineRightIcon';
@@ -166,6 +166,14 @@
       options.push({ value: '--regexp--', label: `-- ${m.regexp()} --`, disabled: true });
       for (const regexp of regexps.current) {
         options.push({ value: REGEXP_MARK + regexp.id, label: regexp.id, icon: regexp.icon });
+      }
+    }
+
+    // predicate
+    if (predicates.current.length > 0) {
+      options.push({ value: '--predicate--', label: `-- ${m.predicate()} --`, disabled: true });
+      for (const predicate of predicates.current) {
+        options.push({ value: PREDICATE_MARK + predicate.id, label: predicate.id, icon: predicate.icon || 'FileJs' });
       }
     }
 

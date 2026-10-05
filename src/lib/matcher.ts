@@ -1,7 +1,7 @@
-import { MODEL_MARK, REGEXP_MARK } from '$lib/constants';
+import { MODEL_MARK, PREDICATE_MARK, REGEXP_MARK } from '$lib/constants';
 import type { ProgrammingLanguageResult } from '$lib/detector';
 import { m } from '$lib/paraglide/messages';
-import { models, regexps } from '$lib/stores.svelte';
+import { models, predicates, regexps } from '$lib/stores.svelte';
 import type { Model, Option, Rule } from '$lib/types';
 import { memoize } from 'es-toolkit/function';
 import { invoke } from '@tauri-apps/api/core';
@@ -26,6 +26,8 @@ import TranslateIcon from 'phosphor-svelte/lib/TranslateIcon';
 interface MatcherContext {
   /** Text to match */
   text: string;
+  /** Application identifier captured when the selection was triggered. */
+  appId: string;
   /** Rule to match against */
   rule: Rule;
   /** ISO 639-1 result; undefined until detected, null when unknown. */
@@ -413,6 +415,33 @@ const customModelMatcher: Matcher = async (context) => {
 };
 
 /**
+ * Custom predicate matcher - always uses the WebView, regardless of action runtime settings.
+ */
+const customPredicateMatcher: Matcher = async (context) => {
+  if (!context.rule.case.startsWith(PREDICATE_MARK)) {
+    return null;
+  }
+
+  try {
+    await predicates.ready;
+    const predicateId = context.rule.case.substring(PREDICATE_MARK.length);
+    const predicate = predicates.current.find((p) => p.id === predicateId);
+    if (!predicate?.script.trim()) {
+      return null;
+    }
+
+    const { evaluatePredicate } = await import('$lib/evaluator');
+    if (await evaluatePredicate({ selection: context.text, appId: context.appId }, predicate.script)) {
+      console.debug(`Custom predicate matched: ${predicate.id}`);
+      return { ...context.rule, caseLabel: predicate.id };
+    }
+  } catch (error) {
+    console.error(`Custom predicate matching failed: ${error}`);
+  }
+  return null;
+};
+
+/**
  * Chain of matchers to match against rules.
  */
 const MATCHERS: Matcher[] = [
@@ -421,7 +450,8 @@ const MATCHERS: Matcher[] = [
   naturalMatcher,
   programmingMatcher,
   customRegexMatcher,
-  customModelMatcher
+  customModelMatcher,
+  customPredicateMatcher
 ];
 
 /**
@@ -430,9 +460,10 @@ const MATCHERS: Matcher[] = [
  * @param text - text to match
  * @param rules - list of rules to check
  * @param matchAll - whether to find all matched rules
+ * @param appId - identifier of the application containing the selection
  * @returns the matched rule(s), returns `null` or empty array if no match is found
  */
-async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Rule | Rule[] | null> {
+async function match(text: string, rules: Rule[], matchAll: boolean, appId: string): Promise<Rule | Rule[] | null> {
   console.debug(`Matching patterns: ${rules.map((r) => r.case || 'skip').join(', ')}`);
   const matchedRules: Rule[] = [];
   const matchedActions: Set<string> = new Set();
@@ -449,7 +480,7 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
     }
 
     // create context for this rule
-    const context: MatcherContext = { text, rule, naturalLanguage, programmingLangs };
+    const context: MatcherContext = { text, appId, rule, naturalLanguage, programmingLangs };
 
     // execute matchers in chain until one succeeds
     let matched: Rule | null = null;
@@ -481,10 +512,11 @@ async function match(text: string, rules: Rule[], matchAll: boolean): Promise<Ru
  *
  * @param text - text to match
  * @param rules - list of rules to check
+ * @param appId - source application identifier, or an empty string when unavailable
  * @returns the first matched rule object, or null if no match is found
  */
-export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null> {
-  return (await match(text, rules, false)) as Rule | null;
+export async function matchOne(text: string, rules: Rule[], appId = ''): Promise<Rule | null> {
+  return (await match(text, rules, false, appId)) as Rule | null;
 }
 
 /**
@@ -492,10 +524,11 @@ export async function matchOne(text: string, rules: Rule[]): Promise<Rule | null
  *
  * @param text - text to match
  * @param rules - list of rules to check
+ * @param appId - source application identifier, or an empty string when unavailable
  * @returns array of matched rule objects, or empty array if no match is found
  */
-export async function matchAll(text: string, rules: Rule[]): Promise<Rule[]> {
-  return (await match(text, rules, true)) as Rule[];
+export async function matchAll(text: string, rules: Rule[], appId = ''): Promise<Rule[]> {
+  return (await match(text, rules, true, appId)) as Rule[];
 }
 
 /**

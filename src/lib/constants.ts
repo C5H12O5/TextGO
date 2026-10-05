@@ -39,6 +39,11 @@ export const MODEL_MARK = 'model-';
 export const REGEXP_MARK = 'regexp-';
 
 /**
+ * Predicate prefix.
+ */
+export const PREDICATE_MARK = 'predicate-';
+
+/**
  * Script prefix.
  */
 export const SCRIPT_MARK = 'script-';

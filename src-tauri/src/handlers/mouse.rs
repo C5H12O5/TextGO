@@ -1,5 +1,5 @@
 use crate::commands::{
-    get_clipboard_text, get_selection, is_blocked, send_copy_keys, set_clipboard_text,
+    get_clipboard_text, get_shortcut_context, send_copy_keys, set_clipboard_text,
     ShortcutHandlerGuard,
 };
 use crate::error::AppError;
@@ -263,7 +263,7 @@ fn handle_mouse_press() -> Result<(), AppError> {
             if LONG_PRESS_EPOCH.load(Ordering::Relaxed) == epoch {
                 debug!("Long press triggered after {}ms", duration);
                 LONG_PRESS_TRIGGERED.store(true, Ordering::Relaxed);
-                let _ = emit_event("LongPress", None, None);
+                let _ = emit_event("LongPress", None);
             }
         });
     }
@@ -321,7 +321,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("Checking for drag end (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit drag end event
-            emit_event("MouseClick+MouseMove", None, None)?;
+            emit_event("MouseClick+MouseMove", None)?;
         }
         IS_DRAGGING.set(false);
         return Ok(());
@@ -332,7 +332,7 @@ fn handle_mouse_release() -> Result<(), AppError> {
         debug!("Checking for shift+click (cursor: {})", is_valid_cursor);
         if is_valid_cursor {
             // emit shift+click event
-            emit_event("Shift+MouseClick", None, None)?;
+            emit_event("Shift+MouseClick", None)?;
         }
 
         // avoid sticky shift state on macOS
@@ -358,12 +358,12 @@ fn handle_mouse_release() -> Result<(), AppError> {
                     && !SHORTCUT_PAUSED.load(Ordering::Relaxed)
                     && SHORTCUT_SUSPEND.load(Ordering::Relaxed) == 0
                 {
-                    let _ = emit_event(DBCLICK_SHORTCUT, None, Some(epoch));
+                    let _ = emit_event(DBCLICK_SHORTCUT, Some(epoch));
                 }
             });
         }
-        2 => emit_event(DBCLICK_SHORTCUT, None, None)?,
-        3 => emit_event(TRIPLE_CLICK_SHORTCUT, None, None)?,
+        2 => emit_event(DBCLICK_SHORTCUT, None)?,
+        3 => emit_event(TRIPLE_CLICK_SHORTCUT, None)?,
         _ => (),
     }
 
@@ -478,52 +478,30 @@ fn is_ibeam_cursor() -> bool {
     }
 }
 
-/// Emit mouse event to frontend with optional selection fetching.
-fn emit_event(
-    shortcut: &str,
-    with_selection: Option<bool>,
-    click_epoch: Option<u64>,
-) -> Result<(), AppError> {
+/// Emit mouse event; the frontend fetches the selection when needed.
+fn emit_event(shortcut: &str, click_epoch: Option<u64>) -> Result<(), AppError> {
     if let Some(app) = APP_HANDLE.lock()?.as_ref() {
-        // check if current frontmost application/website is in blacklist
-        if let Ok(true) = is_blocked(app.clone()) {
-            return Ok(());
-        }
+        let app_id = match get_shortcut_context(app, shortcut) {
+            Ok(context) if context.blocked => return Ok(()),
+            Ok(context) => context.app_id,
+            Err(_) => String::new(),
+        };
 
-        // emit event directly without fetching selection
-        if !with_selection.unwrap_or(false) {
-            let event_data = serde_json::json!({
-                "shortcut": shortcut,
-                "selection": ""
-            });
-            if let Some(epoch) = click_epoch {
-                // recheck click epoch after locking APP_HANDLE and checking blacklist
-                // keep the lock until the event is emitted to prevent cancellation races
-                dispatch_pending_double_click(epoch, || {
-                    app.emit("shortcut", event_data)?;
-                    Ok(())
-                })?;
-                return Ok(());
-            }
-            let _ = app.emit("shortcut", event_data);
-            return Ok(());
-        }
-
-        // get selection asynchronously and emit event
-        let app_handle = app.clone();
-        let shortcut = shortcut.to_string();
-        tauri::async_runtime::spawn(async move {
-            if let Ok(selection) = get_selection(app_handle.clone(), Some(true)).await {
-                if !selection.trim().is_empty() {
-                    // emit event if selection is not empty
-                    let event_data = serde_json::json!({
-                        "shortcut": shortcut,
-                        "selection": selection
-                    });
-                    let _ = app_handle.emit("shortcut", event_data);
-                }
-            }
+        let event_data = serde_json::json!({
+            "shortcut": shortcut,
+            "selection": "",
+            "appId": app_id
         });
+        if let Some(epoch) = click_epoch {
+            // recheck click epoch after locking APP_HANDLE and checking blacklist
+            // keep the lock until the event is emitted to prevent cancellation races
+            dispatch_pending_double_click(epoch, || {
+                app.emit("shortcut", event_data)?;
+                Ok(())
+            })?;
+            return Ok(());
+        }
+        let _ = app.emit("shortcut", event_data);
     }
 
     Ok(())

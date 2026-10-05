@@ -1,3 +1,4 @@
+import type { PredicateData } from '$lib/types';
 import { invoke } from '@tauri-apps/api/core';
 import { fetch } from '@tauri-apps/plugin-http';
 import * as _ from 'es-toolkit';
@@ -14,32 +15,18 @@ function sendKey(first: string | string[], second?: string): Promise<void> {
 }
 
 /**
- * Evaluate synchronous JavaScript code.
+ * Evaluate JavaScript in the WebView, preserving its return type.
  *
  * @param data - input data
  * @param code - user code
+ * @param functionName - entry point for action scripts or predicates
  * @returns evaluation result
  */
-export function evalSync(data: Record<string, string>, code: string): string {
-  const wrappedCode = `
-    (function() {
-      const data = ${JSON.stringify(data)};
-      ${code}
-      const result = process(data);
-      return typeof result === 'string' ? result : JSON.stringify(result);
-    })()
-  `;
-  return eval(wrappedCode);
-}
-
-/**
- * Evaluate asynchronous JavaScript code.
- *
- * @param data - input data
- * @param code - user code
- * @returns evaluation result
- */
-export async function evalAsync(data: Record<string, string>, code: string): Promise<string> {
+async function evaluate(
+  data: Record<string, string>,
+  code: string,
+  functionName: 'process' | 'matches' = 'process'
+): Promise<unknown> {
   const wrappedCode = `
     (async function() {
       const data = ${JSON.stringify(data)};
@@ -57,17 +44,37 @@ export async function evalAsync(data: Record<string, string>, code: string): Pro
       ${code}
       let result;
       try {
-        result = await process(data);
+        result = await ${functionName}(data);
       } finally {
         await keyboardQueue;
       }
       if (keyboardErrors.length) {
         throw keyboardErrors[0];
       }
-      return typeof result === 'string' ? result : JSON.stringify(result);
+      return result;
     })()
   `;
   return await eval(wrappedCode);
+}
+
+/**
+ * Evaluate an action script with the existing text output protocol.
+ */
+export async function evaluateAction(data: Record<string, string>, code: string): Promise<string> {
+  const result = await evaluate(data, code);
+  return typeof result === 'string' ? result : JSON.stringify(result);
+}
+
+/**
+ * Evaluate matches(data) with the selection and source application ID in the WebView.
+ * Non-boolean results and script errors reject the promise.
+ */
+export async function evaluatePredicate(data: PredicateData, code: string): Promise<boolean> {
+  const result = await evaluate(data, code, 'matches');
+  if (typeof result !== 'boolean') {
+    throw new TypeError('Predicates must return true or false');
+  }
+  return result;
 }
 
 // prevent tree-shaking and unused variable errors

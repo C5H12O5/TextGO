@@ -1,11 +1,64 @@
+use super::identifier::{get_frontmost_context, FrontmostContext};
 use crate::error::AppError;
 use crate::{
     IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, REGISTERED_SHORTCUTS,
-    SHORTCUT_PAUSED, SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL, TRIPLE_CLICK_REGISTERED,
+    SETTINGS_STORE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND, TOOLBAR_HIDE_ON_SCROLL,
+    TRIPLE_CLICK_REGISTERED,
 };
+use serde_json::Value;
 use std::sync::atomic::Ordering;
 use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
+use tauri_plugin_store::StoreExt;
+
+/// Reuse the blacklist's application lookup when a shortcut uses a predicate.
+/// Application identifiers are captured before fetching the selection asynchronously.
+pub fn get_shortcut_context(app: &AppHandle, shortcut: &str) -> Result<FrontmostContext, AppError> {
+    let store = app.store(SETTINGS_STORE)?;
+    Ok(get_frontmost_context(store.get("blacklist"), || {
+        shortcut_uses_predicate(
+            store.get("shortcuts").as_ref(),
+            store.get("predicates").as_ref(),
+            shortcut,
+        )
+    }))
+}
+
+/// Only enabled shortcut groups referencing an existing, non-empty predicate need appId.
+fn shortcut_uses_predicate(
+    shortcuts: Option<&Value>,
+    predicates: Option<&Value>,
+    shortcut: &str,
+) -> bool {
+    let Some(group) = shortcuts.and_then(|value| value.get(shortcut)) else {
+        return false;
+    };
+    if group.get("disabled").and_then(Value::as_bool) == Some(true) {
+        return false;
+    }
+    let Some(rules) = group.get("rules").and_then(Value::as_array) else {
+        return false;
+    };
+    let Some(predicates) = predicates.and_then(Value::as_array) else {
+        return false;
+    };
+
+    rules.iter().any(|rule| {
+        // Keep the prefix in sync with PREDICATE_MARK in constants.ts.
+        let Some(id) = rule
+            .get("case")
+            .and_then(Value::as_str)
+            .and_then(|case| case.strip_prefix("predicate-"))
+        else {
+            return false;
+        };
+        predicates
+            .iter()
+            .find(|predicate| predicate.get("id").and_then(Value::as_str) == Some(id))
+            .and_then(|predicate| predicate.get("script").and_then(Value::as_str))
+            .is_some_and(|code| !code.trim().is_empty())
+    })
+}
 
 // guard to suspend shortcut event handling within a scope
 pub struct ShortcutHandlerGuard;
@@ -249,4 +302,80 @@ fn suspension_guard_is_nest_safe() {
     assert_eq!(SHORTCUT_SUSPEND.load(Ordering::Relaxed), initial + 1);
     drop(outer);
     assert_eq!(SHORTCUT_SUSPEND.load(Ordering::Relaxed), initial);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn predicate_lookup_requires_an_enabled_current_rule_and_existing_predicate() {
+        let predicates = json!([
+            { "id": "valid", "script": "function matches(data) { return true; }" },
+            { "id": "empty", "script": " \n\t" }
+        ]);
+        for (group, expected) in [
+            (json!({ "rules": [{ "case": "predicate-valid" }] }), true),
+            (json!({ "rules": [{ "case": "regexp-valid" }] }), false),
+            (
+                json!({ "rules": [{ "case": "", "action": "script-valid" }] }),
+                false,
+            ),
+            (json!({ "rules": [{ "case": "predicate-deleted" }] }), false),
+            (json!({ "rules": [{ "case": "predicate-empty" }] }), false),
+            (
+                json!({ "disabled": true, "rules": [{ "case": "predicate-valid" }] }),
+                false,
+            ),
+            (json!({ "rules": [] }), false),
+            (Value::Null, false),
+        ] {
+            let shortcuts = json!({
+                "current": group,
+                "other": { "rules": [{ "case": "predicate-valid" }] }
+            });
+            assert_eq!(
+                shortcut_uses_predicate(Some(&shortcuts), Some(&predicates), "current"),
+                expected,
+                "{shortcuts}",
+            );
+            assert!(!shortcut_uses_predicate(
+                Some(&shortcuts),
+                Some(&predicates),
+                "unregistered",
+            ));
+        }
+    }
+
+    #[test]
+    fn predicate_lookup_tracks_deletion_and_rename_without_cached_registration() {
+        let mut shortcuts = json!({ "current": { "rules": [{ "case": "predicate-old" }] } });
+        let mut predicates =
+            json!([{ "id": "old", "script": "function matches(data) { return true; }" }]);
+        assert!(shortcut_uses_predicate(
+            Some(&shortcuts),
+            Some(&predicates),
+            "current"
+        ));
+        predicates[0]["id"] = json!("new");
+        assert!(!shortcut_uses_predicate(
+            Some(&shortcuts),
+            Some(&predicates),
+            "current"
+        ));
+        shortcuts["current"]["rules"][0]["case"] = json!("predicate-new");
+        assert!(shortcut_uses_predicate(
+            Some(&shortcuts),
+            Some(&predicates),
+            "current"
+        ));
+        assert!(!shortcut_uses_predicate(
+            Some(&shortcuts),
+            Some(&json!([])),
+            "current"
+        ));
+        assert!(!shortcut_uses_predicate(Some(&shortcuts), None, "current"));
+        assert!(!shortcut_uses_predicate(None, Some(&predicates), "current"));
+    }
 }
