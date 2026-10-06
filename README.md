@@ -26,7 +26,7 @@ _TextGO is a cross-platform text processing tool that recognizes text types and 
 
 ## ✨ Core Features
 
-- **Multiple Triggers**: Hotkeys, double-click, shift-click, or drag-select, each with independent rule configurations.
+- **Multiple Triggers**: Trigger via hotkeys, double-click, drag-select, and more, with independent rules for each.
 - **Flexible Modes**: Choose instant execution or interactive toolbar mode based on your workflow.
 - **Customizable Appearance**: Use custom SVG toolbar icons and customize light and dark themes separately.
 - **Ready to Use**: A rich set of built-in text types and processing actions, ready to use with minimal configuration.
