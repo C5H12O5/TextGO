@@ -477,7 +477,7 @@
       return undefined;
     }
 
-    if (typeof icon === 'string' && !icon.startsWith('data:image/svg+xml;base64,')) {
+    if (typeof icon === 'string' && !icon.startsWith('data:')) {
       icon = await resolvePhosphorIcon(icon);
       if (!icon) {
         return undefined;
@@ -500,10 +500,10 @@
       // wait for rendering to complete
       await tick();
 
-      // get the svg or custom SVG element
+      // get the SVG or validated custom image element
       const svg = tempElement.querySelector('svg');
-      const customSVG = tempElement.querySelector<HTMLElement>('[data-svg]');
-      if (!svg && !customSVG) {
+      const customImage = tempElement.querySelector<HTMLElement>('[data-image]');
+      if (!svg && !customImage) {
         return undefined;
       }
 
@@ -524,9 +524,9 @@
         const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
         objectURL = URL.createObjectURL(svgBlob);
         url = objectURL;
-      } else if (customSVG?.dataset.svg) {
+      } else if (customImage?.dataset.image) {
         // handle base64 image
-        url = customSVG.dataset.svg;
+        url = customImage.dataset.image;
       } else {
         return undefined;
       }
@@ -548,14 +548,14 @@
         imageEl.src = url;
       });
 
-      // draw image onto canvas
+      // draw a single frame onto the canvas for static native menu icons
       ctx.clearRect(0, 0, size, size);
       const scale = Math.min(size / imageEl.naturalWidth, size / imageEl.naturalHeight);
       const width = imageEl.naturalWidth * scale;
       const height = imageEl.naturalHeight * scale;
       ctx.drawImage(imageEl, (size - width) / 2, (size - height) / 2, width, height);
 
-      if (customSVG?.dataset.useTextColor === 'true') {
+      if (customImage?.dataset.useTextColor === 'true') {
         // match the CSS mask with the native menu's text color
         ctx.globalCompositeOperation = 'source-in';
         ctx.fillStyle = window.matchMedia('(prefers-color-scheme: dark)').matches ? '#ffffff' : '#000000';

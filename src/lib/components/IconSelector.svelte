@@ -1,20 +1,38 @@
 <script lang="ts">
   import { enhance } from '$app/forms';
   import { alert } from '$lib/components/Alert.svelte';
-  import Icon, { createSVGDataURL, phosphorIcons } from '$lib/components/Icon.svelte';
+  import Icon, {
+    createCustomIconDataURL,
+    ICON_EXTENSIONS,
+    MAX_ICON_BYTES,
+    phosphorIcons
+  } from '$lib/components/Icon.svelte';
   import Label from '$lib/components/Label.svelte';
   import Modal from '$lib/components/Modal.svelte';
   import { m } from '$lib/paraglide/messages';
   import { open } from '@tauri-apps/plugin-dialog';
-  import { readTextFile } from '@tauri-apps/plugin-fs';
+  import { readFile, stat } from '@tauri-apps/plugin-fs';
   import ArrowsLeftRightIcon from 'phosphor-svelte/lib/ArrowsLeftRightIcon';
   import UploadIcon from 'phosphor-svelte/lib/UploadIcon';
+  import { onDestroy } from 'svelte';
   import { scale } from 'svelte/transition';
 
   let { icon: _icon = $bindable() }: { icon: string } = $props();
 
   // selected icon
   let icon = $state(_icon);
+  let uploading = $state(false);
+  let uploadRequest = 0;
+
+  /**
+   * Cancel pending image uploads and reset the upload state.
+   */
+  function cancelUpload() {
+    uploadRequest++;
+    uploading = false;
+  }
+
+  onDestroy(cancelUpload);
 
   // search input
   let searchInput = $state('');
@@ -38,6 +56,7 @@
   // modal dialog
   let modal: Modal;
   export const showModal = () => {
+    cancelUpload();
     icon = _icon;
     searchInput = '';
     modal.show();
@@ -53,35 +72,56 @@
   }
 
   /**
-   * Handle SVG file upload.
+   * Handle image file upload.
    */
-  async function handleSVGUpload() {
+  async function handleImageUpload() {
+    const request = ++uploadRequest;
+    uploading = true;
     try {
-      // open file dialog to select SVG file
+      // open file dialog to select an image file
       const path = await open({
         multiple: false,
         directory: false,
-        filters: [{ name: 'SVG', extensions: ['svg'] }]
+        filters: [{ name: m.custom_image(), extensions: ICON_EXTENSIONS }]
       });
 
-      if (!path) {
+      if (!path || request !== uploadRequest) {
         return;
       }
 
-      // read SVG file contents
-      const contents = await readTextFile(path);
+      // check file size before reading image contents
+      const metadata = await stat(path);
+      if (request !== uploadRequest) return;
+      if (!metadata.isFile || !metadata.size || metadata.size > MAX_ICON_BYTES) {
+        alert({ level: 'error', message: m.image_file_invalid() });
+        return;
+      }
 
-      const base64 = createSVGDataURL(contents);
+      // read image file contents
+      const contents = await readFile(path);
+      if (request !== uploadRequest) return;
+      const base64 = createCustomIconDataURL(contents);
       if (!base64) {
-        alert({ level: 'error', message: m.svg_file_invalid() });
+        alert({ level: 'error', message: m.image_file_invalid() });
         return;
       }
 
-      // set as selected icon
-      icon = base64;
+      // reject corrupt files and formats unsupported by the current WebView
+      const image = new Image();
+      image.src = base64;
+      try {
+        await image.decode();
+      } catch {
+        if (request === uploadRequest) alert({ level: 'error', message: m.image_file_invalid() });
+        return;
+      }
+      // set as selected icon if the upload is still active
+      if (request === uploadRequest) icon = base64;
     } catch (error) {
-      console.error(`Failed to convert SVG to base64: ${error}`);
-      alert({ level: 'error', message: m.svg_convert_failed() });
+      console.error(`Failed to read custom image: ${error}`);
+      if (request === uploadRequest) alert({ level: 'error', message: m.image_read_failed() });
+    } finally {
+      if (request === uploadRequest) uploading = false;
     }
   }
 </script>
@@ -96,11 +136,11 @@
   }}
 />
 
-<button type="button" class="btn h-8 border" onclick={showModal}>
+<button type="button" class="btn h-8 border" aria-label={m.change_icon()} onclick={showModal}>
   <Icon icon={_icon} class="size-6 opacity-80" />
 </button>
 
-<Modal maxWidth="28rem" icon={ArrowsLeftRightIcon} title={m.change_icon()} bind:this={modal}>
+<Modal maxWidth="28rem" icon={ArrowsLeftRightIcon} title={m.change_icon()} onclose={cancelUpload} bind:this={modal}>
   <form
     method="post"
     use:enhance={({ cancel }) => {
@@ -108,7 +148,7 @@
       submit();
     }}
   >
-    <fieldset class="fieldset">
+    <fieldset class="fieldset" disabled={uploading}>
       <!-- icon selection -->
       <Label tip={m.built_in_icons_tip()}>{m.built_in_icons()}</Label>
       <div class="relative" bind:this={searchContainer}>
@@ -139,12 +179,17 @@
         {/if}
       </div>
 
-      <!-- SVG upload -->
-      <Label class="mt-2">{m.upload_svg()}</Label>
-      <button type="button" class="btn w-full btn-sm" onclick={handleSVGUpload}>
-        <UploadIcon class="size-5" />
-        {m.upload_svg_btn()}
+      <!-- custom image upload -->
+      <Label class="mt-2">{m.upload_image()}</Label>
+      <button type="button" class="btn w-full btn-sm" aria-busy={uploading} onclick={handleImageUpload}>
+        {#if uploading}
+          <span class="loading loading-xs loading-spinner"></span>
+        {:else}
+          <UploadIcon class="size-5" />
+        {/if}
+        {m.upload_image_btn()}
       </button>
+      <p class="px-1 text-xs opacity-70">{m.upload_image_hint()}</p>
 
       <!-- preview -->
       <Label class="mt-6">{m.preview()}</Label>
@@ -154,13 +199,13 @@
           in:scale={{ duration: 150 }}
         >
           <Icon {icon} class="size-8 shrink-0" />
-          <span class="truncate text-base opacity-80">{icon}</span>
+          <span class="truncate text-base opacity-80">{icon.startsWith('data:') ? m.custom_image() : icon}</span>
         </div>
       {/key}
     </fieldset>
     <div class="modal-action">
       <button type="button" class="btn" onclick={() => modal?.close()}>{m.cancel()}</button>
-      <button type="submit" class="btn btn-submit">{m.confirm()}</button>
+      <button type="submit" class="btn btn-submit" disabled={uploading}>{m.confirm()}</button>
     </div>
   </form>
 </Modal>
