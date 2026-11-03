@@ -3,5 +3,5 @@
   import { resolve } from '$app/paths';
 
   // default redirect to shortcut registration page
-  goto(resolve('/shortcuts'), { replaceState: true });
+  goto(resolve('/(main)/shortcuts'), { replace: true });
 </script>

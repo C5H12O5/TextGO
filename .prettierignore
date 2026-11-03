@@ -10,6 +10,8 @@ build/
 .svelte-kit/
 src-tauri/target/
 src-tauri/gen/
+project.inlang/.meta.json
+project.inlang/README.md
 
 # Static Assets
 static/

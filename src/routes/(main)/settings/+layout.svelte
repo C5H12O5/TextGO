@@ -324,7 +324,7 @@
     size="md"
     icon={ArrowLeftIcon}
     class="border-none gradient bg-base-300"
-    onclick={() => goto(resolve('/shortcuts'))}
+    onclick={() => goto(resolve('/(main)/shortcuts'))}
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1 pl-28.75">
     <GearSixIcon class="size-5 opacity-80" />
@@ -380,18 +380,18 @@
   <div class="fixed top-10.5 bottom-2 flex flex-col overflow-y-auto rounded-container p-0" style:width={SIDEBAR_WIDTH}>
     <ul class="menu w-full gap-1">
       <li class="menu-title pl-1 text-xs">{m.custom_recognitions()}</li>
-      {@render menu(SphereIcon, m.model(), resolve('/settings/model'))}
-      {@render menu(ScrollIcon, m.regexp(), resolve('/settings/regexp'))}
-      {@render menu(FileJsIcon, m.predicate(), resolve('/settings/predicate'))}
+      {@render menu(SphereIcon, m.model(), resolve('/(main)/settings/model'))}
+      {@render menu(ScrollIcon, m.regexp(), resolve('/(main)/settings/regexp'))}
+      {@render menu(FileJsIcon, m.predicate(), resolve('/(main)/settings/predicate'))}
       <div class="divider my-0 opacity-50"></div>
       <li class="menu-title pl-1 text-xs">{m.custom_actions()}</li>
-      {@render menu(RobotIcon, m.ai_conversation(), resolve('/settings/prompt'))}
-      {@render menu(CodeIcon, m.script_execution(), resolve('/settings/script'))}
-      {@render menu(MagnifyingGlassIcon, m.web_search(), resolve('/settings/searcher'))}
+      {@render menu(RobotIcon, m.ai_conversation(), resolve('/(main)/settings/prompt'))}
+      {@render menu(CodeIcon, m.script_execution(), resolve('/(main)/settings/script'))}
+      {@render menu(MagnifyingGlassIcon, m.web_search(), resolve('/(main)/settings/searcher'))}
       <div class="divider my-0 opacity-50"></div>
-      {@render menu(PaletteIcon, m.display_settings(), resolve('/settings/display'))}
-      {@render menu(MouseLeftClickIcon, m.mouse_settings(), resolve('/settings/mouse'))}
-      {@render menu(GearIcon, m.general_settings(), resolve('/settings/general'))}
+      {@render menu(PaletteIcon, m.display_settings(), resolve('/(main)/settings/display'))}
+      {@render menu(MouseLeftClickIcon, m.mouse_settings(), resolve('/(main)/settings/mouse'))}
+      {@render menu(GearIcon, m.general_settings(), resolve('/(main)/settings/general'))}
     </ul>
     <Updater />
   </div>

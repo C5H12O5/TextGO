@@ -55,7 +55,7 @@
     size="md"
     icon={ArrowLeftIcon}
     class="border-none gradient bg-base-300"
-    onclick={() => goto(resolve('/shortcuts'))}
+    onclick={() => goto(resolve('/(main)/shortcuts'))}
   />
   <div class="pointer-events-none mx-auto flex items-center gap-1">
     <ClockCounterClockwiseIcon class="size-5 opacity-80" />

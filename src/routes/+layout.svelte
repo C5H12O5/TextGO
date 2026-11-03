@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dev } from '$app/environment';
+  import { dev } from '$app/env';
   import Alert from '$lib/components/Alert.svelte';
   import Confirm from '$lib/components/Confirm.svelte';
   import { customThemes, theme } from '$lib/stores.svelte';

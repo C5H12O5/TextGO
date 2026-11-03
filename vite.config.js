@@ -1,7 +1,10 @@
 import { paraglideVitePlugin } from '@inlang/paraglide-js';
+import adapter from '@sveltejs/adapter-static';
 import { sveltekit } from '@sveltejs/kit/vite';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
 import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
 import { parse } from 'svelte/compiler';
 import { defineConfig } from 'vite';
 
@@ -75,13 +78,26 @@ export default defineConfig({
       }
     },
     tailwindcss(),
-    sveltekit(),
+    sveltekit({
+      preprocess: vitePreprocess(),
+      adapter: adapter({
+        fallback: 'index.html'
+      }),
+      compilerOptions: {
+        runes: true
+      }
+    }),
     paraglideVitePlugin({
       project: './project.inlang',
       outdir: './src/lib/paraglide',
       strategy: ['localStorage', 'preferredLanguage', 'url', 'baseLocale']
     })
   ],
+  resolve: {
+    alias: {
+      $lib: fileURLToPath(new URL('./src/lib', import.meta.url))
+    }
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //

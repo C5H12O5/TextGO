@@ -2,5 +2,5 @@
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
 
-  goto(resolve('/settings/general'), { replaceState: true });
+  goto(resolve('/(main)/settings/general'), { replace: true });
 </script>

@@ -150,14 +150,14 @@
         <!-- history -->
         <button
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
-          onclick={() => goto(resolve('/history'))}
+          onclick={() => goto(resolve('/(main)/history'))}
         >
           <ClockCounterClockwiseIcon class="size-5" />
         </button>
         <!-- settings -->
         <button
           class="cursor-pointer opacity-50 transition-opacity hover:opacity-100"
-          onclick={() => goto(resolve('/settings'))}
+          onclick={() => goto(resolve('/(main)/settings'))}
         >
           <GearSixIcon class="size-5" />
         </button>
