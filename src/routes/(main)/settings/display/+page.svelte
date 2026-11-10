@@ -8,6 +8,7 @@
     POPUP_FONT_SIZE,
     POPUP_OPACITY,
     TOOLBAR_ACTION_COUNT,
+    TOOLBAR_ANIMATION_DURATION,
     TOOLBAR_AUTO_HIDE_DELAY,
     TOOLBAR_CORNER_RADIUS,
     TOOLBAR_OPACITY,
@@ -19,6 +20,8 @@
     popupFontSize,
     popupLineWrapping,
     popupOpacity,
+    toolbarAnimation,
+    toolbarAnimationDuration,
     toolbarAutoHide,
     toolbarAutoHideDelay,
     toolbarCornerRadius,
@@ -49,6 +52,7 @@
   const toolbarPositionOffsetMarks = createRangeMarks(TOOLBAR_POSITION_OFFSET, 3);
   const toolbarCornerRadiusMarks = createRangeMarks(TOOLBAR_CORNER_RADIUS, 4);
   const toolbarOpacityMarks = createRangeMarks(TOOLBAR_OPACITY, 3);
+  const toolbarAnimationDurationMarks = createRangeMarks(TOOLBAR_ANIMATION_DURATION, 3);
   const toolbarAutoHideDelayMarks = createRangeMarks(TOOLBAR_AUTO_HIDE_DELAY, 4);
 
   const popupCornerRadiusMarks = createRangeMarks(POPUP_CORNER_RADIUS, 4);
@@ -168,6 +172,43 @@
         <div class="flex justify-between gap-2 text-xs opacity-70">
           {#each toolbarOpacityMarks as opacity (opacity)}
             <span>{opacity}%</span>
+          {/each}
+        </div>
+      </label>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label inline>{m.toolbar_animation()}</Label>
+      <Select bind:value={toolbarAnimation.current} class="w-36 select-sm">
+        <option value="fly">{m.toolbar_animation_fly()}</option>
+        <option value="fade">{m.toolbar_animation_fade()}</option>
+        <option value="scale">{m.toolbar_animation_scale()}</option>
+        <option value="none">{m.toolbar_animation_none()}</option>
+      </Select>
+    </fieldset>
+    <div class="divider my-0 opacity-60"></div>
+    <fieldset class="flex items-center justify-between gap-1">
+      <Label class="min-w-0 grow">
+        {m.toolbar_animation_duration()}
+        <span class="ml-1 text-xs opacity-70">{toolbarAnimationDuration.current}ms</span>
+      </Label>
+      <label
+        class="flex w-2/5 min-w-0 shrink-0 flex-col gap-2 pt-2"
+        class:opacity-50={toolbarAnimation.current === 'none'}
+      >
+        <input
+          class="range w-full text-emphasis range-xs"
+          type="range"
+          min={TOOLBAR_ANIMATION_DURATION.min}
+          max={TOOLBAR_ANIMATION_DURATION.max}
+          step={TOOLBAR_ANIMATION_DURATION.step}
+          aria-label={m.toolbar_animation_duration()}
+          bind:value={toolbarAnimationDuration.current}
+          disabled={toolbarAnimation.current === 'none'}
+        />
+        <div class="flex justify-between gap-2 text-xs opacity-70">
+          {#each toolbarAnimationDurationMarks as duration (duration)}
+            <span>{duration}ms</span>
           {/each}
         </div>
       </label>

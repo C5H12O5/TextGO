@@ -78,6 +78,16 @@ export const TOOLBAR_POSITION_OFFSET = {
 };
 
 /**
+ * Toolbar appearance animation duration in milliseconds.
+ */
+export const TOOLBAR_ANIMATION_DURATION = {
+  min: 50,
+  default: 100,
+  max: 300,
+  step: 5
+};
+
+/**
  * Toolbar auto-hide delay in seconds.
  */
 export const TOOLBAR_AUTO_HIDE_DELAY = {

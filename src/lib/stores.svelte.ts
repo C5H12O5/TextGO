@@ -4,6 +4,7 @@ import {
   POPUP_FONT_SIZE,
   POPUP_OPACITY,
   TOOLBAR_ACTION_COUNT,
+  TOOLBAR_ANIMATION_DURATION,
   TOOLBAR_AUTO_HIDE_DELAY,
   TOOLBAR_CORNER_RADIUS,
   TOOLBAR_OPACITY,
@@ -274,6 +275,15 @@ export const toolbarCornerRadius = persisted<number>('toolbarCornerRadius', TOOL
 
 // toolbar background opacity percentage
 export const toolbarOpacity = persisted<number>('toolbarOpacity', TOOLBAR_OPACITY.default);
+
+// toolbar appearance animation
+export const toolbarAnimation = persisted<'fly' | 'fade' | 'scale' | 'none'>('toolbarAnimation', 'fly');
+
+// toolbar appearance animation duration in milliseconds
+export const toolbarAnimationDuration = persisted<number>(
+  'toolbarAnimationDuration',
+  TOOLBAR_ANIMATION_DURATION.default
+);
 
 // whether to hide the toolbar automatically after inactivity
 export const toolbarAutoHide = persisted<boolean>('toolbarAutoHide', false);

@@ -5,6 +5,7 @@
     SCRIPT_MARK,
     SEARCHER_MARK,
     TOOLBAR_ACTION_COUNT,
+    TOOLBAR_ANIMATION_DURATION,
     TOOLBAR_AUTO_HIDE_DELAY,
     TOOLBAR_CORNER_RADIUS,
     TOOLBAR_OPACITY
@@ -22,6 +23,8 @@
     prompts,
     scripts,
     searchers,
+    toolbarAnimation,
+    toolbarAnimationDuration,
     toolbarAutoHide,
     toolbarAutoHideDelay,
     toolbarCornerRadius,
@@ -47,7 +50,7 @@
   import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
   import type { Component } from 'svelte';
   import { mount, onMount, tick, unmount, untrack } from 'svelte';
-  import { fly } from 'svelte/transition';
+  import { fade, fly, scale, type TransitionConfig } from 'svelte/transition';
 
   // operating system type
   const osType = type();
@@ -135,6 +138,34 @@
     const opacity = toolbarOpacityValue;
     return `color-mix(in oklab, var(--color-base-200) ${opacity}%, transparent)`;
   });
+
+  // toolbar appearance animation duration in milliseconds
+  let animationDuration = $derived.by(() => {
+    const value = toolbarAnimationDuration.current;
+    return Number.isFinite(value)
+      ? Math.min(TOOLBAR_ANIMATION_DURATION.max, Math.max(TOOLBAR_ANIMATION_DURATION.min, Math.trunc(value)))
+      : TOOLBAR_ANIMATION_DURATION.default;
+  });
+
+  /**
+   * Play the configured toolbar appearance animation.
+   *
+   * @param node - element being shown
+   * @param params - vertical start offset used by the fly animation
+   * @returns transition config using the configured duration; an empty duration shows the element immediately
+   */
+  function appear(node: Element, { y }: { y: number }): TransitionConfig {
+    switch (toolbarAnimation.current) {
+      case 'none':
+        return { duration: 0 };
+      case 'fade':
+        return fade(node, { duration: animationDuration });
+      case 'scale':
+        return scale(node, { start: 0.9, duration: animationDuration });
+      default:
+        return fly(node, { y, duration: animationDuration });
+    }
+  }
 
   // action background style
   let actionBackgroundStyle = $derived.by(() => {
@@ -650,7 +681,12 @@
   }
 
   onMount(async () => {
-    await Promise.all([toolbarSize.ready, toolbarPosition.ready]);
+    await Promise.all([
+      toolbarSize.ready,
+      toolbarPosition.ready,
+      toolbarAnimation.ready,
+      toolbarAnimationDuration.ready
+    ]);
     await invoke('set_toolbar_position', { position: toolbarPosition.current });
     // mark toolbar as initialized
     await invoke('mark_toolbar_initialized');
@@ -715,11 +751,7 @@
   onpointerleave={() => (pointerInside = false)}
 >
   {#if initialized && menuMode && actions.length > 0}
-    <div
-      class="w-fit overflow-hidden border shadow-sm"
-      style:border-radius={cornerRadiusStyle}
-      in:fly={{ y: -6, duration: 100 }}
-    >
+    <div class="w-fit overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle} in:appear={{ y: -6 }}>
       <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm" bind:this={container}>
         {#each actions as action (action.id)}
           <button
@@ -740,11 +772,7 @@
       </div>
     </div>
   {:else if initialized && visibleActions.length > 0}
-    <div
-      class="w-fit overflow-hidden border shadow-sm"
-      style:border-radius={cornerRadiusStyle}
-      in:fly={{ y: -10, duration: 100 }}
-    >
+    <div class="w-fit overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle} in:appear={{ y: -10 }}>
       <div class="flex h-8 w-max min-w-max" style:background-color={toolbarBackgroundStyle} bind:this={container}>
         <span
           class="flex shrink-0 cursor-grab items-center opacity-20 transition-opacity active:cursor-grabbing"
