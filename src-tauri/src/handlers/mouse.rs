@@ -3,12 +3,12 @@ use crate::commands::{
     ShortcutHandlerGuard,
 };
 use crate::error::AppError;
+use crate::input::lock_enigo;
 use crate::platform;
 use crate::{
-    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, ENIGO, IBEAM_CURSOR, LONG_PRESS,
-    LONG_PRESS_DURATION, MOUSE_CLICK_EPOCH, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED,
-    SHORTCUT_SUSPEND, SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN,
-    TRIPLE_CLICK_REGISTERED,
+    APP_HANDLE, CLIPBOARD_RESTORE_INTERRUPTED, IBEAM_CURSOR, LONG_PRESS, LONG_PRESS_DURATION,
+    MOUSE_CLICK_EPOCH, SELECTION_TEXT_CACHE, SHORTCUT_PAUSED, SHORTCUT_SUSPEND,
+    SIMULATED_INPUT_MARKER, TOOLBAR_HIDE_ON_SCROLL, TOOLBAR_MENU_OPEN, TRIPLE_CLICK_REGISTERED,
 };
 use enigo::{Direction, Key as EnigoKey, Keyboard, Mouse};
 use log::debug;
@@ -461,8 +461,7 @@ fn distance(p1: (f64, f64), p2: (f64, f64)) -> f64 {
 /// Get current mouse position using enigo.
 /// Returns physical coordinates on Windows, logical coordinates on macOS.
 fn mouse_pos() -> Result<(f64, f64), AppError> {
-    Ok(ENIGO
-        .lock()?
+    Ok(lock_enigo()?
         .as_ref()?
         .location()
         .map(|(x, y)| (x as f64, y as f64))?)
@@ -548,7 +547,7 @@ fn close_native_menu(key: Key, platform_code: u32) -> Result<bool, AppError> {
 
             let _guard = ShortcutHandlerGuard::suspend();
             let escape_result = (|| -> Result<(), AppError> {
-                let mut enigo_guard = ENIGO.lock()?;
+                let mut enigo_guard = lock_enigo()?;
                 let enigo = enigo_guard.as_mut()?;
                 Ok(enigo.key(EnigoKey::Escape, Direction::Click)?)
             })();

@@ -1,6 +1,6 @@
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
-use crate::ENIGO;
+use crate::input::lock_enigo;
 use enigo::{Direction, Key, Keyboard};
 #[cfg(not(target_os = "macos"))]
 use std::sync::atomic::Ordering;
@@ -86,7 +86,7 @@ pub async fn send_key(
     let (sender, receiver) = std::sync::mpsc::channel();
     app.run_on_main_thread(move || {
         let result = (|| -> Result<(), AppError> {
-            let mut enigo_guard = ENIGO.lock()?;
+            let mut enigo_guard = lock_enigo()?;
             let enigo = enigo_guard.as_mut()?;
 
             #[cfg(target_os = "windows")]
@@ -134,7 +134,7 @@ pub fn send_cut_keys(
         None
     };
 
-    let mut enigo_guard = ENIGO.lock()?;
+    let mut enigo_guard = lock_enigo()?;
     let enigo = enigo_guard.as_mut()?;
 
     if release_modifiers.unwrap_or(true) {
@@ -166,7 +166,7 @@ pub fn send_copy_keys(
         None
     };
 
-    let mut enigo_guard = ENIGO.lock()?;
+    let mut enigo_guard = lock_enigo()?;
     let enigo = enigo_guard.as_mut()?;
 
     if release_modifiers.unwrap_or(true) {
@@ -204,7 +204,7 @@ pub fn send_paste_keys(
         None
     };
 
-    let mut enigo_guard = ENIGO.lock()?;
+    let mut enigo_guard = lock_enigo()?;
     let enigo = enigo_guard.as_mut()?;
 
     if release_modifiers.unwrap_or(true) {

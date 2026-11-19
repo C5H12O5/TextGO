@@ -1,6 +1,7 @@
 use crate::error::AppError;
+use crate::input::lock_enigo;
 use crate::platform;
-use crate::{ENIGO, TOOLBAR_MENU_OPEN};
+use crate::TOOLBAR_MENU_OPEN;
 use enigo::Mouse;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
@@ -401,7 +402,7 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
     #[allow(unused_mut)]
     let (mut x, mut y) = if mouse {
         // directly use mouse position from enigo
-        ENIGO.lock()?.as_ref()?.location()?
+        lock_enigo()?.as_ref()?.location()?
     } else {
         // try to get selection location first, fall back to mouse position if failed
         match platform::get_cursor_location() {
@@ -409,7 +410,7 @@ fn position_window_near_cursor(window: &WebviewWindow, mouse: bool) -> Result<()
                 mouse_position = false;
                 location
             }
-            Err(_) => ENIGO.lock()?.as_ref()?.location()?,
+            Err(_) => lock_enigo()?.as_ref()?.location()?,
         }
     };
 

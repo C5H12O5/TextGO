@@ -14,16 +14,16 @@ unsafe extern "C" {
 
 /// Check if the application has accessibility permissions.
 #[tauri::command]
-pub fn check_accessibility() -> Result<bool, AppError> {
+pub fn check_accessibility() -> bool {
     #[cfg(target_os = "macos")]
     {
-        unsafe { Ok(AXIsProcessTrusted()) }
+        unsafe { AXIsProcessTrusted() }
     }
 
     #[cfg(not(target_os = "macos"))]
     {
         // always return true on non-macOS platforms
-        Ok(true)
+        true
     }
 }
 

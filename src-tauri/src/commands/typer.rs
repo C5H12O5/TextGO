@@ -2,8 +2,8 @@ use crate::commands::clipboard::{set_clipboard_text, with_clipboard_backup};
 use crate::commands::keyboard::send_paste_keys;
 use crate::commands::shortcut::ShortcutHandlerGuard;
 use crate::error::AppError;
+use crate::input::lock_enigo;
 use crate::platform;
-use crate::ENIGO;
 use enigo::{Direction, Key, Keyboard};
 use std::time::Duration;
 use tauri::AppHandle;
@@ -46,7 +46,7 @@ pub async fn enter_text(
             if platform::select_backward_chars(chars).is_err() {
                 // if native API call fails and char count is <= 50, use keyboard simulation
                 if chars <= 50 {
-                    let mut enigo_guard = ENIGO.lock()?;
+                    let mut enigo_guard = lock_enigo()?;
                     let enigo = enigo_guard.as_mut()?;
 
                     enigo.key(Key::Shift, Direction::Press)?;
