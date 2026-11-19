@@ -1,0 +1,1 @@
+The files under `nsis/` are unmodified encoder sources from [NSIS 3.13](https://github.com/NSIS-Dev/nsis/tree/v313/Source). TextGO uses the same LZMA encoder to reproduce the exact signed Windows installer. The upstream licenses and linking exception are included in [COPYING](nsis/COPYING).

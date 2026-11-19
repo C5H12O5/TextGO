@@ -8,8 +8,11 @@ repos:
       - id: check-toml
       - id: check-yaml
       - id: mixed-line-ending
+        exclude: &nsis_sources ^src-tauri/delta/vendor/nsis/
       - id: end-of-file-fixer
+        exclude: *nsis_sources
       - id: trailing-whitespace
+        exclude: *nsis_sources
       - id: check-added-large-files
         args: ['--maxkb=5120']
   - repo: https://github.com/commitizen-tools/commitizen

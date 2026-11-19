@@ -1,0 +1,26 @@
+[package]
+name = "textgo-delta"
+version = "0.1.0"
+edition = "2021"
+license = "GPL-3.0-or-later"
+description = "Reconstruct TextGO updater artifacts from installed executables"
+publish = false
+
+[features]
+# Also exercise the Windows release codec on a non-Windows release-test host.
+nsis = []
+
+[dependencies]
+base64 = "0.22"
+minisign-verify = "0.3"
+sha2 = "0.10"
+zstd = { version = "0.13", default-features = false }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+# The gzip bytes, including the encoder version, are part of the signed updater artifact.
+release-flate2 = { package = "flate2", git = "https://github.com/rust-lang/flate2-rs", rev = "98c98c8a57586b37e6f93e94d993e4f038fd8d32", default-features = false, features = ["zlib-rs"] }
+libz-rs-sys = "=0.5.0"
+zlib-rs = "=0.5.0"
+
+[build-dependencies]
+cc = "1"

@@ -8,6 +8,7 @@ mod selection;
 mod shortcut;
 mod tray;
 mod typer;
+mod updater;
 mod window;
 
 // re-export all command functions
@@ -21,4 +22,5 @@ pub use selection::*;
 pub use shortcut::*;
 pub use tray::*;
 pub use typer::*;
+pub use updater::*;
 pub use window::*;

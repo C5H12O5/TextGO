@@ -14,10 +14,13 @@ jobs:
       matrix:
         include:
           - platform: 'macos-latest' # for Arm based macs (M1 and above).
+            delta_target: darwin-aarch64
             args: '--target aarch64-apple-darwin'
           - platform: 'macos-latest' # for Intel based macs.
+            delta_target: darwin-x86_64
             args: '--target x86_64-apple-darwin'
           - platform: 'windows-latest'
+            delta_target: windows-x86_64
             args: ''
 
     runs-on: ${{ matrix.platform }}
@@ -101,3 +104,13 @@ jobs:
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+      - name: Build, verify and publish the incremental update
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          RELEASE_TAG: ${{ github.ref_name }}
+          DELTA_TARGET: ${{ matrix.delta_target }}
+        shell: bash
+        run: python3 scripts/release_delta.py "$DELTA_TARGET" "$RELEASE_TAG"

@@ -1,8 +1,9 @@
 <script lang="ts" module>
   import { confirm } from '$lib/components/Confirm.svelte';
   import { m } from '$lib/paraglide/messages';
+  import { Channel, invoke } from '@tauri-apps/api/core';
   import { relaunch } from '@tauri-apps/plugin-process';
-  import type { Update } from '@tauri-apps/plugin-updater';
+  import type { DownloadEvent, Update } from '@tauri-apps/plugin-updater';
   import { check } from '@tauri-apps/plugin-updater';
   import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
   import CloudArrowDownIcon from 'phosphor-svelte/lib/CloudArrowDownIcon';
@@ -41,6 +42,7 @@
         icon: SparkleIcon,
         title: m.new_version_available({ version: update.version }),
         message: m.download_and_install(),
+        oncancel: () => void update.close(),
         onconfirm: () => downloadAndInstall(update)
       });
     } catch (error) {
@@ -70,28 +72,42 @@
    * @param update - the update information
    */
   async function downloadAndInstall(update: Update) {
+    if (updateChecking || latestFlag) {
+      await update.close();
+      return;
+    }
     updateChecking = true;
     updateStatus = m.download_starting();
     let downloaded = 0;
     let contentLength = 0;
     try {
-      await update.downloadAndInstall((event) => {
+      const onProgress = (event: DownloadEvent) => {
         switch (event.event) {
           case 'Started':
+            downloaded = 0;
             contentLength = event.data.contentLength || 0;
-            updateStatus = m.download_started({ size: (contentLength / 1024 / 1024).toFixed(2) });
+            updateStatus = contentLength
+              ? m.download_started({ size: (contentLength / 1024 / 1024).toFixed(2) })
+              : m.download_starting();
             break;
           case 'Progress': {
             downloaded += event.data.chunkLength;
-            const progress = contentLength ? ((downloaded / contentLength) * 100).toFixed(1) : '0';
-            updateStatus = m.downloading({ progress });
+            if (contentLength) {
+              updateStatus = m.downloading({ progress: ((downloaded / contentLength) * 100).toFixed(1) });
+            }
             break;
           }
           case 'Finished':
             updateStatus = m.download_completed();
             break;
         }
-      });
+      };
+      const onEvent = new Channel<DownloadEvent>(onProgress);
+      const installed = await invoke<boolean>('try_install_delta', { rid: update.rid, onEvent });
+      if (!installed) {
+        updateStatus = m.download_starting();
+        await update.downloadAndInstall(onProgress);
+      }
       // relaunch to apply the update
       latestFlag = true;
       updateStatus = m.relaunch_to_update();
@@ -102,6 +118,7 @@
       updateStatus = m.update_failed();
     } finally {
       updateChecking = false;
+      await update.close();
       if (failedFlag) {
         setTimeout(() => {
           failedFlag = false;

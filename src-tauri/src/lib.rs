@@ -220,6 +220,7 @@ pub fn run() {
             execute_shell,
             execute_powershell,
             detect_natural_language,
+            try_install_delta,
             enter_text,
             send_key,
             send_cut_keys,

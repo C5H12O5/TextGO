@@ -1,6 +1,6 @@
 # Third-Party License Notices
 
-> This document was automatically generated on November 10, 2026 at 11:50 AM GMT+8
+> This document was automatically generated on November 19, 2026 at 03:48 PM GMT+8
 
 ## Frontend Dependencies
 
@@ -73,7 +73,7 @@
 
 ## Backend Dependencies
 
-> **30** packages included
+> **31** packages included
 
 | Package                                                                         | Version | License           | Description                                                                                                                                                                        |
 | ------------------------------------------------------------------------------- | ------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -104,6 +104,7 @@
 | [tauri-plugin-single-instance](https://github.com/tauri-apps/plugins-workspace) | 2.5.5   | Apache-2.0 OR MIT | Ensure a single instance of your tauri app is running.                                                                                                                             |
 | [tauri-plugin-store](https://github.com/tauri-apps/plugins-workspace)           | 2.5.0   | Apache-2.0 OR MIT | Simple, persistent key-value store.                                                                                                                                                |
 | [tauri-plugin-updater](https://github.com/tauri-apps/plugins-workspace)         | 2.14.1  | Apache-2.0 OR MIT | In-app updates for Tauri applications.                                                                                                                                             |
+| textgo-delta                                                                    | 0.1.0   | GPL-3.0-or-later  | Reconstruct TextGO updater artifacts from installed executables                                                                                                                    |
 | [tokio](https://github.com/tokio-rs/tokio)                                      | 1.54.1  | MIT               | An event-driven, non-blocking I/O platform for writing asynchronous I/O backed applications.                                                                                       |
 | [wildmatch](https://github.com/becheran/wildmatch)                              | 2.7.0   | MIT               | Simple string matching with single- and multi-character wildcard operator.                                                                                                         |
 | [windows](https://github.com/microsoft/windows-rs)                              | 0.62.2  | Apache-2.0 OR MIT | Rust for Windows                                                                                                                                                                   |

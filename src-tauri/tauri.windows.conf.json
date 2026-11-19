@@ -1,0 +1,7 @@
+{
+  "bundle": {
+    "resources": {
+      "delta/vendor/nsis/COPYING": "licenses/nsis.txt"
+    }
+  }
+}

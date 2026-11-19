@@ -6,6 +6,10 @@ authors = ["Xylitol <jam.xylitol@gmail.com>"]
 license = "GPL-3.0-or-later"
 edition = "2021"
 
+[workspace]
+members = ["delta"]
+resolver = "2"
+
 [profile.release]
 strip = "symbols"
 
@@ -20,6 +24,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.7.4", features = [] }
 
 [dependencies]
+textgo-delta = { path = "delta" }
 tauri = { version = "2.12.5", features = ["macos-private-api", "tray-icon"] }
 tauri-plugin-os = "2.4.0"
 tauri-plugin-fs = "2.7.1"
