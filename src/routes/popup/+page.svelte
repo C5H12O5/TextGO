@@ -770,7 +770,7 @@
     {:else if isStreaming && !message.content}
       <div class="loading loading-sm loading-dots opacity-70"></div>
     {:else if message.content}
-      <div class="group">
+      <div class="assistant-reply">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
@@ -790,9 +790,7 @@
 {/snippet}
 
 {#snippet responseActions(content: string, completedAt: number)}
-  <div
-    class="mt-1 -ml-1 flex h-6 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100"
-  >
+  <div class="response-actions mt-1 -ml-1 flex h-6 items-center gap-0.5 transition-opacity">
     <Button icon={CopyIcon} text={m.copy()} iconClass="opacity-60" onclick={() => copyResponse(content)} />
     <Button
       icon={ArrowLineDownLeftIcon}
@@ -1031,6 +1029,17 @@
 {/key}
 
 <style>
+  .assistant-reply:not(:hover) .response-actions:not(:has(:focus-visible)) {
+    time {
+      visibility: hidden;
+    }
+
+    @media (hover: hover) {
+      pointer-events: none;
+      opacity: 0;
+    }
+  }
+
   :global {
     html,
     body {
