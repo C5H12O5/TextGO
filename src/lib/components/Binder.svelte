@@ -73,6 +73,7 @@
   import ClockCounterClockwiseIcon from 'phosphor-svelte/lib/ClockCounterClockwiseIcon';
   import SlidersHorizontalIcon from 'phosphor-svelte/lib/SlidersHorizontalIcon';
   import SparkleIcon from 'phosphor-svelte/lib/SparkleIcon';
+  import TrashIcon from 'phosphor-svelte/lib/TrashIcon';
   import { untrack } from 'svelte';
 
   // loading status
@@ -557,6 +558,8 @@
         <button
           type="button"
           class="btn mr-auto btn-soft btn-error"
+          title={m.delete()}
+          aria-label={m.delete()}
           onclick={() => {
             // confirm delete operation
             confirm({
@@ -572,7 +575,8 @@
             });
           }}
         >
-          {m.delete()}
+          <TrashIcon class="hidden size-4.5 translate-y-[calc(1.125rem/32)] windows:block" />
+          <span class="windows:hidden">{m.delete()}</span>
         </button>
       {/if}
       <button type="button" class="btn" onclick={() => modal?.close()}>{m.cancel()}</button>

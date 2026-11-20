@@ -1,4 +1,7 @@
 @import 'tailwindcss';
+/* platform-specific styles, scoped by the `data-tauri-platform` attribute */
+@import './styles/macos.css';
+@import './styles/windows.css';
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui' {
   themes:
@@ -33,6 +36,10 @@
   --radius-box: 0.5rem;
   --depth: 0;
 }
+
+/* platform variants for markup-level tweaks, e.g. `macos:rounded-field windows:px-1` */
+@custom-variant macos (&:where([data-tauri-platform='macos'], [data-tauri-platform='macos'] *));
+@custom-variant windows (&:where([data-tauri-platform='windows'], [data-tauri-platform='windows'] *));
 
 /* global scrollbar style */
 * {
@@ -182,11 +189,6 @@
 
 @utility rounded-container {
   @apply rounded-box border border-border bg-base-100 p-4 shadow-xs;
-}
-
-/* platform-specific: remove rounded corners on Windows */
-html[data-tauri-platform='windows'] .rounded-container {
-  @apply rounded-none;
 }
 
 /* remove number input spinners */

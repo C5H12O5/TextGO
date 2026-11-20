@@ -85,7 +85,7 @@
 
 <button
   type="button"
-  class="btn relative truncate rounded-sm opacity-80 {subtleClass} {squareClass} {borderClass} {shadowClass} {_class}"
+  class="btn relative truncate rounded-field opacity-80 {subtleClass} {squareClass} {borderClass} {shadowClass} {_class}"
   style:width={square ? preset.size : ''}
   style:height={preset.size}
   style:min-height={preset.size}

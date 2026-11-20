@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { resolve } from '$app/paths';
-  import { page } from '$app/state';
+  import { navigating, page } from '$app/state';
   import { alert } from '$lib/components/Alert.svelte';
   import Button from '$lib/components/Button.svelte';
   import { confirm } from '$lib/components/Confirm.svelte';
@@ -31,12 +31,83 @@
   import ScrollIcon from 'phosphor-svelte/lib/ScrollIcon';
   import SphereIcon from 'phosphor-svelte/lib/SphereIcon';
   import UploadIcon from 'phosphor-svelte/lib/UploadIcon';
-  import type { Component, Snippet } from 'svelte';
+  import { onMount, untrack, type Component, type Snippet } from 'svelte';
 
   let { children }: { children: Snippet } = $props();
 
   // sidebar width
   const SIDEBAR_WIDTH = '13rem';
+
+  // active settings path, updated immediately when switching between settings pages
+  const activePath = $derived.by(() => {
+    const targetPath = navigating.to?.url ? deLocalizeHref(navigating.to.url.pathname) : null;
+    if (targetPath?.startsWith('/settings/')) {
+      return targetPath;
+    }
+    return deLocalizeHref(page.url.pathname);
+  });
+
+  // sliding selection indicator for sidebar menu
+  let menuList: HTMLUListElement | undefined = $state();
+  let indicator = $state({ top: 0, left: 0, width: 0, height: 0, visible: false, ready: false });
+  let rafId: number | undefined;
+
+  function cancelIndicatorRaf() {
+    if (rafId !== undefined) {
+      cancelAnimationFrame(rafId);
+      rafId = undefined;
+    }
+  }
+
+  function updateIndicator() {
+    if (!menuList) {
+      return;
+    }
+    const activeItem = menuList.querySelector<HTMLElement>('a[data-active]');
+    if (!activeItem) {
+      cancelIndicatorRaf();
+      indicator.visible = false;
+      indicator.ready = false;
+      return;
+    }
+    const listRect = menuList.getBoundingClientRect();
+    const itemRect = activeItem.getBoundingClientRect();
+    indicator.top = itemRect.top - listRect.top;
+    indicator.left = itemRect.left - listRect.left;
+    indicator.width = itemRect.width;
+    indicator.height = itemRect.height;
+    if (!untrack(() => indicator.visible)) {
+      indicator.visible = true;
+      cancelIndicatorRaf();
+      rafId = requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
+          rafId = undefined;
+          if (indicator.visible) {
+            indicator.ready = true;
+          }
+        });
+      });
+    }
+  }
+
+  $effect(() => {
+    void activePath;
+    updateIndicator();
+  });
+
+  onMount(() => {
+    if (!menuList) {
+      return;
+    }
+    const observer = new ResizeObserver(() => {
+      updateIndicator();
+    });
+    observer.observe(menuList);
+    return () => {
+      observer.disconnect();
+      cancelIndicatorRaf();
+    };
+  });
 
   // configuration transfer
   const JSON_FILTER = [{ name: 'JSON', extensions: ['json'] }];
@@ -366,19 +437,37 @@
 
 {#snippet menu(icon: Component<IconComponentProps>, text: string, href: string)}
   {@const Icon = icon}
-  {@const active = deLocalizeHref(page.url.pathname) === href}
+  {@const active = activePath === href}
   <li>
-    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-    <a {href} class="gap-2 rounded-field transition-colors active:bg-emphasis {active ? 'menu-emphasis' : ''}">
+    <!-- eslint-disable svelte/no-navigation-without-resolve -->
+    <a
+      {href}
+      data-active={active ? '' : undefined}
+      class="relative z-1 gap-2 rounded-field transition-colors duration-200 active:bg-none {active
+        ? 'text-neutral-content hover:bg-transparent hover:shadow-none active:bg-transparent active:text-neutral-content windows:text-base-content windows:active:text-base-content'
+        : 'active:bg-base-content/5 active:text-inherit'}"
+    >
       <Icon class="size-5 opacity-80" />
       <span class="truncate">{text}</span>
     </a>
+    <!-- eslint-enable svelte/no-navigation-without-resolve -->
   </li>
 {/snippet}
 
 <div class="h-(--app-h)">
   <div class="fixed top-10.5 bottom-2 flex flex-col overflow-y-auto rounded-container p-0" style:width={SIDEBAR_WIDTH}>
-    <ul class="menu w-full gap-1">
+    <ul class="menu relative w-full gap-1" bind:this={menuList}>
+      {#if indicator.visible}
+        <div
+          aria-hidden="true"
+          class="pointer-events-none absolute! top-0 left-0 z-0 rounded-field menu-emphasis {indicator.ready
+            ? 'motion-safe:transition-[transform,height] motion-safe:duration-200 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]'
+            : ''}"
+          style:width="{indicator.width}px"
+          style:height="{indicator.height}px"
+          style:transform="translate3d({indicator.left}px, {indicator.top}px, 0)"
+        ></div>
+      {/if}
       <li class="menu-title pl-1 text-xs">{m.custom_recognitions()}</li>
       {@render menu(SphereIcon, m.model(), resolve('/(main)/settings/model'))}
       {@render menu(ScrollIcon, m.regexp(), resolve('/(main)/settings/regexp'))}

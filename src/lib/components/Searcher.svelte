@@ -196,7 +196,9 @@
           />
         </label>
         {#if showBrowsers && filteredBrowsers.length > 0}
-          <ul class="menu absolute z-1 mt-1 max-h-64 w-full overflow-auto rounded-box border bg-base-100 p-2 shadow-lg">
+          <ul
+            class="overlay-surface menu absolute z-1 mt-1 max-h-64 w-full overflow-auto rounded-box border bg-base-100 p-2 shadow-lg"
+          >
             {#each filteredBrowsers as option (option.value)}
               <li>
                 <button

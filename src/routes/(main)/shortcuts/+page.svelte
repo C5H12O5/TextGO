@@ -183,7 +183,9 @@
 />
 
 {#snippet shortcutMenu(source = '')}
-  <ul class="menu dropdown-content z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg">
+  <ul
+    class="overlay-surface menu dropdown-content z-1 mt-1 min-w-42 gap-1 rounded-box border bg-base-100 p-1 shadow-lg"
+  >
     <!-- mouse drag-select option -->
     <li class={shortcuts.current[DRAG_SHORTCUT] ? 'hidden' : ''}>
       <button class="btn px-1 btn-sm" onclick={() => register(DRAG_SHORTCUT, source)}>

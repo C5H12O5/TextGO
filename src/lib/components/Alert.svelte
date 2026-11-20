@@ -95,7 +95,7 @@
       {@const { icon: Icon, color } = mappings[alert.level ?? 'success']}
       <div
         role="alert"
-        class="alert animate-none gap-2 border bg-base-150/95 px-3 py-2 shadow-lg"
+        class="overlay-surface alert animate-none gap-2 border bg-base-150/95 px-3 py-2 shadow-lg"
         in:slide={{ duration: 100 }}
         out:fade
       >

@@ -1,0 +1,376 @@
+/*
+ * Windows platform styles, scoped by the `data-tauri-platform` attribute set in the root layout.
+ *
+ * Follows Windows 11 Fluent controls: Segoe UI Variable, 4px control and 8px overlay corners,
+ * elevation borders with a stronger bottom edge, accent underlines on focused text fields, compact
+ * switches, navigation selection pills and dialogs with a footer band. Colors always come from the
+ * active daisyUI theme; radius variables are only platform defaults, so custom themes (injected
+ * unlayered at runtime) still override them.
+ */
+
+/* platform defaults for theme variables: above the built-in themes in `base`, below custom themes */
+@layer components {
+  :root[data-tauri-platform='windows'] {
+    --font-sans:
+      'Segoe UI Variable Text', 'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei UI', 'Microsoft YaHei', var(--sans);
+    --font-mono: 'Cascadia Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+    --radius-selector: 0.25rem;
+    --radius-field: 0.25rem;
+    --radius-box: 0.25rem;
+
+    --win-control-fill: color-mix(in oklab, var(--color-base-100), #fff 7%);
+    --win-control-fill-hover: color-mix(in oklab, var(--win-control-fill), var(--color-base-content) 4%);
+    --win-control-stroke: color-mix(in oklab, var(--color-base-content) 10%, transparent);
+    --win-control-stroke-bottom: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+    --win-strong-stroke: color-mix(in oklab, var(--color-base-content) 55%, transparent);
+    --win-subtle-fill: color-mix(in oklab, var(--color-base-content) 5%, transparent);
+    --win-subtle-fill-hover: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+    --win-card-stroke: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+    --win-focus-stroke: var(--color-base-content);
+    --win-flyout-shadow: 0 8px 16px rgb(0 0 0 / 0.14);
+
+    scrollbar-color: color-mix(in oklab, var(--color-base-content) 35%, transparent) transparent;
+  }
+
+  /* text fields keep neutral edges and show an accent underline (overrides the shared focus border) */
+  :root[data-tauri-platform='windows'] :is(.input, .select, .textarea, .file-input):is(:focus, :focus-within) {
+    border-color: var(--win-control-stroke) !important;
+  }
+}
+
+/* daisyUI component overrides: a sublayer above daisyUI, below Tailwind utilities used in markup */
+@layer utilities {
+  @layer platform {
+    :root[data-tauri-platform='windows'] {
+      /* standard and accent buttons: elevation border with a stronger bottom edge */
+      .btn {
+        font-weight: 400;
+        translate: none;
+        &:focus-visible {
+          outline: 2px solid var(--win-focus-stroke);
+          outline-offset: 1px;
+        }
+      }
+      .btn:not(.btn-ghost, .btn-link, .btn-soft, .btn-outline, .btn-dash, .btn-subtle, .menu *):not(
+          :disabled,
+          [disabled],
+          .btn-disabled,
+          [aria-disabled='true']
+        ) {
+        --win-btn-fill: var(--btn-color, var(--win-control-fill));
+        --btn-bg: var(--win-btn-fill);
+        --btn-inset: 0 0 #0000;
+        --btn-shadow: 0 0 #0000;
+        border-color: var(--win-control-stroke);
+        border-bottom-color: var(--win-control-stroke-bottom);
+        &:hover {
+          --btn-bg: color-mix(in oklab, var(--win-btn-fill), var(--color-base-content) 5%);
+        }
+        &:active {
+          --btn-bg: color-mix(in oklab, var(--win-btn-fill), var(--color-base-content) 3%);
+          color: color-mix(in oklab, var(--btn-fg) 75%, transparent);
+          border-bottom-color: var(--win-control-stroke);
+        }
+      }
+      .btn:not(.btn-xs, .btn-sm, .btn-lg, .btn-xl) {
+        --size: calc(var(--size-field, 0.25rem) * 8);
+      }
+
+      /* text boxes: subtle fill, clipped bottom accent bar, solid fill while focused */
+      .input,
+      .textarea {
+        border-color: var(--win-control-stroke);
+        background-color: var(--win-control-fill);
+        background-image: linear-gradient(var(--win-control-stroke-bottom), var(--win-control-stroke-bottom));
+        background-position: 0 100%;
+        background-size: 100% 1px;
+        background-origin: border-box;
+        background-repeat: no-repeat;
+        box-shadow: none;
+        &:hover {
+          background-color: var(--win-control-fill-hover);
+        }
+        &:focus,
+        &:focus-within {
+          background-color: var(--color-base-100);
+          background-image: linear-gradient(var(--color-primary), var(--color-primary));
+          background-size: 100% 2px;
+        }
+      }
+      .input:not(.input-xs, .input-sm, .input-lg, .input-xl) {
+        --in-size-mul: 8;
+      }
+
+      /* combo boxes: button-like surface with a chevron-down glyph */
+      .select {
+        --win-select-bar: linear-gradient(var(--win-control-stroke-bottom), var(--win-control-stroke-bottom));
+        --win-select-bar-size: 100% 1px;
+        cursor: pointer;
+        border-color: var(--win-control-stroke);
+        background-color: var(--win-control-fill);
+        background-image:
+          linear-gradient(
+            45deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          ),
+          linear-gradient(
+            135deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          ),
+          var(--win-select-bar);
+        background-position:
+          calc(100% - 17px) 50%,
+          calc(100% - 12px) 50%,
+          0 100%;
+        background-size:
+          5px 5px,
+          5px 5px,
+          var(--win-select-bar-size);
+        background-origin: padding-box, padding-box, border-box;
+        background-repeat: no-repeat;
+        box-shadow: none;
+        &:hover {
+          background-color: var(--win-control-fill-hover);
+        }
+        &:focus,
+        &:focus-within {
+          --win-select-bar: linear-gradient(var(--color-primary), var(--color-primary));
+          --win-select-bar-size: 100% 2px;
+        }
+      }
+      :is(.input, .textarea, .select):is(:disabled, [disabled], :has(> input[disabled])),
+      fieldset:disabled :is(.input, .textarea, .select) {
+        cursor: not-allowed;
+        background-color: var(--win-subtle-fill);
+      }
+      :is(.input, .textarea):is(:disabled, [disabled], :has(> input[disabled])),
+      fieldset:disabled :is(.input, .textarea) {
+        background-image: none;
+      }
+      .select:is(:disabled, [disabled]),
+      fieldset:disabled .select {
+        --win-select-bar: linear-gradient(transparent, transparent);
+      }
+
+      /* toggle switches: outlined off state, small knob that grows on hover */
+      .toggle {
+        --toggle-p: calc(var(--size) * 0.2 - 1px);
+        border-radius: calc(var(--radius-selector) * 100);
+        &::before {
+          border-radius: calc(var(--radius-selector) * 100);
+          box-shadow: none;
+          transition:
+            background-color 0.1s,
+            translate 0.2s,
+            inset-inline-start 0.2s,
+            scale 0.1s;
+        }
+        &:not(:checked) {
+          --input-color: color-mix(in oklab, var(--color-base-content) 62%, transparent);
+          background-color: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+        }
+        &:not(:checked):hover {
+          background-color: var(--win-subtle-fill-hover);
+        }
+        &:hover:not(:disabled)::before {
+          scale: 1.15;
+        }
+        &:focus-visible {
+          outline: 2px solid var(--win-focus-stroke);
+          outline-offset: 1px;
+        }
+      }
+
+      /* check boxes and radio buttons: strong outline when off, accent fill when on */
+      .checkbox,
+      .radio {
+        border-color: var(--win-strong-stroke);
+        background-color: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+        box-shadow: none;
+        &:hover {
+          background-color: var(--win-subtle-fill-hover);
+        }
+        &:focus-visible {
+          outline: 2px solid var(--win-focus-stroke);
+          outline-offset: 1px;
+        }
+      }
+      .checkbox:checked {
+        border-color: var(--color-emphasis);
+        background-color: var(--color-emphasis);
+        color: var(--color-neutral-content);
+        box-shadow: none;
+      }
+      .radio:checked {
+        border-color: currentColor;
+        background-color: currentColor;
+        padding: calc(var(--size) * 0.25);
+        &::before {
+          background-color: var(--color-neutral-content);
+          box-shadow: none;
+        }
+        &:hover {
+          padding: calc(var(--size) * 0.22);
+        }
+      }
+
+      /* sliders: native slider tinted with the theme color */
+      .range {
+        all: revert;
+        margin: 0;
+        cursor: pointer;
+        accent-color: currentColor;
+        &::-webkit-slider-runnable-track,
+        &::-webkit-slider-thumb {
+          all: revert;
+        }
+        &:disabled {
+          cursor: not-allowed;
+        }
+      }
+
+      /* navigation and menu items: subtle fills instead of strong highlights */
+      .menu li > :not(ul, menu, details, .menu-title, .btn, .menu-emphasis):hover {
+        background-color: var(--win-subtle-fill);
+        box-shadow: none;
+      }
+      .menu .btn:not(:disabled, .btn-disabled) {
+        --btn-bg: transparent;
+        --btn-border: transparent;
+        --btn-inset: 0 0 #0000;
+        --btn-shadow: 0 0 #0000;
+        &:hover,
+        &:focus-visible {
+          --btn-bg: var(--win-subtle-fill);
+        }
+        &:active {
+          --btn-bg: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+          color: color-mix(in oklab, var(--color-base-content) 75%, transparent);
+        }
+      }
+
+      /* content dialogs: 8px corners, smoke layer, larger title and a footer band for the actions */
+      .modal[open] {
+        background-color: rgb(0 0 0 / 0.3);
+      }
+      .modal-box {
+        --modal-tl: calc(var(--radius-box) * 2);
+        --modal-tr: calc(var(--radius-box) * 2);
+        --modal-bl: calc(var(--radius-box) * 2);
+        --modal-br: calc(var(--radius-box) * 2);
+        border: 1px solid var(--win-control-stroke);
+        box-shadow:
+          0 32px 64px rgb(0 0 0 / 0.19),
+          0 2px 21px rgb(0 0 0 / 0.15);
+        .modal-title {
+          font-size: 1.25rem;
+          line-height: 1.75rem;
+        }
+        .modal-corner > button {
+          border-radius: var(--radius-field);
+        }
+        .modal-action {
+          margin-inline: -1rem;
+          margin-bottom: -1rem;
+          padding: 1rem;
+          border-top: 1px solid var(--win-card-stroke);
+          background-color: var(--color-base-200);
+          /* buttons share the width; the primary action comes first and a destructive one stays apart */
+          > .btn {
+            flex: 1 1 0;
+          }
+          > .btn-submit {
+            order: -1;
+          }
+          > .btn-soft {
+            flex: none;
+            order: -2;
+            width: var(--size);
+            min-width: 0;
+            padding-inline: 0;
+            margin-inline-end: auto;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* project utilities: same layer as Tailwind utilities, so the platform selector raises specificity */
+@layer utilities {
+  :root[data-tauri-platform='windows'] {
+    /* settings cards: flat surface with a hairline stroke */
+    .rounded-container {
+      border-color: var(--win-card-stroke);
+      box-shadow: none;
+    }
+
+    /* Fluent surfaces are flat */
+    .gradient {
+      background-image: none;
+      text-shadow: none;
+    }
+
+    .btn-subtle:not(:disabled, [disabled], .btn-disabled) {
+      &:hover {
+        background-color: var(--win-subtle-fill);
+      }
+      &:active {
+        background-color: color-mix(in oklab, var(--color-base-content) 3%, transparent);
+      }
+    }
+
+    /* selected navigation item: subtle fill with an accent pill on the leading edge */
+    .menu-emphasis {
+      position: relative;
+      border-color: transparent;
+      background-color: var(--win-subtle-fill-hover);
+      background-image: none;
+      color: var(--color-base-content);
+      box-shadow: none;
+      text-shadow: none;
+      backdrop-filter: none;
+      &::before {
+        position: absolute;
+        top: 50%;
+        inset-inline-start: 0;
+        width: 3px;
+        height: 1rem;
+        translate: 0 -50%;
+        border-radius: 9999px;
+        background-color: var(--color-emphasis);
+        content: '';
+      }
+    }
+
+    /* flyouts, popovers and toasts use an acrylic-like surface with 8px corners */
+    .overlay-surface {
+      border-radius: calc(var(--radius-box) * 2);
+      background-color: color-mix(in oklab, var(--color-base-100) 90%, transparent);
+      -webkit-backdrop-filter: blur(30px) saturate(1.25);
+      backdrop-filter: blur(30px) saturate(1.25);
+      box-shadow: var(--win-flyout-shadow);
+    }
+
+    /* keep the system font's own tracking */
+    .tracking-wide,
+    .tracking-wider {
+      letter-spacing: normal;
+    }
+  }
+}
+
+/* tooltips: Fluent tooltip surface (Tippy.js styles are unlayered) */
+:root[data-tauri-platform='windows'] .tippy-box:is([data-theme~='default'], [data-theme~='follow-cursor']) {
+  border: 1px solid var(--win-card-stroke);
+  border-radius: var(--radius-box);
+  background-color: var(--color-base-100);
+  background-image: none;
+  color: var(--color-base-content);
+  text-shadow: none;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 0.14);
+}

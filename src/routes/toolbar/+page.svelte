@@ -752,12 +752,15 @@
 >
   {#if initialized && menuMode && actions.length > 0}
     <div class="w-fit overflow-hidden border shadow-sm" style:border-radius={cornerRadiusStyle} in:appear={{ y: -6 }}>
-      <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm" bind:this={container}>
+      <div class="w-52 bg-base-200/95 py-1 backdrop-blur-sm macos:px-1 windows:px-1" bind:this={container}>
         {#each actions as action (action.id)}
           <button
-            class="flex h-8 w-full cursor-pointer items-center gap-2 px-2 text-left transition-colors"
+            class="flex h-8 w-full cursor-pointer items-center gap-2 px-2 text-left transition-colors macos:rounded-field windows:rounded-field"
             class:hover:bg-btn-hover={hoverEnabled}
             class:hover:text-primary={hoverEnabled}
+            class:macos:hover:bg-emphasis={hoverEnabled}
+            class:macos:hover:text-neutral-content={hoverEnabled}
+            class:windows:hover:text-inherit={hoverEnabled}
             onclick={() => executeAction(action)}
             title={action.label}
           >

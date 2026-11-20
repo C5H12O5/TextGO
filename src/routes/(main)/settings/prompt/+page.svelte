@@ -34,6 +34,7 @@
   import { readTextFile } from '@tauri-apps/plugin-fs';
   import type { IconComponentProps } from 'phosphor-svelte';
   import CubeIcon from 'phosphor-svelte/lib/CubeIcon';
+  import HeadCircuitIcon from 'phosphor-svelte/lib/HeadCircuitIcon';
   import PencilSimpleLineIcon from 'phosphor-svelte/lib/PencilSimpleLineIcon';
   import PlusIcon from 'phosphor-svelte/lib/PlusIcon';
   import RobotIcon from 'phosphor-svelte/lib/RobotIcon';
@@ -320,7 +321,7 @@
 
 <Modal
   maxWidth="28rem"
-  icon={PlusIcon}
+  icon={HeadCircuitIcon}
   title="{editingProvider ? m.update() : m.add()}{m.custom_provider()}"
   bind:this={providerModal}
 >

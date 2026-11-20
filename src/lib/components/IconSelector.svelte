@@ -159,7 +159,9 @@
           bind:value={searchInput}
         />
         {#if filteredIcons.length > 0}
-          <div class="absolute z-1 mt-1 max-h-64 w-full overflow-auto rounded-box border bg-base-100 p-2 shadow-lg">
+          <div
+            class="overlay-surface absolute z-1 mt-1 max-h-64 w-full overflow-auto rounded-box border bg-base-100 p-2 shadow-lg"
+          >
             <div class="grid grid-cols-3 gap-3">
               {#each filteredIcons as iconName (iconName)}
                 <button

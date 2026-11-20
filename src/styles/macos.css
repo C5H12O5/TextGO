@@ -1,0 +1,257 @@
+/*
+ * macOS platform styles, scoped by the `data-tauri-platform` attribute set in the root layout.
+ *
+ * Follows the latest macOS look: system font, concentric rounded corners, raised push and pop-up
+ * buttons, capsule switches, accent focus rings and translucent menus. Colors always come from the
+ * active daisyUI theme; radius variables are only platform defaults, so custom themes (injected
+ * unlayered at runtime) still override them. Edges use whole pixels so they stay crisp on 1x displays.
+ */
+
+/* platform defaults for theme variables: above the built-in themes in `base`, below custom themes */
+@layer components {
+  :root[data-tauri-platform='macos'] {
+    --font-sans:
+      -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'PingFang SC', 'Hiragino Sans GB', var(--sans);
+    --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+    --radius-selector: 0.3125rem;
+    --radius-field: 0.5rem;
+    --radius-box: 0.75rem;
+
+    --mac-control-fill: color-mix(in oklab, var(--color-base-100), #fff 16%);
+    --mac-control-edge: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+    --mac-control-shadow: 0 1px 1px rgb(0 0 0 / 0.06);
+    --mac-focus-ring: color-mix(in oklab, var(--color-primary) 30%, transparent);
+    --mac-menu-shadow: 0 12px 32px -6px rgb(0 0 0 / 0.3);
+    --mac-separator: color-mix(in oklab, var(--color-base-content) 8%, transparent);
+
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* daisyUI component overrides: a sublayer above daisyUI, below Tailwind utilities used in markup */
+@layer utilities {
+  @layer platform {
+    :root[data-tauri-platform='macos'] {
+      /* push buttons: raised fill with a 1px edge, no hover state, darken while pressed */
+      .btn {
+        font-weight: 400;
+        translate: none;
+        &:focus-visible {
+          outline: 2px solid var(--mac-focus-ring);
+          outline-offset: 1px;
+        }
+      }
+      .btn:not(.btn-ghost, .btn-link, .btn-soft, .btn-outline, .btn-dash, .btn-subtle, .menu *):not(
+          :disabled,
+          [disabled],
+          .btn-disabled,
+          [aria-disabled='true']
+        ) {
+        --mac-btn-fill: var(--btn-color, var(--mac-control-fill));
+        --btn-bg: var(--mac-btn-fill);
+        --btn-border: var(--mac-control-edge);
+        --btn-inset: 0 0 #0000;
+        --btn-shadow: var(--mac-control-shadow);
+        &:active {
+          --btn-bg: color-mix(in oklab, var(--mac-btn-fill), var(--color-base-content) 12%);
+        }
+      }
+      .btn:not(.btn-xs, .btn-sm, .btn-lg, .btn-xl) {
+        --size: calc(var(--size-field, 0.25rem) * 8);
+      }
+
+      /* text fields: 1px edge with the shared focus border */
+      .input,
+      .textarea {
+        border-color: var(--mac-control-edge);
+        box-shadow: none;
+      }
+      .input:not(.input-xs, .input-sm, .input-lg, .input-xl) {
+        --in-size-mul: 8;
+      }
+
+      /* pop-up buttons: raised like push buttons with stacked up/down chevrons */
+      .select {
+        cursor: pointer;
+        border-color: var(--mac-control-edge);
+        background-color: var(--mac-control-fill);
+        background-image:
+          linear-gradient(
+            135deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          ),
+          linear-gradient(
+            45deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          ),
+          linear-gradient(
+            45deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          ),
+          linear-gradient(
+            135deg,
+            #0000 calc(50% - 0.9px),
+            currentColor calc(50% - 0.5px) calc(50% + 0.5px),
+            #0000 calc(50% + 0.9px)
+          );
+        background-position:
+          calc(100% - 14px) calc(50% - 3px),
+          calc(100% - 10px) calc(50% - 3px),
+          calc(100% - 14px) calc(50% + 3px),
+          calc(100% - 10px) calc(50% + 3px);
+        background-size: 4px 4px;
+        background-repeat: no-repeat;
+        box-shadow: var(--mac-control-shadow);
+      }
+      .select:is(:disabled, [disabled]),
+      fieldset:disabled .select {
+        cursor: not-allowed;
+        background-color: color-mix(in oklab, var(--color-base-content) 5%, transparent);
+        box-shadow: none;
+      }
+
+      /* switches: capsule track, full-height white knob */
+      .toggle {
+        --toggle-p: 1px;
+        border-radius: calc(var(--radius-selector) * 100);
+        box-shadow: none;
+        transition:
+          color 0.3s,
+          grid-template-columns 0.2s,
+          background-color 0.2s,
+          border-color 0.2s;
+        &::before {
+          border-radius: calc(var(--radius-selector) * 100);
+          background-color: #fff;
+          box-shadow:
+            0 1px 2px rgb(0 0 0 / 0.25),
+            0 0 0 1px rgb(0 0 0 / 0.04);
+        }
+        &:not(:checked) {
+          border-color: transparent;
+          background-color: color-mix(in oklab, var(--color-base-content) 14%, transparent);
+        }
+        &:focus-visible {
+          outline: 2px solid var(--mac-focus-ring);
+          outline-offset: 1px;
+        }
+      }
+
+      /* check boxes: raised when off, accent fill with a light check mark when on */
+      .checkbox {
+        border-color: color-mix(in oklab, var(--color-base-content) 22%, transparent);
+        background-color: var(--mac-control-fill);
+        box-shadow: var(--mac-control-shadow);
+        &:checked {
+          border-color: var(--color-emphasis);
+          background-color: var(--color-emphasis);
+          color: var(--color-neutral-content);
+        }
+        &:focus-visible {
+          outline: 2px solid var(--mac-focus-ring);
+          outline-offset: 1px;
+        }
+      }
+
+      /* sliders: native slider tinted with the theme color and a clearer thumb edge */
+      .range {
+        all: revert;
+        margin: 0;
+        cursor: pointer;
+        accent-color: currentColor;
+        &::-webkit-slider-runnable-track {
+          all: revert;
+        }
+        &::-webkit-slider-thumb {
+          all: revert;
+          filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.28)) drop-shadow(0 0 0.5px rgb(0 0 0 / 0.28));
+        }
+        &:disabled {
+          cursor: not-allowed;
+        }
+      }
+
+      /* sidebar lists highlight only the selection; menus highlight the hovered item in accent */
+      .menu:not(.overlay-surface) li > :not(ul, menu, details, .menu-title, .btn, .menu-emphasis):hover {
+        background-color: transparent;
+        box-shadow: none;
+      }
+      .menu.overlay-surface li > :not(ul, menu, details, .menu-title, .btn):hover {
+        background-color: var(--color-emphasis);
+        color: var(--color-neutral-content);
+      }
+      .menu .btn:not(:disabled, .btn-disabled) {
+        --btn-bg: transparent;
+        --btn-border: transparent;
+        --btn-inset: 0 0 #0000;
+        --btn-shadow: 0 0 #0000;
+        &:hover,
+        &:focus-visible {
+          --btn-bg: var(--color-emphasis);
+          color: var(--color-neutral-content);
+        }
+        &:active {
+          --btn-bg: color-mix(in oklab, var(--color-emphasis), #000 10%);
+        }
+      }
+
+      /* sheets: larger concentric corners, soft window shadow and a light dimming layer */
+      .modal[open] {
+        background-color: rgb(0 0 0 / 0.2);
+      }
+      .modal-box {
+        --modal-tl: calc(var(--radius-box) * 1.5);
+        --modal-tr: calc(var(--radius-box) * 1.5);
+        --modal-bl: calc(var(--radius-box) * 1.5);
+        --modal-br: calc(var(--radius-box) * 1.5);
+        box-shadow:
+          0 0 0 1px rgb(0 0 0 / 0.08),
+          0 24px 64px -12px rgb(0 0 0 / 0.4);
+      }
+    }
+  }
+}
+
+/* project utilities: same layer as Tailwind utilities, so the platform selector raises specificity */
+@layer utilities {
+  :root[data-tauri-platform='macos'] {
+    .rounded-container {
+      border-color: var(--mac-separator);
+      box-shadow: none;
+    }
+
+    /* floating menus, popovers and toasts use a translucent menu material */
+    .overlay-surface {
+      border-radius: var(--radius-box);
+      background-color: color-mix(in oklab, var(--color-base-100) 86%, transparent);
+      -webkit-backdrop-filter: blur(24px) saturate(1.8);
+      backdrop-filter: blur(24px) saturate(1.8);
+      box-shadow: var(--mac-menu-shadow);
+    }
+
+    /* keep the system font's own tracking */
+    .tracking-wide,
+    .tracking-wider {
+      letter-spacing: normal;
+    }
+  }
+}
+
+/* tooltips: help tags on the window material (Tippy.js styles are unlayered) */
+:root[data-tauri-platform='macos'] .tippy-box:is([data-theme~='default'], [data-theme~='follow-cursor']) {
+  border: 1px solid color-mix(in oklab, var(--color-base-content) 12%, transparent);
+  border-radius: calc(var(--radius-box) * 0.5);
+  background-color: color-mix(in oklab, var(--color-base-100) 92%, transparent);
+  background-image: none;
+  color: var(--color-base-content);
+  text-shadow: none;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  backdrop-filter: blur(20px) saturate(1.8);
+}
