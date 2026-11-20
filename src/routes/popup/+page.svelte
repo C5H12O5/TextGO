@@ -219,12 +219,14 @@
 </script>
 
 <script lang="ts">
+  import { alert } from '$lib/components/Alert.svelte';
   import Button from '$lib/components/Button.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import Select from '$lib/components/Select.svelte';
   import { renderTranslationPrompt } from '$lib/executor';
   import { NATURAL_CASES } from '$lib/matcher';
   import { m } from '$lib/paraglide/messages';
+  import { createSpeechController } from '$lib/speech';
   import {
     popupCornerRadius,
     popupFontSize,
@@ -249,6 +251,8 @@
   import ChatTeardropDotsIcon from 'phosphor-svelte/lib/ChatTeardropDotsIcon';
   import CopyIcon from 'phosphor-svelte/lib/CopyIcon';
   import PushPinIcon from 'phosphor-svelte/lib/PushPinIcon';
+  import SpeakerHighIcon from 'phosphor-svelte/lib/SpeakerHighIcon';
+  import SpeakerSlashIcon from 'phosphor-svelte/lib/SpeakerSlashIcon';
   import StopCircleIcon from 'phosphor-svelte/lib/StopCircleIcon';
   import TextIndentIcon from 'phosphor-svelte/lib/TextIndentIcon';
   import XIcon from 'phosphor-svelte/lib/XIcon';
@@ -258,6 +262,7 @@
   // current window
   const currentWindow = getCurrentWindow();
   const autoScrollController = createAutoScrollController(requestAnimationFrame, cancelAnimationFrame);
+  const speechController = createSpeechController();
   let canPersistWindowSize = false;
 
   // popup corner radius style
@@ -314,8 +319,9 @@
   let llmClient: LLMClient | null = $state(null);
   let chatRequestId = 0;
 
-  // streaming status
+  // streaming and speech status
   let streaming: boolean = $state(false);
+  let speaking: boolean = $state(false);
 
   // auto scroll control
   let scrollElement: HTMLElement | null = $state(null);
@@ -327,6 +333,7 @@
   let canRegenerate = $derived(!!latestAssistant || chatMessages.at(-1)?.role === 'user');
 
   // translation mode state
+  let translationMode = $derived(!!entry?.translation && !conversationMode);
   let translationText = $state('');
   let sourceLanguage = $state('');
   let targetLanguage = $state('');
@@ -392,6 +399,7 @@
     }
 
     const selection = translationText;
+    stopSpeech();
     if (!translationText.trim()) {
       entry.selection = selection;
       renderedTranslation = translationKey;
@@ -457,6 +465,7 @@
     if (streaming || !entry?.model || !entry?.provider || (entry.translation && !entry.selection.trim())) {
       return;
     }
+    stopSpeech();
 
     const userMessage = message ?? entry.result;
     if (regenerate && conversationMode) {
@@ -619,6 +628,39 @@
   }
 
   /**
+   * Stop any active speech playback.
+   */
+  function stopSpeech() {
+    speechController.stop();
+    speaking = false;
+  }
+
+  /**
+   * Toggle reading the translated text aloud in the selected target language.
+   *
+   * @param text - raw Markdown response content
+   */
+  async function toggleSpeak(text: string) {
+    if (speaking) {
+      stopSpeech();
+      return;
+    }
+    speaking = true;
+    const started = await speechController.speak(text, targetLanguage, {
+      onEnd: () => {
+        speaking = false;
+      },
+      onError: () => {
+        speaking = false;
+        alert({ level: 'warning', message: m.speech_unavailable() });
+      }
+    });
+    if (!started) {
+      speaking = false;
+    }
+  }
+
+  /**
    * Copy an AI response to the system clipboard.
    *
    * @param text - raw Markdown response content
@@ -638,6 +680,7 @@
    * @param text - replacement text
    */
   async function replaceSelection(text: string = result) {
+    stopSpeech();
     try {
       await currentWindow.hide();
       await invoke<void>('focus_popup_source');
@@ -701,7 +744,19 @@
   });
 
   onMount(() => {
+    let mounted = true;
+    let unlistenFocus: (() => void) | undefined;
+    let hideCheckTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const clearHideCheck = () => {
+      if (hideCheckTimer !== undefined) {
+        clearTimeout(hideCheckTimer);
+        hideCheckTimer = undefined;
+      }
+    };
+
     const setup = (data: Entry | null) => {
+      stopSpeech();
       abort();
       entry = data;
       result = data?.result ?? '';
@@ -714,7 +769,49 @@
       sourceLanguage = '';
       targetLanguage = data?.translation?.targetLanguage ?? '';
       renderedTranslation = data?.translation ? JSON.stringify([translationText, sourceLanguage, targetLanguage]) : '';
+      if (data?.translation) {
+        speechController.warmUp();
+      }
     };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopSpeech();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Native focus loss can hide an unpinned popup without emitting hide-popup.
+    void currentWindow
+      .onFocusChanged(({ payload: focused }) => {
+        clearHideCheck();
+        if (focused || !speaking) {
+          return;
+        }
+        hideCheckTimer = setTimeout(() => {
+          hideCheckTimer = undefined;
+          void currentWindow
+            .isVisible()
+            .then((visible) => {
+              if (!visible) {
+                stopSpeech();
+              }
+            })
+            .catch(() => {
+              stopSpeech();
+            });
+        }, 200);
+      })
+      .then((unlisten) => {
+        if (!mounted) {
+          unlisten();
+          return;
+        }
+        unlistenFocus = unlisten;
+      })
+      .catch((error) => {
+        console.error(`Failed to listen for popup focus changes: ${error}`);
+      });
 
     // listen to window show/hide events
     const unlistenWindowShow = listen<string>('show-popup', (event) => {
@@ -746,7 +843,12 @@
     });
 
     return () => {
+      mounted = false;
+      clearHideCheck();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      unlistenFocus?.();
       setup(null);
+      speechController.destroy();
       unlistenWindowShow.then((fn) => fn());
       unlistenWindowHide.then((fn) => fn());
     };
@@ -790,7 +892,15 @@
 {/snippet}
 
 {#snippet responseActions(content: string, completedAt: number)}
-  <div class="response-actions mt-1 -ml-1 flex h-6 items-center gap-0.5 transition-opacity">
+  <div class="response-actions mt-1 -ml-1 flex h-6 items-center gap-0.5 transition-opacity" class:speaking>
+    {#if translationMode}
+      <Button
+        icon={speaking ? SpeakerSlashIcon : SpeakerHighIcon}
+        text={speaking ? m.stop_speaking() : m.speak()}
+        iconClass={speaking ? 'text-emphasis' : 'opacity-60'}
+        onclick={() => toggleSpeak(content)}
+      />
+    {/if}
     <Button icon={CopyIcon} text={m.copy()} iconClass="opacity-60" onclick={() => copyResponse(content)} />
     <Button
       icon={ArrowLineDownLeftIcon}
@@ -856,6 +966,7 @@
           <Button
             icon={XIcon}
             onclick={() => {
+              stopSpeech();
               translationRequestId += 1;
               currentWindow.hide();
             }}
@@ -1029,7 +1140,7 @@
 {/key}
 
 <style>
-  .assistant-reply:not(:hover) .response-actions:not(:has(:focus-visible)) {
+  .assistant-reply:not(:hover) .response-actions:not(:has(:focus-visible), .speaking) {
     time {
       visibility: hidden;
     }
