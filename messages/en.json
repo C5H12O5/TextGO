@@ -158,6 +158,7 @@
   "prompt_template_count": "Prompt Templates ({count})",
   "prompt_variables_tip": "The following variables can be used in prompts:",
   "translation_mode": "Translation Mode",
+  "translation_default_prompt": "Translate the following content into {targetLanguage}, preserving the original meaning and formatting with natural, fluent expression. Output only the translation without explanation:\n\n{selection}",
   "auto_detect": "Auto-detect",
   "swap_languages": "Swap languages",
   "source_language": "Source Language",

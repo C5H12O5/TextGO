@@ -14,8 +14,8 @@
    */
   const JAVASCRIPT_TEMPLATE = `
 function process(data) {
-    // data.clipboard - ${m.clipboard_text()}
     // data.selection - ${m.selected_text()}
+    // data.clipboard - ${m.clipboard_text()}
     return '';
 }
 `.trimStart();
@@ -25,8 +25,8 @@ function process(data) {
    */
   const PYTHON_TEMPLATE = `
 def process(data):
-    # data["clipboard"] - ${m.clipboard_text()}
     # data["selection"] - ${m.selected_text()}
+    # data["clipboard"] - ${m.clipboard_text()}
     return ""
 `.trimStart();
 
@@ -34,16 +34,16 @@ def process(data):
    * Shell script placeholder.
    */
   const SHELL_PLACEHOLDER = `
-\${clipboard} - ${m.clipboard_text()}
 \${selection} - ${m.selected_text()}
+\${clipboard} - ${m.clipboard_text()}
 `.trimStart();
 
   /**
    * PowerShell script placeholder.
    */
   const POWERSHELL_PLACEHOLDER = `
-\${clipboard} - ${m.clipboard_text()}
 \${selection} - ${m.selected_text()}
+\${clipboard} - ${m.clipboard_text()}
 `.trimStart();
 
   /**

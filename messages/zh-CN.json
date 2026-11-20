@@ -158,6 +158,7 @@
   "prompt_template_count": "{count}个提示词模板",
   "prompt_variables_tip": "提示词中可使用以下变量：",
   "translation_mode": "翻译模式",
+  "translation_default_prompt": "请将以下内容翻译为 {targetLanguage}，保持原意和原有格式，表达自然流畅。只输出翻译结果，不要添加解释：\n\n{selection}",
   "auto_detect": "自动检测",
   "swap_languages": "交换语言",
   "source_language": "源语言",

@@ -8,8 +8,8 @@
    */
   const PROMPT_PLACEHOLDER = `
 ${m.prompt_variables_tip()}
-{{clipboard}} - ${m.clipboard_text()}
 {{selection}} - ${m.selected_text()}
+{{clipboard}} - ${m.clipboard_text()}
 `.trimStart();
 
   const TRANSLATION_PLACEHOLDER = `{{sourceLanguage}} - ${m.source_language()}
@@ -269,7 +269,19 @@ ${m.prompt_variables_tip()}
       <Label required tip={m.prompt_tip()}>{m.prompt()}</Label>
       <div class="flex items-center gap-2">
         <label class="label mr-2 min-h-8 shrink-0 cursor-pointer justify-start gap-2">
-          <input type="checkbox" class="checkbox checkbox-sm" bind:checked={translationMode} />
+          <input
+            type="checkbox"
+            class="checkbox checkbox-sm"
+            bind:checked={translationMode}
+            onchange={(event) => {
+              if (event.currentTarget.checked && !promptId && !promptText.trim()) {
+                promptText = m.translation_default_prompt({
+                  targetLanguage: '{{targetLanguage}}',
+                  selection: '{{selection}}'
+                });
+              }
+            }}
+          />
           <span>{m.translation_mode()}</span>
         </label>
         <Select

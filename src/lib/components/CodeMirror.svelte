@@ -424,6 +424,14 @@
   const getEditorPlaceholder = () => (_placeholder ? placeholder(_placeholder) : []);
   const placeholderHandler: Extension = editorPlaceholder.of(getEditorPlaceholder());
 
+  // update the editor when external document changes
+  $effect(() => {
+    const currentDocument = document;
+    if (editorView && currentDocument !== undefined && currentDocument !== editorView.state.doc.toString()) {
+      replaceDocument(editorView, currentDocument);
+    }
+  });
+
   // update the editor when placeholder text changes
   $effect(() => {
     const currentEditorPlaceholder = getEditorPlaceholder();
