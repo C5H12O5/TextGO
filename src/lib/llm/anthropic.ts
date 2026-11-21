@@ -14,4 +14,12 @@ export class AnthropicClient extends OpenAICompatibleClient {
     }
     super('https://api.anthropic.com/v1', apiKey);
   }
+
+  protected override getModelsHeaders(): Record<string, string> {
+    return {
+      ...super.getModelsHeaders(),
+      'x-api-key': this.apiKey,
+      'anthropic-version': '2023-06-01'
+    };
+  }
 }

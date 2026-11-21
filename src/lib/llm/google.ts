@@ -14,4 +14,8 @@ export class GeminiClient extends OpenAICompatibleClient {
     }
     super('https://generativelanguage.googleapis.com/v1beta/openai', apiKey);
   }
+
+  protected override normalizeModelId(id: string): string {
+    return id.trim().replace(/^models\//, '');
+  }
 }

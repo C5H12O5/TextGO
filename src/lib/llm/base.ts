@@ -53,6 +53,58 @@ function parseResponseChunk(message?: ResponseMessage): LLMResponseChunk {
   };
 }
 
+/** Default timeout in milliseconds when fetching available models. */
+const DEFAULT_MODELS_TIMEOUT_MS = 5000;
+
+/**
+ * Extract normalized, deduplicated, and sorted model IDs from a provider `/models` response.
+ *
+ * @param payload - decoded JSON payload returned by a provider's models endpoint
+ * @param normalize - optional per-ID normalizer (e.g. stripping provider prefixes)
+ * @returns sorted list of non-empty model IDs
+ */
+export function extractModelIds(payload: unknown, normalize: (id: string) => string = (id) => id.trim()): string[] {
+  const rawList = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === 'object'
+      ? Array.isArray((payload as { data?: unknown }).data)
+        ? (payload as { data: unknown[] }).data
+        : Array.isArray((payload as { models?: unknown }).models)
+          ? (payload as { models: unknown[] }).models
+          : []
+      : [];
+
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const item of rawList) {
+    let rawId = '';
+    if (typeof item === 'string') {
+      rawId = item;
+    } else if (item && typeof item === 'object') {
+      const record = item as { id?: unknown; name?: unknown };
+      if (typeof record.id === 'string') {
+        rawId = record.id;
+      } else if (typeof record.name === 'string') {
+        rawId = record.name;
+      }
+    }
+    const normalized = normalize(rawId);
+    if (normalized && !seen.has(normalized)) {
+      seen.add(normalized);
+      ids.push(normalized);
+    }
+  }
+  return ids.sort((a, b) => a.localeCompare(b));
+}
+
+/** Options for fetching available models from a provider. */
+export type ListModelsOptions = {
+  /** External abort signal for cancelling stale requests. */
+  signal?: AbortSignal;
+  /** Request timeout in milliseconds (defaults to 5000ms). */
+  timeoutMs?: number;
+};
+
 /**
  * LLM Client interface.
  */
@@ -65,6 +117,14 @@ export interface LLMClient {
    * @returns an async iterable that yields response chunks
    */
   chat(request: ChatCompletionParams, customParams?: Record<string, unknown>): AsyncIterable<LLMResponseChunk>;
+
+  /**
+   * Fetch available model IDs from the provider.
+   *
+   * @param options - optional abort signal and timeout configuration
+   * @returns list of available model IDs
+   */
+  listModels(options?: ListModelsOptions): Promise<string[]>;
 
   /**
    * Abort the ongoing request.
@@ -145,11 +205,91 @@ export abstract class OpenAICompatibleClient implements LLMClient {
     }
   }
 
+  async listModels(options?: ListModelsOptions): Promise<string[]> {
+    const timeoutMs = options?.timeoutMs ?? DEFAULT_MODELS_TIMEOUT_MS;
+    const controller = new AbortController();
+    let timedOut = false;
+
+    const onExternalAbort = () => controller.abort();
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        controller.abort();
+      } else {
+        options.signal.addEventListener('abort', onExternalAbort, { once: true });
+      }
+    }
+
+    const timer = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeoutMs);
+
+    try {
+      const baseUrl = this.baseUrl.replace(/\/+$/, '');
+      const response = await fetch(`${baseUrl}/models`, {
+        method: 'GET',
+        headers: this.getModelsHeaders(),
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        const responseText = await response.text();
+        throw new Error(this.errorMessage(response.status, responseText));
+      }
+
+      const payload: unknown = await response.json();
+      return extractModelIds(payload, (id) => this.normalizeModelId(id));
+    } catch (error) {
+      if (timedOut) {
+        const timeoutError = new Error(`request timed out after ${timeoutMs}ms`, { cause: error });
+        timeoutError.name = 'TimeoutError';
+        throw timeoutError;
+      }
+      if (options?.signal?.aborted || (error instanceof Error && error.name === 'AbortError')) {
+        const abortError = new Error('request aborted', { cause: error });
+        abortError.name = 'AbortError';
+        throw abortError;
+      }
+      if (error instanceof Error) {
+        throw new Error(`request failed: ${error.message}`, { cause: error });
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      options?.signal?.removeEventListener('abort', onExternalAbort);
+    }
+  }
+
   abort(): void {
     if (this.abortController) {
       this.abortController.abort();
       this.abortController = null;
     }
+  }
+
+  /**
+   * Build request headers for the provider's `/models` endpoint.
+   *
+   * @returns HTTP headers record
+   */
+  protected getModelsHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      Origin: 'http://localhost'
+    };
+    if (this.apiKey) {
+      headers.Authorization = `Bearer ${this.apiKey}`;
+    }
+    return headers;
+  }
+
+  /**
+   * Normalize a model ID returned by the provider's `/models` endpoint.
+   *
+   * @param id - raw model ID
+   * @returns normalized model ID
+   */
+  protected normalizeModelId(id: string): string {
+    return id.trim();
   }
 
   /**

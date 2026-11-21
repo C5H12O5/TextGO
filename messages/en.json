@@ -186,6 +186,8 @@
   "ai_conversation_hint": "Converse with AI models through preset prompts",
   "model_provider": "Model Provider",
   "model_name": "Model Name",
+  "model_list_fetch_failed": "Failed to fetch models. You can enter the model name manually.",
+  "model_list_fetch_timeout": "Fetching models timed out. You can enter the model name manually.",
   "custom_providers": "Custom Providers",
   "custom_provider": "Custom Provider",
   "provider_name": "Name",

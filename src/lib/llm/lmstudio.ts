@@ -8,7 +8,7 @@ import { OpenAICompatibleClient } from './base';
  */
 export class LMStudioClient extends OpenAICompatibleClient {
   constructor() {
-    const baseUrl = `${lmstudioHost.current || 'http://127.0.0.1:1234'}/v1`;
-    super(baseUrl, 'lm-studio');
+    const host = (lmstudioHost.current || 'http://127.0.0.1:1234').replace(/\/+$/, '');
+    super(`${host}/v1`, 'lm-studio');
   }
 }
