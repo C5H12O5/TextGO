@@ -10,6 +10,7 @@
   import { getLocale, setLocale, type Locale } from '$lib/paraglide/runtime';
   import { accessibility, autoStart, autoUpdate, historySize, minimizeToTray, theme } from '$lib/stores.svelte';
   import { invoke } from '@tauri-apps/api/core';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
   import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
   import { type } from '@tauri-apps/plugin-os';
   import CheckCircleIcon from 'phosphor-svelte/lib/CheckCircleIcon';
@@ -45,14 +46,66 @@
     }
   }
 
-  // check auto start status on mount
-  onMount(async () => {
-    try {
-      autoStart.current = await isEnabled();
-      accessibility.current = await invoke<boolean>('check_accessibility');
-    } catch (error) {
-      console.error(`Failed to check auto start status: ${error}`);
+  // check auto start and accessibility status on mount
+  onMount(() => {
+    let active = true;
+    let accessibilityTimer: ReturnType<typeof setInterval> | null = null;
+
+    const stopAccessibilityPolling = () => {
+      if (accessibilityTimer) {
+        clearInterval(accessibilityTimer);
+        accessibilityTimer = null;
+      }
+    };
+
+    const syncAccessibility = async () => {
+      try {
+        await accessibility.ready.catch(() => {});
+        const granted = await invoke<boolean>('check_accessibility');
+        if (!active) {
+          return;
+        }
+        accessibility.current = granted;
+        if (granted) {
+          stopAccessibilityPolling();
+        } else if (!accessibilityTimer) {
+          accessibilityTimer = setInterval(() => {
+            void syncAccessibility();
+          }, 1000);
+        }
+      } catch (error) {
+        console.error(`Failed to check accessibility status: ${error}`);
+      }
+    };
+
+    isEnabled()
+      .then((enabled) => {
+        if (active) {
+          autoStart.current = enabled;
+        }
+      })
+      .catch((error) => {
+        console.error(`Failed to check auto start status: ${error}`);
+      });
+
+    if (osType === 'macos') {
+      void syncAccessibility();
     }
+
+    const unlistenFocus =
+      osType === 'macos'
+        ? getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+            if (focused) {
+              void syncAccessibility();
+            }
+          })
+        : null;
+
+    return () => {
+      active = false;
+      stopAccessibilityPolling();
+      unlistenFocus?.then((unlisten) => unlisten());
+    };
   });
 </script>
 

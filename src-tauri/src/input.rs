@@ -67,15 +67,25 @@ fn listen_with_retry(
     mut trusted: impl FnMut() -> bool,
     mut sleep: impl FnMut(Duration),
 ) {
-    const PERMISSION_CHECK_INTERVAL: Duration = Duration::from_secs(2);
+    const PERMISSION_CHECK_INTERVAL: Duration = Duration::from_secs(1);
     const MAX_RETRY_DELAY: Duration = Duration::from_secs(30);
     let mut retry_delay = PERMISSION_CHECK_INTERVAL;
 
     loop {
         // Wait for Accessibility before creating the CGEventTap; calling rdev::listen
-        // while untrusted makes macOS prompt for Input Monitoring (kTCCServiceListenEvent).
+        // while untrusted makes macOS prompt for Input Monitoring (kTCCServiceListenEvent)
+        // or return a degraded event tap that blocks in CFRunLoopRun without recovering.
+        let mut waited_for_permission = false;
         while !trusted() {
+            if !waited_for_permission {
+                log::info!("Waiting for Accessibility permission before starting mouse listener");
+                waited_for_permission = true;
+            }
             sleep(PERMISSION_CHECK_INTERVAL);
+        }
+        if waited_for_permission {
+            log::info!("Accessibility permission granted; starting mouse listener");
+            retry_delay = PERMISSION_CHECK_INTERVAL;
         }
 
         // rdev blocks in the event tap's run loop. Only a failed setup reaches the retry path.
@@ -134,19 +144,19 @@ mod tests {
             },
         );
         assert_eq!(attempts.get(), 1);
-        assert_eq!(delays, [2, 2]);
+        assert_eq!(delays, [1, 1]);
         assert_eq!(permissions.next(), None);
     }
 
     #[test]
     fn failed_listener_waits_for_trust_then_retries_transient_errors() {
-        let mut permissions = [true, false, false, true, true].into_iter();
+        let mut permissions = [true, false, false, true, true, true].into_iter();
         let mut attempts = 0;
         let mut delays = Vec::new();
         listen_with_retry(
             || {
                 attempts += 1;
-                if attempts < 3 {
+                if attempts < 4 {
                     Err(rdev::ListenError::EventTapError)
                 } else {
                     Ok(())
@@ -155,8 +165,8 @@ mod tests {
             || permissions.next().unwrap(),
             |delay| delays.push(delay.as_secs()),
         );
-        assert_eq!(attempts, 3);
-        assert_eq!(delays, [2, 2, 2, 4]);
+        assert_eq!(attempts, 4);
+        assert_eq!(delays, [1, 1, 1, 1, 2]);
         assert_eq!(permissions.next(), None);
     }
 
