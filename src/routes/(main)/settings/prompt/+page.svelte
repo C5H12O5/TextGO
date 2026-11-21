@@ -13,11 +13,12 @@
   import { LLM_PROVIDERS } from '$lib/constants';
   import { buildFormSchema } from '$lib/constraint';
   import { exportExtensions } from '$lib/helpers';
-  import { Anthropic, Gemini, LMStudio, Ollama, OpenAI, OpenRouter, XAI } from '$lib/icons';
+  import { Anthropic, DeepSeek, Gemini, LMStudio, Ollama, OpenAI, OpenRouter, XAI } from '$lib/icons';
   import { m } from '$lib/paraglide/messages';
   import { Loading } from '$lib/states.svelte';
   import {
     anthropicApiKey,
+    deepseekApiKey,
     geminiApiKey,
     lmstudioHost,
     ollamaHost,
@@ -52,7 +53,8 @@
     openai: OpenAI,
     anthropic: Anthropic,
     google: Gemini,
-    xai: XAI
+    xai: XAI,
+    deepseek: DeepSeek
   };
 
   // loading state
@@ -67,6 +69,7 @@
     anthropicApiKey: password().maxlength(256),
     geminiApiKey: password().maxlength(256),
     xaiApiKey: password().maxlength(256),
+    deepseekApiKey: password().maxlength(256),
     // custom provider fields
     name: text().maxlength(64),
     baseUrl: text().maxlength(256),
@@ -282,6 +285,13 @@
         placeholder={m.api_key({ provider: 'xAI' })}
         {...schema.xaiApiKey}
         bind:value={xaiApiKey.current}
+      />
+      <Label icon={DeepSeek}>DeepSeek</Label>
+      <input
+        class="input w-full"
+        placeholder={m.api_key({ provider: 'DeepSeek' })}
+        {...schema.deepseekApiKey}
+        bind:value={deepseekApiKey.current}
       />
       <!-- Custom LLM Providers -->
       <div class="divider mb-0 opacity-50">{m.custom_providers()}</div>

@@ -1,4 +1,5 @@
 export { default as Anthropic } from './Anthropic.svelte';
+export { default as DeepSeek } from './DeepSeek.svelte';
 export { default as Deno } from './Deno.svelte';
 export { default as Extensions } from './Extensions.svelte';
 export { default as Gemini } from './Gemini.svelte';

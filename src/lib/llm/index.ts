@@ -4,6 +4,7 @@ import type { LLMClient } from './base';
 import { providers } from '$lib/stores.svelte';
 import { AnthropicClient } from './anthropic';
 import { OpenAICompatibleClient } from './base';
+import { DeepSeekClient } from './deepseek';
 import { GeminiClient } from './google';
 import { LMStudioClient } from './lmstudio';
 import { OllamaClient } from './ollama';
@@ -42,6 +43,8 @@ export function createLLMClient(provider: LLMProvider | string): LLMClient {
       return new GeminiClient();
     case 'xai':
       return new XAIClient();
+    case 'deepseek':
+      return new DeepSeekClient();
     default: {
       // check if it's a custom provider
       const customProvider = providers.current.find((p) => p.name === provider);

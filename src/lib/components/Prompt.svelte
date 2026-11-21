@@ -47,6 +47,7 @@ ${m.prompt_variables_tip()}
   import { Loading } from '$lib/states.svelte';
   import {
     anthropicApiKey,
+    deepseekApiKey,
     geminiApiKey,
     openaiApiKey,
     openrouterApiKey,
@@ -246,6 +247,7 @@ ${m.prompt_variables_tip()}
               { value: 'anthropic', label: 'Anthropic', disabled: !anthropicApiKey.current },
               { value: 'google', label: 'Google', disabled: !geminiApiKey.current },
               { value: 'xai', label: 'xAI', disabled: !xaiApiKey.current },
+              { value: 'deepseek', label: 'DeepSeek', disabled: !deepseekApiKey.current },
               ...providers.current.map((p) => ({ value: p.name, label: p.name }))
             ]}
             onchange={(event) => {

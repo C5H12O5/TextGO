@@ -396,6 +396,7 @@ export const openaiApiKey = persisted<string>('openaiApiKey', '', { encrypt, dec
 export const anthropicApiKey = persisted<string>('anthropicApiKey', '', { encrypt, decrypt });
 export const geminiApiKey = persisted<string>('geminiApiKey', '', { encrypt, decrypt });
 export const xaiApiKey = persisted<string>('xaiApiKey', '', { encrypt, decrypt });
+export const deepseekApiKey = persisted<string>('deepseekApiKey', '', { encrypt, decrypt });
 
 // Custom LLM providers
 export const providers = persisted<CustomLLMProvider[]>('providers', [], {
