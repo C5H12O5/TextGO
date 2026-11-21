@@ -1,9 +1,29 @@
 use crate::error::AppError;
+#[cfg(target_os = "macos")]
+use core_foundation::{
+    base::TCFType,
+    boolean::CFBoolean,
+    dictionary::{CFDictionary, CFDictionaryRef},
+    string::{CFString, CFStringRef},
+};
 
 #[cfg(target_os = "macos")]
 #[link(name = "ApplicationServices", kind = "framework")]
 unsafe extern "C" {
     unsafe fn AXIsProcessTrusted() -> bool;
+    unsafe fn AXIsProcessTrustedWithOptions(options: CFDictionaryRef) -> bool;
+    static kAXTrustedCheckOptionPrompt: CFStringRef;
+}
+
+/// Request accessibility permission using the native macOS system prompt.
+#[cfg(target_os = "macos")]
+pub fn request_accessibility_prompt() -> bool {
+    unsafe {
+        let key = CFString::wrap_under_get_rule(kAXTrustedCheckOptionPrompt);
+        let value = CFBoolean::true_value();
+        let options = CFDictionary::from_CFType_pairs(&[(key, value)]);
+        AXIsProcessTrustedWithOptions(options.as_concrete_TypeRef())
+    }
 }
 
 /// Check if the application has accessibility permissions.

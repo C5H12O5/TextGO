@@ -7,11 +7,11 @@ use std::sync::{LazyLock, Mutex, MutexGuard};
 use std::time::Duration;
 
 type Connection = Result<Enigo, NewConError>;
-static ENIGO: LazyLock<Mutex<Connection>> = LazyLock::new(|| Mutex::new(connect_enigo(true)));
+static ENIGO: LazyLock<Mutex<Connection>> = LazyLock::new(|| Mutex::new(connect_enigo()));
 
-fn connect_enigo(prompt: bool) -> Connection {
+fn connect_enigo() -> Connection {
     Enigo::new(&Settings {
-        open_prompt_to_get_permissions: prompt,
+        open_prompt_to_get_permissions: false,
         event_source_user_data: Some(SIMULATED_INPUT_MARKER.into()),
         windows_dw_extra_info: Some(SIMULATED_INPUT_MARKER as usize),
         ..Settings::default()
@@ -25,7 +25,7 @@ pub(crate) fn lock_enigo() -> Result<MutexGuard<'static, Connection>, AppError> 
     retry_denied_connection(
         &mut connection,
         crate::commands::check_accessibility,
-        || connect_enigo(false),
+        connect_enigo,
     );
     Ok(connection)
 }
@@ -52,6 +52,9 @@ pub(crate) fn start_mouse_listener() {
         listen_with_retry(
             listen,
             crate::commands::check_accessibility,
+            || {
+                crate::commands::request_accessibility_prompt();
+            },
             std::thread::sleep,
         );
         #[cfg(not(target_os = "macos"))]
@@ -65,11 +68,13 @@ pub(crate) fn start_mouse_listener() {
 fn listen_with_retry(
     mut listen: impl FnMut() -> Result<(), rdev::ListenError>,
     mut trusted: impl FnMut() -> bool,
+    mut prompt: impl FnMut(),
     mut sleep: impl FnMut(Duration),
 ) {
     const PERMISSION_CHECK_INTERVAL: Duration = Duration::from_secs(1);
     const MAX_RETRY_DELAY: Duration = Duration::from_secs(30);
     let mut retry_delay = PERMISSION_CHECK_INTERVAL;
+    let mut prompted = false;
 
     loop {
         // Wait for Accessibility before creating the CGEventTap; calling rdev::listen
@@ -77,6 +82,10 @@ fn listen_with_retry(
         // or return a degraded event tap that blocks in CFRunLoopRun without recovering.
         let mut waited_for_permission = false;
         while !trusted() {
+            if !prompted {
+                prompt();
+                prompted = true;
+            }
             if !waited_for_permission {
                 log::info!("Waiting for Accessibility permission before starting mouse listener");
                 waited_for_permission = true;
@@ -117,6 +126,7 @@ mod tests {
                 trust_checks += 1;
                 true
             },
+            || panic!("prompted for a trusted process"),
             |_| panic!("delayed a working listener"),
         );
         assert_eq!(trust_checks, 1);
@@ -124,9 +134,10 @@ mod tests {
     }
 
     #[test]
-    fn untrusted_listener_waits_for_accessibility_before_starting() {
+    fn untrusted_listener_prompts_once_and_waits_for_accessibility_before_starting() {
         let mut permissions = [false, false, true].into_iter();
         let attempts = std::cell::Cell::new(0);
+        let prompts = std::cell::Cell::new(0);
         let mut delays = Vec::new();
         listen_with_retry(
             || {
@@ -134,7 +145,16 @@ mod tests {
                 Ok(())
             },
             || permissions.next().unwrap(),
+            || {
+                assert_eq!(attempts.get(), 0, "must prompt before starting event tap");
+                prompts.set(prompts.get() + 1);
+            },
             |delay| {
+                assert_eq!(
+                    prompts.get(),
+                    1,
+                    "must prompt exactly once while waiting for accessibility"
+                );
                 assert_eq!(
                     attempts.get(),
                     0,
@@ -143,6 +163,7 @@ mod tests {
                 delays.push(delay.as_secs());
             },
         );
+        assert_eq!(prompts.get(), 1);
         assert_eq!(attempts.get(), 1);
         assert_eq!(delays, [1, 1]);
         assert_eq!(permissions.next(), None);
@@ -152,6 +173,7 @@ mod tests {
     fn failed_listener_waits_for_trust_then_retries_transient_errors() {
         let mut permissions = [true, false, false, true, true, true].into_iter();
         let mut attempts = 0;
+        let mut prompts = 0;
         let mut delays = Vec::new();
         listen_with_retry(
             || {
@@ -163,8 +185,10 @@ mod tests {
                 }
             },
             || permissions.next().unwrap(),
+            || prompts += 1,
             |delay| delays.push(delay.as_secs()),
         );
+        assert_eq!(prompts, 1);
         assert_eq!(attempts, 4);
         assert_eq!(delays, [1, 1, 1, 1, 2]);
         assert_eq!(permissions.next(), None);
