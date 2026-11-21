@@ -220,8 +220,6 @@ pub fn run() {
             show_about,
             check_accessibility,
             open_accessibility,
-            check_input_monitoring,
-            open_input_monitoring,
             get_app_id,
             is_blocked
         ])

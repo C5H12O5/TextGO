@@ -71,14 +71,22 @@ fn listen_with_retry(
     const MAX_RETRY_DELAY: Duration = Duration::from_secs(30);
     let mut retry_delay = PERMISSION_CHECK_INTERVAL;
 
-    // rdev blocks in the event tap's run loop. Only a failed setup reaches the retry path.
-    while let Err(error) = listen() {
-        log::warn!("Mouse event listener failed to start: {:?}", error);
-        sleep(retry_delay);
+    loop {
+        // Wait for Accessibility before creating the CGEventTap; calling rdev::listen
+        // while untrusted makes macOS prompt for Input Monitoring (kTCCServiceListenEvent).
         while !trusted() {
             sleep(PERMISSION_CHECK_INTERVAL);
         }
-        retry_delay = (retry_delay * 2).min(MAX_RETRY_DELAY);
+
+        // rdev blocks in the event tap's run loop. Only a failed setup reaches the retry path.
+        match listen() {
+            Ok(()) => return,
+            Err(error) => {
+                log::warn!("Mouse event listener failed to start: {:?}", error);
+                sleep(retry_delay);
+                retry_delay = (retry_delay * 2).min(MAX_RETRY_DELAY);
+            }
+        }
     }
 }
 
@@ -88,21 +96,51 @@ mod tests {
 
     #[test]
     fn working_listener_starts_once_without_polling() {
+        let mut trust_checks = 0;
         let mut attempts = 0;
         listen_with_retry(
             || {
                 attempts += 1;
                 Ok(())
             },
-            || panic!("polled permission for a working listener"),
+            || {
+                trust_checks += 1;
+                true
+            },
             |_| panic!("delayed a working listener"),
         );
+        assert_eq!(trust_checks, 1);
         assert_eq!(attempts, 1);
     }
 
     #[test]
+    fn untrusted_listener_waits_for_accessibility_before_starting() {
+        let mut permissions = [false, false, true].into_iter();
+        let attempts = std::cell::Cell::new(0);
+        let mut delays = Vec::new();
+        listen_with_retry(
+            || {
+                attempts.set(attempts.get() + 1);
+                Ok(())
+            },
+            || permissions.next().unwrap(),
+            |delay| {
+                assert_eq!(
+                    attempts.get(),
+                    0,
+                    "must not start event tap before accessibility is granted"
+                );
+                delays.push(delay.as_secs());
+            },
+        );
+        assert_eq!(attempts.get(), 1);
+        assert_eq!(delays, [2, 2]);
+        assert_eq!(permissions.next(), None);
+    }
+
+    #[test]
     fn failed_listener_waits_for_trust_then_retries_transient_errors() {
-        let mut permissions = [false, false, true, true].into_iter();
+        let mut permissions = [true, false, false, true, true].into_iter();
         let mut attempts = 0;
         let mut delays = Vec::new();
         listen_with_retry(
