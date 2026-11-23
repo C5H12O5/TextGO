@@ -3,6 +3,7 @@ use crate::input::lock_enigo;
 use crate::platform;
 use crate::TOOLBAR_MENU_OPEN;
 use enigo::Mouse;
+use log::debug;
 use serde::{Deserialize, Serialize};
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -43,7 +44,16 @@ const SAFE_AREA_BOTTOM: i32 = 80;
 const INITIALIZATION_TIMEOUT_MS: u64 = 5000;
 
 // maximum time to wait for the popup source application to regain focus
-const FOCUS_RESTORE_TIMEOUT_MS: u64 = 500;
+const FOCUS_RESTORE_TIMEOUT_MS: u64 = 1000;
+
+// interval between repeated activation requests while the source is still inactive
+const FOCUS_RESTORE_RETRY_MS: u64 = 250;
+
+// maximum time to wait for the source to restore keyboard focus after activation
+const FOCUS_READY_TIMEOUT_MS: u64 = 300;
+
+// delay after keyboard focus returns so the source can finish handling activation
+const FOCUS_SETTLE_MS: u64 = 50;
 
 // interval between source focus checks
 const FOCUS_RESTORE_INTERVAL_MS: u64 = 10;
@@ -56,34 +66,66 @@ static TOOLBAR_POSITION_OFFSET: Mutex<(i32, i32)> = Mutex::new((0, 0));
 static POPUP_SOURCE_FOCUS: LazyLock<Mutex<Option<platform::FocusTarget>>> =
     LazyLock::new(|| Mutex::new(None));
 
-/// Activate a focus target and wait until the operating system reports it as active.
-async fn restore_focus_with<T, Activate, IsActive, Sleep, SleepFuture>(
+/// Activate a focus target and wait until it can receive keyboard input.
+///
+/// The operating system reports the new foreground application before that application has
+/// restored its focused control, so input sent as soon as activation is reported can be lost.
+async fn restore_focus_with<T, Activate, IsActive, IsReady, Sleep, SleepFuture>(
     target: T,
     activate: Activate,
     is_active: IsActive,
+    is_ready: IsReady,
     sleep: Sleep,
 ) -> Result<(), AppError>
 where
     T: Copy,
-    Activate: FnOnce(T) -> Result<(), AppError>,
+    Activate: Fn(T) -> Result<(), AppError>,
     IsActive: Fn(T) -> bool,
+    IsReady: Fn(T) -> bool,
     Sleep: Fn(Duration) -> SleepFuture,
     SleepFuture: Future<Output = ()>,
 {
     activate(target)?;
 
     let interval = Duration::from_millis(FOCUS_RESTORE_INTERVAL_MS);
+    let retry_checks = FOCUS_RESTORE_RETRY_MS / FOCUS_RESTORE_INTERVAL_MS;
     let max_checks = FOCUS_RESTORE_TIMEOUT_MS / FOCUS_RESTORE_INTERVAL_MS;
+    let mut active = false;
     for check in 0..=max_checks {
         if is_active(target) {
-            return Ok(());
+            active = true;
+            break;
         }
-        if check < max_checks {
-            sleep(interval).await;
+        if check == max_checks {
+            break;
         }
+        // the system can ignore an activation request while windows are still changing
+        if check > 0 && check % retry_checks == 0 {
+            if let Err(error) = activate(target) {
+                debug!("Failed to repeat popup source activation: {}", error);
+            }
+        }
+        sleep(interval).await;
+    }
+    if !active {
+        return Err("Failed to restore focus to popup source application".into());
     }
 
-    Err("Failed to restore focus to popup source application".into())
+    // continue after the timeout because some applications never report their focused control
+    let ready_checks = FOCUS_READY_TIMEOUT_MS / FOCUS_RESTORE_INTERVAL_MS;
+    for check in 0..=ready_checks {
+        if is_ready(target) {
+            break;
+        }
+        if check == ready_checks {
+            debug!("Popup source did not report keyboard focus before timeout");
+            break;
+        }
+        sleep(interval).await;
+    }
+    sleep(Duration::from_millis(FOCUS_SETTLE_MS)).await;
+
+    Ok(())
 }
 
 /// Show main window.
@@ -334,6 +376,7 @@ pub async fn focus_popup_source() -> Result<(), AppError> {
         target,
         platform::activate_focus_target,
         platform::is_focus_target_active,
+        platform::is_focus_target_ready,
         tokio::time::sleep,
     )
     .await
@@ -568,6 +611,78 @@ pub fn toggle_window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Run focus restoration with simulated platform state and record every delay.
+    fn restore_focus_for_test(
+        activations: &std::cell::Cell<u32>,
+        active_after: Option<u32>,
+        ready_after: Option<u32>,
+        delays: &std::cell::RefCell<Vec<u64>>,
+    ) -> Result<(), AppError> {
+        let checks = std::cell::Cell::new(0);
+        let ready_checks = std::cell::Cell::new(0);
+        tauri::async_runtime::block_on(restore_focus_with(
+            (),
+            |_| {
+                activations.set(activations.get() + 1);
+                Ok(())
+            },
+            |_| {
+                checks.set(checks.get() + 1);
+                active_after.is_some_and(|after| checks.get() > after)
+            },
+            |_| {
+                ready_checks.set(ready_checks.get() + 1);
+                ready_after.is_some_and(|after| ready_checks.get() > after)
+            },
+            |delay| {
+                delays.borrow_mut().push(delay.as_millis() as u64);
+                std::future::ready(())
+            },
+        ))
+    }
+
+    #[test]
+    fn focus_restore_waits_for_keyboard_focus_before_settling() {
+        let activations = std::cell::Cell::new(0);
+        let delays = std::cell::RefCell::new(Vec::new());
+        restore_focus_for_test(&activations, Some(2), Some(3), &delays).unwrap();
+        assert_eq!(activations.get(), 1);
+        // two inactive checks, three unready checks, then the settle delay
+        assert_eq!(*delays.borrow(), [10, 10, 10, 10, 10, FOCUS_SETTLE_MS]);
+    }
+
+    #[test]
+    fn focus_restore_repeats_ignored_activation_requests() {
+        let activations = std::cell::Cell::new(0);
+        let delays = std::cell::RefCell::new(Vec::new());
+        let retry_checks = (FOCUS_RESTORE_RETRY_MS / FOCUS_RESTORE_INTERVAL_MS) as u32;
+        restore_focus_for_test(&activations, Some(retry_checks * 2 + 1), Some(0), &delays).unwrap();
+        assert_eq!(activations.get(), 3);
+    }
+
+    #[test]
+    fn focus_restore_continues_when_keyboard_focus_is_not_reported() {
+        let activations = std::cell::Cell::new(0);
+        let delays = std::cell::RefCell::new(Vec::new());
+        restore_focus_for_test(&activations, Some(0), None, &delays).unwrap();
+        let ready_checks = (FOCUS_READY_TIMEOUT_MS / FOCUS_RESTORE_INTERVAL_MS) as usize;
+        assert_eq!(delays.borrow().len(), ready_checks + 1);
+        assert_eq!(delays.borrow().last(), Some(&FOCUS_SETTLE_MS));
+    }
+
+    #[test]
+    fn focus_restore_fails_when_source_never_activates() {
+        let activations = std::cell::Cell::new(0);
+        let delays = std::cell::RefCell::new(Vec::new());
+        assert!(restore_focus_for_test(&activations, None, Some(0), &delays).is_err());
+        let max_checks = (FOCUS_RESTORE_TIMEOUT_MS / FOCUS_RESTORE_INTERVAL_MS) as usize;
+        assert_eq!(delays.borrow().len(), max_checks);
+        assert!(delays
+            .borrow()
+            .iter()
+            .all(|delay| *delay == FOCUS_RESTORE_INTERVAL_MS));
+    }
 
     #[test]
     fn toolbar_positions_match_frontend_values() {

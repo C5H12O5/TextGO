@@ -1,3 +1,4 @@
+use super::PasteProgress;
 use crate::error::AppError;
 use std::fs;
 use std::path::Path;
@@ -12,18 +13,24 @@ use windows::Win32::System::Threading::{
 use windows::Win32::UI::Accessibility::{
     CUIAutomation, IUIAutomation, IUIAutomationElement, IUIAutomationLegacyIAccessiblePattern,
     IUIAutomationTextPattern, IUIAutomationTextRange, IUIAutomationValuePattern,
-    TextPatternRangeEndpoint_Start, TextUnit_Character, TreeScope_Descendants,
-    UIA_ControlTypePropertyId, UIA_DocumentControlTypeId, UIA_EditControlTypeId,
-    UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
+    TextPatternRangeEndpoint_End, TextPatternRangeEndpoint_Start, TextUnit_Character,
+    TreeScope_Descendants, UIA_ControlTypePropertyId, UIA_DocumentControlTypeId,
+    UIA_EditControlTypeId, UIA_LegacyIAccessiblePatternId, UIA_TextPatternId, UIA_ValuePatternId,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetCursorInfo, GetForegroundWindow, GetWindowThreadProcessId, LoadCursorW, SetForegroundWindow,
-    CURSORINFO, CURSOR_SHOWING, IDC_IBEAM,
+    GetCursorInfo, GetForegroundWindow, GetGUIThreadInfo, GetWindowThreadProcessId, LoadCursorW,
+    SetForegroundWindow, CURSORINFO, CURSOR_SHOWING, GUITHREADINFO, IDC_IBEAM,
 };
 use windows::UI::ViewManagement::UISettings;
 
 /// Native identifier for the window that owned focus before the popup opened.
 pub type FocusTarget = isize;
+
+/// Selection state of the focused text element captured immediately before a paste.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PasteAnchor {
+    collapsed: bool,
+}
 
 /// Get the Windows accessibility text scale applied by WebView2.
 pub fn get_text_scale_factor() -> f64 {
@@ -93,6 +100,28 @@ pub fn activate_focus_target(target: FocusTarget) -> Result<(), AppError> {
 /// Check whether the popup source window currently owns focus.
 pub fn is_focus_target_active(target: FocusTarget) -> bool {
     unsafe { GetForegroundWindow().0 as isize == target }
+}
+
+/// Check whether the popup source window's thread has processed its activation.
+///
+/// The foreground window changes before the target thread handles activation and restores
+/// keyboard focus, so keyboard input sent immediately after activation may be dropped.
+pub fn is_focus_target_ready(target: FocusTarget) -> bool {
+    unsafe {
+        let window = HWND(target as *mut _);
+        let thread_id = GetWindowThreadProcessId(window, None);
+        if thread_id == 0 {
+            return false;
+        }
+
+        let mut info = GUITHREADINFO {
+            cbSize: std::mem::size_of::<GUITHREADINFO>() as u32,
+            ..Default::default()
+        };
+        GetGUIThreadInfo(thread_id, &mut info).is_ok()
+            && info.hwndActive == window
+            && !info.hwndFocus.is_invalid()
+    }
 }
 
 impl ComGuard {
@@ -262,8 +291,86 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
     }
 }
 
-/// Check if currently focused element is editable.
-pub fn is_cursor_editable() -> Result<bool, AppError> {
+/// Check if an element is an editable text control.
+fn is_editable_element(element: &IUIAutomationElement) -> bool {
+    unsafe {
+        // Strategy 1: check if control type is editable
+        if let Ok(control_type) = element.CurrentControlType() {
+            let is_edit_control = control_type.0 == UIA_EditControlTypeId.0;
+            let is_document_control = control_type.0 == UIA_DocumentControlTypeId.0;
+            if is_edit_control || is_document_control {
+                return true;
+            }
+        }
+
+        // Strategy 2: check if value pattern is not read-only
+        if let Ok(is_readonly) = element
+            .GetCurrentPattern(UIA_ValuePatternId)
+            .and_then(|p| p.cast::<IUIAutomationValuePattern>())
+            .and_then(|vp| vp.CurrentIsReadOnly())
+        {
+            if !is_readonly.as_bool() {
+                return true;
+            }
+        }
+
+        // Strategy 3: check if legacy control role is editable
+        if let Ok(role) = element
+            .GetCurrentPattern(UIA_LegacyIAccessiblePatternId)
+            .and_then(|p| p.cast::<IUIAutomationLegacyIAccessiblePattern>())
+            .and_then(|lp| lp.CurrentRole())
+        {
+            if role == ROLE_SYSTEM_TEXT || role == ROLE_SYSTEM_COMBOBOX {
+                return true;
+            }
+        }
+
+        false
+    }
+}
+
+/// Check whether a text range is a caret without selected text.
+fn is_degenerate_range(range: &IUIAutomationTextRange) -> Result<bool, AppError> {
+    unsafe {
+        let distance = range
+            .CompareEndpoints(
+                TextPatternRangeEndpoint_Start,
+                range,
+                TextPatternRangeEndpoint_End,
+            )
+            .map_err(|_| "Failed to compare text range endpoints")?;
+        Ok(distance == 0)
+    }
+}
+
+/// Normalize line endings before comparing pasted text with the target's contents.
+fn normalize_line_endings(text: &str) -> String {
+    text.replace("\r\n", "\n").replace('\r', "\n")
+}
+
+/// Capture the editable selection that a paste is about to replace.
+pub fn get_paste_anchor() -> Result<PasteAnchor, AppError> {
+    // initialize COM
+    let _com = ComGuard::new()?;
+
+    // get focused element
+    let focused_element = get_focused_element()?;
+    if !is_editable_element(&focused_element) {
+        return Err("Focused element is not editable".into());
+    }
+
+    // get first selected text range
+    let text_range = get_selected_range(&focused_element)?;
+    Ok(PasteAnchor {
+        collapsed: is_degenerate_range(&text_range)?,
+    })
+}
+
+/// Select the pasted text once the focused element reports it.
+///
+/// Moving the selection before the target applies the paste would make the paste replace the
+/// wrong range, so the selection is left untouched until the paste has been confirmed.
+pub fn select_pasted_text(anchor: &PasteAnchor, text: &str) -> Result<PasteProgress, AppError> {
     unsafe {
         // initialize COM
         let _com = ComGuard::new()?;
@@ -271,38 +378,41 @@ pub fn is_cursor_editable() -> Result<bool, AppError> {
         // get focused element
         let focused_element = get_focused_element()?;
 
-        // Strategy 1: check if control type is editable
-        if let Ok(control_type) = focused_element.CurrentControlType() {
-            let is_edit_control = control_type.0 == UIA_EditControlTypeId.0;
-            let is_document_control = control_type.0 == UIA_DocumentControlTypeId.0;
-            if is_edit_control || is_document_control {
-                return Ok(true);
-            }
+        // the paste replaces any selection with a caret after the inserted text
+        let caret = get_selected_range(&focused_element)?;
+        if !is_degenerate_range(&caret)? {
+            return Ok(PasteProgress::Pending);
         }
 
-        // Strategy 2: check if value pattern is not read-only
-        if let Ok(is_readonly) = focused_element
-            .GetCurrentPattern(UIA_ValuePatternId)
-            .and_then(|p| p.cast::<IUIAutomationValuePattern>())
-            .and_then(|vp| vp.CurrentIsReadOnly())
+        // extend the caret backward over the inserted text
+        let chars = i32::try_from(text.chars().count()).unwrap_or(i32::MAX);
+        let inserted = caret.Clone().map_err(|_| "Failed to clone text range")?;
+        if inserted
+            .MoveEndpointByUnit(TextPatternRangeEndpoint_Start, TextUnit_Character, -chars)
+            .is_err()
         {
-            if !is_readonly.as_bool() {
-                return Ok(true);
+            return Ok(if anchor.collapsed {
+                PasteProgress::Pending
+            } else {
+                PasteProgress::Unselectable
+            });
+        }
+
+        // a caret insertion leaves the caret collapsed, so confirm it by the text before the caret
+        if anchor.collapsed {
+            let Ok(before_caret) = inserted.GetText(-1) else {
+                return Ok(PasteProgress::Pending);
+            };
+            if normalize_line_endings(&before_caret.to_string()) != normalize_line_endings(text) {
+                return Ok(PasteProgress::Pending);
             }
         }
 
-        // Strategy 3: check if legacy control role is editable
-        if let Ok(role) = focused_element
-            .GetCurrentPattern(UIA_LegacyIAccessiblePatternId)
-            .and_then(|p| p.cast::<IUIAutomationLegacyIAccessiblePattern>())
-            .and_then(|lp| lp.CurrentRole())
-        {
-            if role == ROLE_SYSTEM_TEXT || role == ROLE_SYSTEM_COMBOBOX {
-                return Ok(true);
-            }
+        // select new range
+        if inserted.Select().is_err() {
+            return Ok(PasteProgress::Unselectable);
         }
-
-        Ok(false)
+        Ok(PasteProgress::Selected)
     }
 }
 
@@ -333,36 +443,6 @@ pub fn is_ibeam_cursor() -> bool {
 
         // compare cursor handles
         cursor_info.hCursor == ibeam_cursor
-    }
-}
-
-/// Select specified number of characters from current cursor position backward.
-pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
-    unsafe {
-        // initialize COM
-        let _com = ComGuard::new()?;
-
-        // get focused element
-        let focused_element = get_focused_element()?;
-
-        // get first selected text range
-        let text_range = get_selected_range(&focused_element)?;
-
-        // move endpoint backward
-        text_range
-            .MoveEndpointByUnit(
-                TextPatternRangeEndpoint_Start,
-                TextUnit_Character,
-                -(chars as i32),
-            )
-            .map_err(|_| "Failed to move endpoint backward")?;
-
-        // select new range
-        text_range
-            .Select()
-            .map_err(|_| "Failed to select new range")?;
-
-        Ok(())
     }
 }
 

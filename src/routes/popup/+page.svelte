@@ -683,7 +683,13 @@
     stopSpeech();
     try {
       await currentWindow.hide();
-      await invoke<void>('focus_popup_source');
+      try {
+        await invoke<void>('focus_popup_source');
+      } catch (error) {
+        // never paste into an unknown app; leave the text ready for a manual paste instead
+        await invoke<void>('set_clipboard_text', { text });
+        throw error;
+      }
       await invoke<void>('enter_text', { text, clipboard: true });
     } catch (error) {
       console.error(`Failed to replace selected text: ${error}`);

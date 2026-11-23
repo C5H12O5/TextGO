@@ -1,3 +1,4 @@
+use super::PasteProgress;
 use crate::error::AppError;
 use core_foundation::array::CFArray;
 use core_foundation::base::{CFRange, CFType, CFTypeRef, TCFType};
@@ -29,6 +30,13 @@ static PROCESSED_PIDS: Mutex<Option<HashMap<i32, Instant>>> = Mutex::new(None);
 
 /// Native identifier for the application that owned focus before the popup opened.
 pub type FocusTarget = i32;
+
+/// Selection of the focused text element captured immediately before a paste.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PasteAnchor {
+    location: isize,
+    length: isize,
+}
 
 // NSPoint structure for macOS AppKit
 #[repr(C)]
@@ -65,6 +73,8 @@ unsafe extern "C" {
     unsafe fn AXUIElementCreateSystemWide() -> CFTypeRef;
 
     unsafe fn AXUIElementCreateApplication(pid: i32) -> CFTypeRef;
+
+    unsafe fn AXUIElementGetPid(element: CFTypeRef, pid: *mut i32) -> i32;
 
     unsafe fn AXUIElementCopyAttributeValue(
         element: CFTypeRef,
@@ -320,6 +330,19 @@ pub fn is_focus_target_active(target: FocusTarget) -> bool {
     get_frontmost_app_pid() == Some(target)
 }
 
+/// Check whether the popup source application reports a focused UI element.
+///
+/// The frontmost application can change before the application restores its key window and
+/// first responder, so keyboard input sent immediately after activation may be dropped.
+pub fn is_focus_target_ready(target: FocusTarget) -> bool {
+    let Ok(element) = get_focused_element() else {
+        return false;
+    };
+    let mut pid = 0;
+    let error_code = unsafe { AXUIElementGetPid(element.as_CFTypeRef(), &mut pid) };
+    error_code == 0 && pid == target
+}
+
 /// Enable AXAPI for special applications (Chrome/Chromium and Electron apps).
 /// Uses NSWorkspace to get frontmost app PID, bypassing AXAPI limitations.
 /// Each PID is cached for a short duration to avoid redundant processing.
@@ -526,20 +549,63 @@ pub fn get_cursor_location() -> Result<(i32, i32), AppError> {
     }
 }
 
-/// Check if currently focused element is editable.
-pub fn is_cursor_editable() -> Result<bool, AppError> {
-    // get focused element
+/// Check if an element has an editable text role.
+fn is_editable_element(element: &CFType) -> bool {
+    get_element_attribute(element, "AXRole")
+        .ok()
+        .and_then(|role| role.downcast::<CFString>())
+        .is_some_and(|role| {
+            let role = role.to_string();
+            EDITABLE_AX_ROLES.iter().any(|r| role.contains(r))
+        })
+}
+
+/// Capture the editable selection that a paste is about to replace.
+pub fn get_paste_anchor() -> Result<PasteAnchor, AppError> {
     let focused_element = get_focused_element()?;
+    if !is_editable_element(&focused_element) {
+        return Err("Focused element is not editable".into());
+    }
 
-    // get role of focused element
-    let ax_role = get_element_attribute(&focused_element, "AXRole")?;
+    let range = get_selected_range(&focused_element)?;
+    Ok(PasteAnchor {
+        location: range.location,
+        length: range.length,
+    })
+}
 
-    // check if role is editable type
-    Ok(ax_role.downcast::<CFString>().is_some_and(|role| {
-        EDITABLE_AX_ROLES
-            .iter()
-            .any(|r| role.to_string().contains(r))
-    }))
+/// Select the pasted text once the focused element reports it.
+///
+/// Asynchronous editors such as Electron apps can apply a paste after the keys are sent.
+/// Moving the selection before that would make the paste replace the wrong range, so the
+/// selection is left untouched until the caret has moved past the anchor.
+pub fn select_pasted_text(anchor: &PasteAnchor, text: &str) -> Result<PasteProgress, AppError> {
+    let focused_element = get_focused_element()?;
+    let range = get_selected_range(&focused_element)?;
+    let Some(pasted) = pasted_range(anchor, range, text.encode_utf16().count()) else {
+        return Ok(PasteProgress::Pending);
+    };
+
+    // select the range reported by the target so line ending and Unicode normalization still match
+    match set_selected_range(&focused_element, pasted) {
+        Ok(()) => Ok(PasteProgress::Selected),
+        Err(_) => Ok(PasteProgress::Unselectable),
+    }
+}
+
+/// Return the inserted range once the selection collapses to a caret after the anchor.
+fn pasted_range(anchor: &PasteAnchor, current: CFRange, text_len: usize) -> Option<CFRange> {
+    if current.length != 0 || current.location <= anchor.location {
+        return None;
+    }
+
+    // reject impossible offsets such as NSNotFound; a target may expand line endings at most
+    let length = current.location - anchor.location;
+    let max_length = isize::try_from(text_len.saturating_mul(2)).unwrap_or(isize::MAX);
+    (length <= max_length).then_some(CFRange {
+        location: anchor.location,
+        length,
+    })
 }
 
 /// Check if current cursor is I-Beam (text cursor).
@@ -579,36 +645,18 @@ pub fn is_ibeam_cursor() -> bool {
     }
 }
 
-/// Select specified number of characters from current cursor position backward.
-pub fn select_backward_chars(chars: usize) -> Result<(), AppError> {
+/// Set the selected text range of an element.
+fn set_selected_range(element: &CFType, range: CFRange) -> Result<(), AppError> {
     unsafe {
-        // get focused element
-        let focused_element = get_focused_element()?;
-
-        // get selected text range
-        let orig_range = get_selected_range(&focused_element)?;
-
-        // calculate new selection range
-        let new_range = CFRange {
-            location: (orig_range.location + orig_range.length - chars as isize).max(0),
-            length: chars as isize,
-        };
-
         // create AXValue object
-        let new_range_ptr = AXValueCreate(AX_VALUE_TYPE_CF_RANGE, &new_range as *const _ as _);
-        if new_range_ptr.is_null() {
+        let range_ptr = AXValueCreate(AX_VALUE_TYPE_CF_RANGE, &range as *const _ as _);
+        if range_ptr.is_null() {
             return Err("Failed to create new range AXValue".into());
         }
-        let new_range_value = CFType::wrap_under_create_rule(new_range_ptr);
+        let range_value = CFType::wrap_under_create_rule(range_ptr);
 
         // set new selection range
-        set_element_attribute(
-            &focused_element,
-            "AXSelectedTextRange",
-            new_range_value.as_CFTypeRef(),
-        )?;
-
-        Ok(())
+        set_element_attribute(element, "AXSelectedTextRange", range_value.as_CFTypeRef())
     }
 }
 
@@ -729,5 +777,52 @@ fn find_url_in_element(element: &CFType, depth: usize, max_depth: usize) -> Opti
         }
 
         None
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn range(location: isize, length: isize) -> CFRange {
+        CFRange { location, length }
+    }
+
+    fn pasted(
+        anchor: (isize, isize),
+        current: (isize, isize),
+        text_len: usize,
+    ) -> Option<(isize, isize)> {
+        let anchor = PasteAnchor {
+            location: anchor.0,
+            length: anchor.1,
+        };
+        pasted_range(&anchor, range(current.0, current.1), text_len)
+            .map(|range| (range.location, range.length))
+    }
+
+    #[test]
+    fn pending_paste_keeps_selection_untouched() {
+        // the replaced selection and an unmoved caret both mean the paste has not landed
+        assert_eq!(pasted((10, 5), (10, 5), 8), None);
+        assert_eq!(pasted((10, 0), (10, 0), 8), None);
+    }
+
+    #[test]
+    fn landed_paste_selects_reported_range() {
+        assert_eq!(pasted((10, 5), (18, 0), 8), Some((10, 8)));
+        assert_eq!(pasted((10, 0), (13, 0), 3), Some((10, 3)));
+        // a target that normalizes line endings reports fewer units than were pasted
+        assert_eq!(pasted((0, 4), (5, 0), 6), Some((0, 5)));
+    }
+
+    #[test]
+    fn unrelated_selection_changes_are_not_treated_as_paste() {
+        assert_eq!(pasted((10, 5), (12, 3), 8), None);
+        assert_eq!(pasted((10, 5), (4, 0), 8), None);
+        assert_eq!(pasted((10, 5), (10, 0), 8), None);
+        // NSNotFound and other impossible offsets
+        assert_eq!(pasted((10, 5), (isize::MAX, 0), 8), None);
+        assert_eq!(pasted((10, 5), (27, 0), 8), None);
     }
 }
