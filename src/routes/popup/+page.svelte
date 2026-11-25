@@ -1146,6 +1146,15 @@
 {/key}
 
 <style>
+  /*
+   * Keep the action row on its own compositing layer for its whole lifetime. Otherwise WebKit creates the layer
+   * only when the opacity transition starts and invalidates the old pixels against that new layer, which leaves a
+   * stale copy of the layerless timestamp text in the scroll container while the buttons fade out correctly.
+   */
+  .response-actions {
+    will-change: opacity;
+  }
+
   .assistant-reply:not(:hover) .response-actions:not(:has(:focus-visible), .speaking) {
     time {
       visibility: hidden;
